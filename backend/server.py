@@ -1,15 +1,24 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import json
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Dict, Optional
 import uuid
-from datetime import datetime
-
+from datetime import datetime, timedelta
+from binance.client import Client
+import pandas as pd
+import numpy as np
+import threading
+from binance.websockets import BinanceSocketManager
+import websocket
+from contextlib import asynccontextmanager
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,38 +28,356 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
+# Global variables for websocket and data storage
+active_connections: List[WebSocket] = []
+current_price = 0.0
+price_history = []
+signals = []
+is_websocket_running = False
+
+# Binance client setup
+binance_client = Client(
+    api_key=os.environ.get('BINANCE_API_KEY', ''),
+    api_secret=os.environ.get('BINANCE_API_SECRET', ''),
+    testnet=False
+)
+
+# Create the main app
 app = FastAPI()
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-
 # Define Models
-class StatusCheck(BaseModel):
+class PriceData(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
+    symbol: str
+    price: float
+    volume: float
+    change_24h: float
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class TradingSignal(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    symbol: str
+    signal_type: str  # 'BUY' or 'SELL'
+    strength: float  # 0-100
+    indicators: Dict
+    timeframe: str
+    price: float
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-# Add your routes to the router instead of directly to app
+class Alert(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    signal_id: str
+    message: str
+    is_read: bool = False
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+# Technical Analysis Functions
+def calculate_rsi(prices, window=14):
+    """Calculate RSI (Relative Strength Index)"""
+    deltas = np.diff(prices)
+    seed = deltas[:window+1]
+    up = seed[seed >= 0].sum()/window
+    down = -seed[seed < 0].sum()/window
+    rs = up/down if down != 0 else 0
+    rsi = np.zeros_like(prices)
+    rsi[:window] = 100. - 100./(1. + rs)
+    
+    for i in range(window, len(prices)):
+        delta = deltas[i-1]
+        if delta > 0:
+            upval = delta
+            downval = 0.
+        else:
+            upval = 0.
+            downval = -delta
+        
+        up = (up*(window-1) + upval)/window
+        down = (down*(window-1) + downval)/window
+        rs = up/down if down != 0 else 0
+        rsi[i] = 100. - 100./(1. + rs)
+    
+    return rsi
+
+def calculate_macd(prices, fast=12, slow=26, signal=9):
+    """Calculate MACD (Moving Average Convergence Divergence)"""
+    exp1 = pd.Series(prices).ewm(span=fast).mean()
+    exp2 = pd.Series(prices).ewm(span=slow).mean()
+    macd = exp1 - exp2
+    signal_line = macd.ewm(span=signal).mean()
+    histogram = macd - signal_line
+    return macd.values, signal_line.values, histogram.values
+
+def calculate_moving_averages(prices, short_window=20, long_window=50):
+    """Calculate Simple Moving Averages"""
+    sma_short = pd.Series(prices).rolling(window=short_window).mean()
+    sma_long = pd.Series(prices).rolling(window=long_window).mean()
+    return sma_short.values, sma_long.values
+
+def generate_trading_signal(prices, timeframe='15m'):
+    """Generate trading signal based on multiple indicators"""
+    if len(prices) < 50:
+        return None
+    
+    # Calculate indicators
+    rsi = calculate_rsi(prices)
+    macd, signal_line, histogram = calculate_macd(prices)
+    sma_short, sma_long = calculate_moving_averages(prices)
+    
+    current_rsi = rsi[-1]
+    current_macd = macd[-1]
+    current_signal = signal_line[-1]
+    current_histogram = histogram[-1]
+    current_sma_short = sma_short[-1]
+    current_sma_long = sma_long[-1]
+    current_price = prices[-1]
+    
+    # Signal scoring
+    buy_signals = 0
+    sell_signals = 0
+    
+    # RSI signals
+    if current_rsi < 30:  # Oversold
+        buy_signals += 1
+    elif current_rsi > 70:  # Overbought
+        sell_signals += 1
+    
+    # MACD signals
+    if current_macd > current_signal and histogram[-1] > histogram[-2]:
+        buy_signals += 1
+    elif current_macd < current_signal and histogram[-1] < histogram[-2]:
+        sell_signals += 1
+    
+    # Moving Average signals
+    if current_sma_short > current_sma_long and current_price > current_sma_short:
+        buy_signals += 1
+    elif current_sma_short < current_sma_long and current_price < current_sma_short:
+        sell_signals += 1
+    
+    # Volume analysis (simplified)
+    if len(prices) >= 5:
+        recent_avg = np.mean(prices[-5:])
+        if current_price > recent_avg * 1.01:  # 1% increase
+            buy_signals += 0.5
+        elif current_price < recent_avg * 0.99:  # 1% decrease
+            sell_signals += 0.5
+    
+    # Determine signal
+    total_signals = buy_signals + sell_signals
+    if total_signals > 0:
+        if buy_signals > sell_signals:
+            signal_type = 'BUY'
+            strength = min(100, (buy_signals / total_signals) * 100)
+        else:
+            signal_type = 'SELL'
+            strength = min(100, (sell_signals / total_signals) * 100)
+        
+        # Only return strong signals
+        if strength >= 60:
+            return TradingSignal(
+                symbol='DOGEUSDT',
+                signal_type=signal_type,
+                strength=strength,
+                indicators={
+                    'rsi': float(current_rsi),
+                    'macd': float(current_macd),
+                    'signal_line': float(current_signal),
+                    'sma_short': float(current_sma_short),
+                    'sma_long': float(current_sma_long)
+                },
+                timeframe=timeframe,
+                price=current_price
+            )
+    
+    return None
+
+# WebSocket connection manager
+async def connect_websocket(websocket: WebSocket):
+    await websocket.accept()
+    active_connections.append(websocket)
+
+async def disconnect_websocket(websocket: WebSocket):
+    if websocket in active_connections:
+        active_connections.remove(websocket)
+
+async def broadcast_to_all(message: dict):
+    """Broadcast message to all connected websockets"""
+    if active_connections:
+        for connection in active_connections[:]:
+            try:
+                await connection.send_text(json.dumps(message))
+            except:
+                active_connections.remove(connection)
+
+# Binance WebSocket handler
+def handle_socket_message(msg):
+    """Handle incoming Binance WebSocket messages"""
+    global current_price, price_history
+    
+    if msg['e'] == '24hrTicker':
+        current_price = float(msg['c'])
+        price_data = {
+            'symbol': msg['s'],
+            'price': current_price,
+            'volume': float(msg['v']),
+            'change_24h': float(msg['P']),
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Store price history
+        price_history.append(current_price)
+        if len(price_history) > 200:  # Keep last 200 prices
+            price_history.pop(0)
+        
+        # Generate signals when we have enough data
+        if len(price_history) >= 50:
+            signal = generate_trading_signal(price_history)
+            if signal:
+                signals.append(signal)
+                if len(signals) > 50:  # Keep last 50 signals
+                    signals.pop(0)
+                
+                # Broadcast signal to all connected clients
+                asyncio.create_task(broadcast_to_all({
+                    'type': 'signal',
+                    'data': signal.dict()
+                }))
+        
+        # Broadcast price update to all connected clients
+        asyncio.create_task(broadcast_to_all({
+            'type': 'price',
+            'data': price_data
+        }))
+
+def start_binance_websocket():
+    """Start Binance WebSocket in a separate thread"""
+    global is_websocket_running
+    
+    if not is_websocket_running:
+        is_websocket_running = True
+        
+        def websocket_thread():
+            try:
+                bm = BinanceSocketManager(binance_client)
+                conn_key = bm.start_symbol_ticker_socket('DOGEUSDT', handle_socket_message)
+                bm.start()
+            except Exception as e:
+                logging.error(f"WebSocket error: {e}")
+                is_websocket_running = False
+        
+        thread = threading.Thread(target=websocket_thread, daemon=True)
+        thread.start()
+
+# API Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "DOGE Trading App API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
+@api_router.get("/doge/price")
+async def get_doge_price():
+    """Get current DOGE price"""
+    try:
+        ticker = binance_client.get_symbol_ticker(symbol="DOGEUSDT")
+        price_24h = binance_client.get_24hr_ticker(symbol="DOGEUSDT")
+        
+        return {
+            "symbol": "DOGEUSDT",
+            "price": float(ticker['price']),
+            "change_24h": float(price_24h['priceChangePercent']),
+            "volume": float(price_24h['volume']),
+            "high_24h": float(price_24h['highPrice']),
+            "low_24h": float(price_24h['lowPrice']),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching price: {str(e)}")
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
+@api_router.get("/doge/klines")
+async def get_doge_klines(timeframe: str = "15m", limit: int = 100):
+    """Get DOGE candlestick data"""
+    try:
+        klines = binance_client.get_klines(
+            symbol="DOGEUSDT",
+            interval=timeframe,
+            limit=limit
+        )
+        
+        formatted_klines = []
+        for kline in klines:
+            formatted_klines.append({
+                "timestamp": kline[0],
+                "open": float(kline[1]),
+                "high": float(kline[2]),
+                "low": float(kline[3]),
+                "close": float(kline[4]),
+                "volume": float(kline[5])
+            })
+        
+        return formatted_klines
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching klines: {str(e)}")
+
+@api_router.get("/doge/signals")
+async def get_trading_signals():
+    """Get recent trading signals"""
+    return signals[-10:]  # Return last 10 signals
+
+@api_router.get("/doge/analysis")
+async def get_technical_analysis(timeframe: str = "15m"):
+    """Get technical analysis for DOGE"""
+    try:
+        # Get historical data
+        klines = binance_client.get_klines(
+            symbol="DOGEUSDT",
+            interval=timeframe,
+            limit=100
+        )
+        
+        prices = [float(kline[4]) for kline in klines]  # Close prices
+        
+        if len(prices) < 50:
+            return {"error": "Not enough data for analysis"}
+        
+        # Calculate indicators
+        rsi = calculate_rsi(prices)
+        macd, signal_line, histogram = calculate_macd(prices)
+        sma_short, sma_long = calculate_moving_averages(prices)
+        
+        return {
+            "symbol": "DOGEUSDT",
+            "timeframe": timeframe,
+            "current_price": prices[-1],
+            "rsi": float(rsi[-1]),
+            "macd": float(macd[-1]),
+            "signal_line": float(signal_line[-1]),
+            "sma_short": float(sma_short[-1]),
+            "sma_long": float(sma_long[-1]),
+            "analysis": {
+                "rsi_signal": "oversold" if rsi[-1] < 30 else "overbought" if rsi[-1] > 70 else "neutral",
+                "macd_signal": "bullish" if macd[-1] > signal_line[-1] else "bearish",
+                "ma_signal": "bullish" if sma_short[-1] > sma_long[-1] else "bearish"
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in technical analysis: {str(e)}")
+
+@api_router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time updates"""
+    await connect_websocket(websocket)
+    try:
+        while True:
+            # Keep connection alive
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        await disconnect_websocket(websocket)
+
+# Background task to start WebSocket
+async def startup_event():
+    """Start background tasks"""
+    start_binance_websocket()
 
 # Include the router in the main app
 app.include_router(api_router)
@@ -69,6 +396,10 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+@app.on_event("startup")
+async def startup():
+    await startup_event()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
