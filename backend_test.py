@@ -1858,6 +1858,9 @@ class DOGETradingAppTester:
         
         print("\n🛡️ Testing Premium Safety Limits...")
         premium_safety_ok = self.test_premium_safety_limits()
+        
+        print("\n🌐 Testing Proxy Configuration Endpoints...")
+        proxy_config_ok = self.test_proxy_configuration_endpoints()
             
         # Summary
         print("\n" + "=" * 60)
