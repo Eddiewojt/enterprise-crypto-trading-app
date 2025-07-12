@@ -59,7 +59,7 @@ SUPPORTED_COINS = [
 try:
     binance_client = Client(
         api_key=os.environ.get('BINANCE_API_KEY', ''),
-        api_secret=os.environ.get('BINANCE_API_SECRET', ''),
+        api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
         testnet=True  # Use testnet to avoid geo-restrictions
     )
     # Test connection
