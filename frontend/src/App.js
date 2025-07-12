@@ -1099,6 +1099,7 @@ function App() {
   });
   const [tradingMode, setTradingMode] = useState('manual'); // 'auto' or 'manual'
   const [masterSwitch, setMasterSwitch] = useState('disabled'); // 'enabled' or 'disabled'
+  const [botData, setBotData] = useState([]);
   const [showBotCreator, setShowBotCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProxyConfig, setShowProxyConfig] = useState(false);
