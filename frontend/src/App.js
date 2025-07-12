@@ -2224,28 +2224,51 @@ function App() {
           <div className="performance-grid">
             <div className="perf-card">
               <h4>📊 Total Profit</h4>
-              <div className="perf-value positive">+${portfolioData.daily_change.toFixed(2)}</div>
-              <div className="perf-percent">+{portfolioData.daily_change_pct.toFixed(1)}% All Time</div>
+              <div className={`perf-value ${portfolioData.daily_change >= 0 ? 'positive' : 'negative'}`}>
+                {portfolioData.daily_change >= 0 ? '+' : ''}${Math.abs(portfolioData.daily_change).toFixed(2)}
+              </div>
+              <div className="perf-percent">
+                {portfolioData.daily_change >= 0 ? '+' : ''}{portfolioData.daily_change_pct.toFixed(1)}% 
+                {portfolioData.is_real ? ' (Real Account)' : ' (Demo)'}
+              </div>
             </div>
             
             <div className="perf-card">
-              <h4>🎯 Win Rate</h4>
-              <div className="perf-value">74%</div>
-              <div className="perf-details">156 wins / 211 trades</div>
+              <h4>💰 Account Value</h4>
+              <div className="perf-value">
+                ${portfolioData.total_value.toFixed(2)}
+              </div>
+              <div className="perf-details">
+                {portfolioData.is_real ? '🟢 Live Binance Account' : '⚪ Demo Account'}
+              </div>
             </div>
             
             <div className="perf-card">
-              <h4>⚡ Trades Today</h4>
-              <div className="perf-value">23</div>
-              <div className="perf-details">18 profitable</div>
+              <h4>🤖 Active Bots</h4>
+              <div className="perf-value">
+                {botData.filter(bot => bot.status === 'RUNNING').length}
+              </div>
+              <div className="perf-details">
+                {botData.filter(bot => bot.status === 'NOT_TRADING').length} not trading
+              </div>
             </div>
             
             <div className="perf-card">
-              <h4>🚨 Max Drawdown</h4>
-              <div className="perf-value">-3.2%</div>
-              <div className="perf-details">Well controlled</div>
+              <h4>📈 Today's Trades</h4>
+              <div className="perf-value">
+                {botData.reduce((total, bot) => total + bot.trades_today, 0)}
+              </div>
+              <div className="perf-details">
+                Across all bots
+              </div>
             </div>
           </div>
+          
+          {portfolioData.message && (
+            <div className="performance-message">
+              ⚠️ {portfolioData.message}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
