@@ -40,7 +40,12 @@ class DOGETradingAppTester:
             'automation_execution': False,
             'automation_logs': False,
             'telegram_notification_system': False,
-            'email_notification_system': False
+            'email_notification_system': False,
+            'binance_account_connection': False,
+            'binance_enable_real_trading': False,
+            'binance_safety_settings': False,
+            'binance_execute_real_trade': False,
+            'binance_notification_system': False
         }
         self.errors = []
         
