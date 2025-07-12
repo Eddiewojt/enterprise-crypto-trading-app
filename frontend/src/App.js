@@ -1459,38 +1459,82 @@ function App() {
   // Portfolio Data Functions
   const fetchPortfolioData = async () => {
     try {
-      const response = await axios.get(`${API}/portfolio`);
-      if (response.data) {
-        const portfolio = response.data;
-        
-        // Calculate total portfolio value
-        let totalValue = 0;
-        if (portfolio.positions && portfolio.positions.length > 0) {
-          totalValue = portfolio.positions.reduce((sum, position) => {
-            return sum + (position.quantity * position.current_price);
-          }, 0);
-        } else {
-          // Demo portfolio value for new users
-          totalValue = 2450.67;
-        }
-        
-        // Calculate daily change (mock for demo)
-        const dailyChange = totalValue * 0.055; // 5.5% demo gain
+      // First try to get real Binance wallet balance
+      const walletResponse = await axios.get(`${API}/binance/wallet-balance`);
+      
+      if (walletResponse.data.status === 'success' && walletResponse.data.total_usd_value > 0) {
+        // Use real Binance wallet balance
+        const realBalance = walletResponse.data.total_usd_value;
+        const dailyChange = realBalance * 0.001; // Very small demo change for real accounts
         
         setPortfolioData({
-          total_value: totalValue,
+          total_value: realBalance,
           daily_change: dailyChange,
-          daily_change_pct: (dailyChange / (totalValue - dailyChange)) * 100
+          daily_change_pct: (dailyChange / realBalance) * 100,
+          is_real: true,
+          balances: walletResponse.data.balances
         });
+        
+        console.log('✅ Using REAL Binance wallet balance:', realBalance);
+        
+        setNotification({
+          type: 'success',
+          message: `💰 Real Binance Balance Loaded: $${realBalance.toFixed(2)}`
+        });
+        setTimeout(() => setNotification(null), 4000);
+        
+      } else {
+        // Binance not available - show $0 or minimal demo
+        setPortfolioData({
+          total_value: 0.00,
+          daily_change: 0.00,
+          daily_change_pct: 0.0,
+          is_real: false,
+          message: walletResponse.data.message || "Binance wallet not accessible"
+        });
+        
+        console.log('⚠️ Binance wallet not accessible - showing $0');
+        
+        setNotification({
+          type: 'error', 
+          message: '⚠️ Cannot access Binance wallet - geographical restrictions. Showing $0 balance.'
+        });
+        setTimeout(() => setNotification(null), 5000);
       }
+      
     } catch (error) {
-      console.error('Error fetching portfolio data:', error);
-      // Set demo values on error
+      console.error('Error fetching wallet data:', error);
+      
+      // On error, show $0 balance
       setPortfolioData({
-        total_value: 2450.67,
-        daily_change: 127.34,
-        daily_change_pct: 5.5
+        total_value: 0.00,
+        daily_change: 0.00,
+        daily_change_pct: 0.0,
+        is_real: false,
+        error: error.message
       });
+      
+      setNotification({
+        type: 'error',
+        message: '❌ Could not connect to Binance wallet. Check VPN connection.'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
+  };
+
+  const fetchBotPerformance = async () => {
+    try {
+      const response = await axios.get(`${API}/trading/bot-performance`);
+      setBotData(response.data.bots || []);
+      console.log('✅ Real bot performance loaded:', response.data);
+    } catch (error) {
+      console.error('Error fetching bot performance:', error);
+      // Set all bots to $0 if can't fetch real data
+      setBotData([
+        { name: "DCA Bot - DOGE", status: "NOT_TRADING", profit: 0.00, profit_pct: 0.0, trades_today: 0 },
+        { name: "Grid Bot - BTC", status: "NOT_TRADING", profit: 0.00, profit_pct: 0.0, trades_today: 0 },
+        { name: "Momentum Bot - ETH", status: "NOT_TRADING", profit: 0.00, profit_pct: 0.0, trades_today: 0 }
+      ]);
     }
   };
   
