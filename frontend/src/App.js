@@ -1617,6 +1617,123 @@ function App() {
             📊 Account Info
           </button>
         </div>
+
+        {/* Proxy Configuration Modal */}
+        {showProxyConfig && (
+          <div className="modal-overlay" onClick={() => setShowProxyConfig(false)}>
+            <div className="modal proxy-config-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🌍 Global Trading Access Configuration</h2>
+                <button className="close-btn" onClick={() => setShowProxyConfig(false)}>×</button>
+              </div>
+              
+              <div className="modal-content">
+                <div className="config-section">
+                  <h3>🚀 Recommended: Smartproxy</h3>
+                  <p>Best solution for global crypto trading access with 40M+ IPs worldwide.</p>
+                  
+                  <div className="signup-info">
+                    <div className="signup-step">
+                      <strong>Step 1:</strong> Sign up at <a href="https://smartproxy.com" target="_blank" rel="noopener noreferrer">smartproxy.com</a>
+                    </div>
+                    <div className="signup-step">
+                      <strong>Step 2:</strong> Choose "Residential Proxies" plan (starting $12.5/month)
+                    </div>
+                    <div className="signup-step">
+                      <strong>Step 3:</strong> Get your credentials from the dashboard
+                    </div>
+                    <div className="signup-step">
+                      <strong>Step 4:</strong> Enter credentials below
+                    </div>
+                  </div>
+                </div>
+
+                <div className="config-form">
+                  <h3>🔧 Proxy Configuration</h3>
+                  
+                  <div className="form-group">
+                    <label>Proxy Type:</label>
+                    <select 
+                      value={proxyConfig.type} 
+                      onChange={(e) => setProxyConfig({...proxyConfig, type: e.target.value})}
+                    >
+                      <option value="http">HTTP (Recommended)</option>
+                      <option value="socks5">SOCKS5</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Host/IP Address:</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., gate.smartproxy.com"
+                      value={proxyConfig.host}
+                      onChange={(e) => setProxyConfig({...proxyConfig, host: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Port:</label>
+                    <input
+                      type="number"
+                      placeholder="e.g., 10000"
+                      value={proxyConfig.port}
+                      onChange={(e) => setProxyConfig({...proxyConfig, port: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Username:</label>
+                    <input
+                      type="text"
+                      placeholder="Your proxy username"
+                      value={proxyConfig.username}
+                      onChange={(e) => setProxyConfig({...proxyConfig, username: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Password:</label>
+                    <input
+                      type="password"
+                      placeholder="Your proxy password"
+                      value={proxyConfig.password}
+                      onChange={(e) => setProxyConfig({...proxyConfig, password: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="modal-actions">
+                    <button 
+                      className="test-btn"
+                      onClick={testProxyConnection}
+                      disabled={!proxyConfig.host || !proxyConfig.port}
+                    >
+                      🧪 Test Connection
+                    </button>
+                    <button 
+                      className="configure-btn"
+                      onClick={configureProxy}
+                      disabled={!proxyConfig.host || !proxyConfig.port}
+                    >
+                      🚀 Configure & Enable
+                    </button>
+                  </div>
+                </div>
+
+                <div className="benefits-section">
+                  <h3>✨ Benefits</h3>
+                  <ul>
+                    <li>🌍 Trade from anywhere in the world</li>
+                    <li>🚀 Bypass all geographical restrictions</li>
+                    <li>⚡ High-speed connections for trading</li>
+                    <li>🔒 Secure encrypted connections</li>
+                    <li>💰 Start earning with automated trading</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
