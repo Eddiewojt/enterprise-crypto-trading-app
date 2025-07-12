@@ -1542,6 +1542,39 @@ function App() {
       ]);
     }
   };
+
+  const detectAvailableExchanges = async () => {
+    try {
+      const response = await axios.get(`${API}/exchanges/available`);
+      setAvailableExchanges(response.data.available_exchanges || []);
+      setRecommendedExchange(response.data.recommended_exchange);
+      
+      if (response.data.recommended_exchange) {
+        setNotification({
+          type: 'success',
+          message: `🎯 Found ${response.data.total_available} legitimate exchanges! Recommended: ${response.data.recommended_exchange.name}`
+        });
+        setTimeout(() => setNotification(null), 6000);
+      }
+      
+      console.log('✅ Available exchanges detected:', response.data);
+    } catch (error) {
+      console.error('Error detecting exchanges:', error);
+    }
+  };
+
+  const handleExchangeSetup = async (exchangeId) => {
+    try {
+      const response = await axios.get(`${API}/exchanges/${exchangeId}/setup`);
+      setSelectedExchange({
+        id: exchangeId,
+        ...response.data.instructions
+      });
+      setShowExchangeSetup(true);
+    } catch (error) {
+      console.error('Error getting exchange setup:', error);
+    }
+  };
   
   // Fetch initial data
   useEffect(() => {
