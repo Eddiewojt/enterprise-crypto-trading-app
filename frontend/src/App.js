@@ -23,20 +23,50 @@ const formatNumber = (num) => {
   return new Intl.NumberFormat('en-US').format(num);
 };
 
-// Multi-Coin Price Card Component
-const MultiCoinPriceCard = ({ multiCoinData, onSelectCoin }) => {
+// Extended Multi-Coin Price Card Component
+const ExtendedMultiCoinCard = ({ multiCoinData, onSelectCoin, selectedSymbol }) => {
+  const [sortBy, setSortBy] = useState('change_24h');
+  const [sortOrder, setSortOrder] = useState('desc');
+  
+  const sortedCoins = Object.entries(multiCoinData).sort((a, b) => {
+    const aVal = a[1][sortBy] || 0;
+    const bVal = b[1][sortBy] || 0;
+    return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+  });
+  
   return (
-    <div className="multi-coin-card">
-      <h3>Cryptocurrency Prices</h3>
-      <div className="coin-grid">
-        {Object.entries(multiCoinData).map(([symbol, data]) => {
+    <div className="extended-multi-coin-card">
+      <div className="coin-card-header">
+        <h3>Cryptocurrency Market (15 Coins)</h3>
+        <div className="sort-controls">
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+            className="sort-select"
+          >
+            <option value="change_24h">24h Change</option>
+            <option value="price">Price</option>
+            <option value="volume">Volume</option>
+          </select>
+          <button 
+            onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+            className="sort-button"
+          >
+            {sortOrder === 'desc' ? '↓' : '↑'}
+          </button>
+        </div>
+      </div>
+      
+      <div className="coin-grid-extended">
+        {sortedCoins.map(([symbol, data]) => {
           const isPositive = data.change_24h >= 0;
           const coinName = symbol.replace('USDT', '');
+          const isSelected = symbol === selectedSymbol;
           
           return (
             <div 
               key={symbol} 
-              className={`coin-item ${isPositive ? 'positive' : 'negative'}`}
+              className={`coin-item-extended ${isPositive ? 'positive' : 'negative'} ${isSelected ? 'selected' : ''}`}
               onClick={() => onSelectCoin(symbol)}
             >
               <div className="coin-header">
@@ -46,8 +76,11 @@ const MultiCoinPriceCard = ({ multiCoinData, onSelectCoin }) => {
               <div className="coin-price">
                 {formatPrice(data.price)}
               </div>
-              <div className="coin-volume">
-                Vol: {formatNumber(data.volume)}
+              <div className="coin-details">
+                <div className="coin-volume">Vol: {formatNumber(data.volume)}</div>
+                <div className="coin-range">
+                  H: {formatPrice(data.high_24h)} | L: {formatPrice(data.low_24h)}
+                </div>
               </div>
             </div>
           );
@@ -154,90 +187,278 @@ const CandlestickChart = ({ klineData, symbol }) => {
     <div className="candlestick-chart">
       <canvas 
         ref={canvasRef} 
-        width={400} 
-        height={300}
-        style={{ width: '100%', height: '300px' }}
+        width={500} 
+        height={350}
+        style={{ width: '100%', height: '350px' }}
       />
     </div>
   );
 };
 
-// Advanced Technical Analysis Component
-const AdvancedTechnicalAnalysis = ({ analysis, selectedSymbol }) => {
-  if (!analysis || !analysis.indicators) return null;
+// Backtesting Component
+const BacktestingPanel = ({ selectedSymbol }) => {
+  const [backtestForm, setBacktestForm] = useState({
+    symbol: selectedSymbol.replace('USDT', ''),
+    timeframe: '15m',
+    start_date: '2024-01-01',
+    end_date: '2024-12-31',
+    strategy: 'combined',
+    initial_capital: 10000
+  });
   
-  const { indicators } = analysis;
+  const [backtestResults, setBacktestResults] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [pastResults, setPastResults] = useState([]);
   
-  const getIndicatorColor = (signal) => {
-    if (signal.includes('bullish') || signal.includes('oversold') || signal === 'above') return '#4ade80';
-    if (signal.includes('bearish') || signal.includes('overbought') || signal === 'below') return '#f87171';
-    return '#fbbf24';
+  useEffect(() => {
+    setBacktestForm(prev => ({
+      ...prev,
+      symbol: selectedSymbol.replace('USDT', '')
+    }));
+    fetchPastResults();
+  }, [selectedSymbol]);
+  
+  const fetchPastResults = async () => {
+    try {
+      const response = await axios.get(`${API}/backtest/results`);
+      setPastResults(response.data);
+    } catch (error) {
+      console.error('Error fetching past results:', error);
+    }
+  };
+  
+  const runBacktest = async () => {
+    setIsRunning(true);
+    try {
+      const response = await axios.post(`${API}/backtest`, backtestForm);
+      setBacktestResults(response.data);
+      fetchPastResults();
+    } catch (error) {
+      console.error('Error running backtest:', error);
+      alert('Backtest failed. Please try again.');
+    } finally {
+      setIsRunning(false);
+    }
   };
   
   return (
-    <div className="advanced-analysis">
-      <h3>Advanced Technical Analysis - {selectedSymbol}</h3>
+    <div className="backtesting-panel">
+      <h3>Strategy Backtesting</h3>
       
-      <div className="analysis-grid">
-        <div className="indicator-card">
-          <h4>RSI (14)</h4>
-          <div className="indicator-value" style={{ color: getIndicatorColor(indicators.rsi.signal) }}>
-            {indicators.rsi.value.toFixed(1)}
-          </div>
-          <div className="indicator-signal">{indicators.rsi.signal}</div>
+      <div className="backtest-form">
+        <div className="form-row">
+          <label>Symbol:</label>
+          <input 
+            type="text" 
+            value={backtestForm.symbol}
+            onChange={(e) => setBacktestForm({...backtestForm, symbol: e.target.value})}
+            disabled
+          />
         </div>
         
-        <div className="indicator-card">
-          <h4>MACD</h4>
-          <div className="indicator-value">
-            {indicators.macd.macd.toFixed(6)}
-          </div>
-          <div className="indicator-signal" style={{ color: getIndicatorColor(indicators.macd.signal_type) }}>
-            {indicators.macd.signal_type}
-          </div>
+        <div className="form-row">
+          <label>Strategy:</label>
+          <select 
+            value={backtestForm.strategy}
+            onChange={(e) => setBacktestForm({...backtestForm, strategy: e.target.value})}
+          >
+            <option value="rsi">RSI Strategy</option>
+            <option value="macd">MACD Strategy</option>
+            <option value="combined">Combined Strategy</option>
+          </select>
         </div>
         
-        <div className="indicator-card">
-          <h4>Moving Averages</h4>
-          <div className="indicator-details">
-            <div>Short: {indicators.moving_averages.sma_short.toFixed(6)}</div>
-            <div>Long: {indicators.moving_averages.sma_long.toFixed(6)}</div>
-          </div>
-          <div className="indicator-signal" style={{ color: getIndicatorColor(indicators.moving_averages.signal) }}>
-            {indicators.moving_averages.signal}
-          </div>
+        <div className="form-row">
+          <label>Timeframe:</label>
+          <select 
+            value={backtestForm.timeframe}
+            onChange={(e) => setBacktestForm({...backtestForm, timeframe: e.target.value})}
+          >
+            <option value="15m">15 minutes</option>
+            <option value="1h">1 hour</option>
+            <option value="4h">4 hours</option>
+            <option value="1d">1 day</option>
+          </select>
         </div>
         
-        <div className="indicator-card">
-          <h4>Bollinger Bands</h4>
-          <div className="indicator-details">
-            <div>Upper: {indicators.bollinger_bands.upper.toFixed(6)}</div>
-            <div>Lower: {indicators.bollinger_bands.lower.toFixed(6)}</div>
-          </div>
-          <div className="indicator-signal">
-            {indicators.bollinger_bands.position}
-          </div>
+        <div className="form-row">
+          <label>Start Date:</label>
+          <input 
+            type="date" 
+            value={backtestForm.start_date}
+            onChange={(e) => setBacktestForm({...backtestForm, start_date: e.target.value})}
+          />
         </div>
         
-        <div className="indicator-card">
-          <h4>Stochastic</h4>
-          <div className="indicator-details">
-            <div>%K: {indicators.stochastic.k.toFixed(1)}</div>
-            <div>%D: {indicators.stochastic.d.toFixed(1)}</div>
-          </div>
-          <div className="indicator-signal" style={{ color: getIndicatorColor(indicators.stochastic.signal) }}>
-            {indicators.stochastic.signal}
-          </div>
+        <div className="form-row">
+          <label>End Date:</label>
+          <input 
+            type="date" 
+            value={backtestForm.end_date}
+            onChange={(e) => setBacktestForm({...backtestForm, end_date: e.target.value})}
+          />
         </div>
         
-        <div className="indicator-card">
-          <h4>Volume Analysis</h4>
-          <div className="indicator-details">
-            <div>VWAP: {indicators.volume.vwap.toFixed(6)}</div>
-            <div>OBV: {formatNumber(indicators.volume.obv)}</div>
+        <div className="form-row">
+          <label>Initial Capital:</label>
+          <input 
+            type="number" 
+            value={backtestForm.initial_capital}
+            onChange={(e) => setBacktestForm({...backtestForm, initial_capital: parseFloat(e.target.value)})}
+          />
+        </div>
+        
+        <button 
+          onClick={runBacktest} 
+          disabled={isRunning}
+          className="backtest-button"
+        >
+          {isRunning ? 'Running Backtest...' : 'Run Backtest'}
+        </button>
+      </div>
+      
+      {backtestResults && (
+        <div className="backtest-results">
+          <h4>Backtest Results</h4>
+          <div className="results-grid">
+            <div className="result-item">
+              <span className="label">Total Return:</span>
+              <span className={`value ${backtestResults.total_return >= 0 ? 'positive' : 'negative'}`}>
+                {formatPrice(backtestResults.total_return)} ({formatPercentage(backtestResults.total_return_percentage)})
+              </span>
+            </div>
+            
+            <div className="result-item">
+              <span className="label">Final Capital:</span>
+              <span className="value">{formatPrice(backtestResults.final_capital)}</span>
+            </div>
+            
+            <div className="result-item">
+              <span className="label">Total Trades:</span>
+              <span className="value">{backtestResults.total_trades}</span>
+            </div>
+            
+            <div className="result-item">
+              <span className="label">Win Rate:</span>
+              <span className="value">{backtestResults.win_rate.toFixed(1)}%</span>
+            </div>
+            
+            <div className="result-item">
+              <span className="label">Max Drawdown:</span>
+              <span className="value negative">{backtestResults.max_drawdown.toFixed(2)}%</span>
+            </div>
+            
+            <div className="result-item">
+              <span className="label">Sharpe Ratio:</span>
+              <span className="value">{backtestResults.sharpe_ratio.toFixed(2)}</span>
+            </div>
           </div>
-          <div className="indicator-signal" style={{ color: getIndicatorColor(indicators.volume.price_vs_vwap) }}>
-            Price {indicators.volume.price_vs_vwap} VWAP
+        </div>
+      )}
+      
+      {pastResults.length > 0 && (
+        <div className="past-results">
+          <h4>Recent Backtest Results</h4>
+          <div className="results-list">
+            {pastResults.slice(0, 5).map((result, index) => (
+              <div key={index} className="result-summary">
+                <div className="result-header">
+                  <span>{result.symbol} - {result.strategy}</span>
+                  <span className={result.total_return >= 0 ? 'positive' : 'negative'}>
+                    {formatPercentage(result.total_return_percentage)}
+                  </span>
+                </div>
+                <div className="result-details">
+                  <span>Trades: {result.total_trades}</span>
+                  <span>Win Rate: {result.win_rate.toFixed(1)}%</span>
+                  <span>Timeframe: {result.timeframe}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Notification Settings Component
+const NotificationSettings = () => {
+  const [settings, setSettings] = useState({
+    email_enabled: true,
+    sms_enabled: true,
+    telegram_enabled: true,
+    signal_strength_threshold: 75
+  });
+  
+  return (
+    <div className="notification-settings">
+      <h3>Notification Settings</h3>
+      
+      <div className="settings-grid">
+        <div className="setting-item">
+          <label>
+            <input 
+              type="checkbox" 
+              checked={settings.email_enabled}
+              onChange={(e) => setSettings({...settings, email_enabled: e.target.checked})}
+            />
+            Email Notifications
+          </label>
+          <span className="setting-description">eddiewojt1@gmail.com</span>
+        </div>
+        
+        <div className="setting-item">
+          <label>
+            <input 
+              type="checkbox" 
+              checked={settings.sms_enabled}
+              onChange={(e) => setSettings({...settings, sms_enabled: e.target.checked})}
+            />
+            SMS Notifications
+          </label>
+          <span className="setting-description">+610437975583</span>
+        </div>
+        
+        <div className="setting-item">
+          <label>
+            <input 
+              type="checkbox" 
+              checked={settings.telegram_enabled}
+              onChange={(e) => setSettings({...settings, telegram_enabled: e.target.checked})}
+            />
+            Telegram Notifications
+          </label>
+          <span className="setting-description">Bot integration ready</span>
+        </div>
+        
+        <div className="setting-item">
+          <label>Signal Strength Threshold:</label>
+          <input 
+            type="range" 
+            min="60" 
+            max="90" 
+            value={settings.signal_strength_threshold}
+            onChange={(e) => setSettings({...settings, signal_strength_threshold: e.target.value})}
+          />
+          <span className="setting-value">{settings.signal_strength_threshold}%</span>
+        </div>
+      </div>
+      
+      <div className="notification-status">
+        <h4>Notification Status</h4>
+        <div className="status-grid">
+          <div className="status-item">
+            <span className="status-dot email"></span>
+            <span>Email: Connected</span>
+          </div>
+          <div className="status-item">
+            <span className="status-dot sms"></span>
+            <span>SMS: Demo Mode</span>
+          </div>
+          <div className="status-item">
+            <span className="status-dot telegram"></span>
+            <span>Telegram: Demo Mode</span>
           </div>
         </div>
       </div>
@@ -245,8 +466,8 @@ const AdvancedTechnicalAnalysis = ({ analysis, selectedSymbol }) => {
   );
 };
 
-// Portfolio Component
-const Portfolio = ({ portfolio, onExecuteTrade }) => {
+// Enhanced Portfolio Component
+const EnhancedPortfolio = ({ portfolio, onExecuteTrade }) => {
   const [tradeForm, setTradeForm] = useState({
     symbol: 'DOGEUSDT',
     side: 'BUY',
@@ -254,32 +475,59 @@ const Portfolio = ({ portfolio, onExecuteTrade }) => {
     price: ''
   });
   
+  const [supportedCoins, setSupportedCoins] = useState([]);
+  const [tradeHistory, setTradeHistory] = useState([]);
+  
+  useEffect(() => {
+    fetchSupportedCoins();
+    fetchTradeHistory();
+  }, []);
+  
+  const fetchSupportedCoins = async () => {
+    try {
+      const response = await axios.get(`${API}/supported-coins`);
+      setSupportedCoins(response.data);
+    } catch (error) {
+      console.error('Error fetching supported coins:', error);
+    }
+  };
+  
+  const fetchTradeHistory = async () => {
+    try {
+      const response = await axios.get(`${API}/portfolio/trades`);
+      setTradeHistory(response.data.trades);
+    } catch (error) {
+      console.error('Error fetching trade history:', error);
+    }
+  };
+  
   const handleTrade = async () => {
     try {
       await onExecuteTrade(tradeForm);
       setTradeForm({ ...tradeForm, quantity: 1000, price: '' });
+      fetchTradeHistory();
     } catch (error) {
       console.error('Trade failed:', error);
     }
   };
   
   return (
-    <div className="portfolio-container">
-      <h3>Portfolio Management</h3>
+    <div className="enhanced-portfolio">
+      <h3>Advanced Portfolio Management</h3>
       
       {/* Paper Trading Form */}
       <div className="trade-form">
-        <h4>Paper Trading</h4>
+        <h4>Paper Trading - Multi-Coin Support</h4>
         <div className="form-row">
           <select 
             value={tradeForm.symbol} 
             onChange={(e) => setTradeForm({ ...tradeForm, symbol: e.target.value })}
           >
-            <option value="DOGEUSDT">DOGE</option>
-            <option value="BTCUSDT">BTC</option>
-            <option value="ETHUSDT">ETH</option>
-            <option value="ADAUSDT">ADA</option>
-            <option value="BNBUSDT">BNB</option>
+            {supportedCoins.map(coin => (
+              <option key={coin.symbol} value={coin.symbol}>
+                {coin.name} ({coin.symbol})
+              </option>
+            ))}
           </select>
           
           <select 
@@ -344,7 +592,7 @@ const Portfolio = ({ portfolio, onExecuteTrade }) => {
       {/* Holdings */}
       {portfolio.holdings && portfolio.holdings.length > 0 && (
         <div className="holdings-list">
-          <h4>Holdings</h4>
+          <h4>Current Holdings</h4>
           {portfolio.holdings.map((holding, index) => (
             <div key={index} className="holding-item">
               <div className="holding-header">
@@ -362,74 +610,31 @@ const Portfolio = ({ portfolio, onExecuteTrade }) => {
           ))}
         </div>
       )}
-    </div>
-  );
-};
-
-// Enhanced Signal Card Component
-const EnhancedSignalCard = ({ signal }) => {
-  const isBuySignal = signal.signal_type === 'BUY';
-  
-  return (
-    <div className={`enhanced-signal-card ${isBuySignal ? 'buy-signal' : 'sell-signal'}`}>
-      <div className="signal-header">
-        <div className="signal-type">
-          <span className="signal-icon">
-            {isBuySignal ? '🚀' : '⚡'}
-          </span>
-          <span className="signal-text">
-            {signal.signal_type}
-          </span>
-        </div>
-        <div className="signal-strength">
-          <span className="strength-value">{signal.strength.toFixed(0)}%</span>
-          <div className="strength-bar">
-            <div 
-              className="strength-fill" 
-              style={{ width: `${signal.strength}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
       
-      <div className="signal-details">
-        <div className="signal-price">
-          {formatPrice(signal.price)}
-        </div>
-        <div className="signal-time">
-          {new Date(signal.timestamp).toLocaleTimeString()}
-        </div>
-      </div>
-      
-      <div className="signal-indicators">
-        <div className="indicator-row">
-          <span>RSI</span>
-          <span className={
-            signal.indicators.rsi < 30 ? 'oversold' : 
-            signal.indicators.rsi > 70 ? 'overbought' : 'neutral'
-          }>
-            {signal.indicators.rsi.toFixed(1)}
-          </span>
-        </div>
-        <div className="indicator-row">
-          <span>MACD</span>
-          <span>{signal.indicators.macd.toFixed(6)}</span>
-        </div>
-        {signal.indicators.bollinger_upper && (
-          <div className="indicator-row">
-            <span>Bollinger</span>
-            <span>
-              {signal.indicators.bollinger_upper.toFixed(6)} / {signal.indicators.bollinger_lower.toFixed(6)}
-            </span>
+      {/* Trade History */}
+      {tradeHistory.length > 0 && (
+        <div className="trade-history">
+          <h4>Recent Trades</h4>
+          <div className="trades-list">
+            {tradeHistory.slice(0, 10).map((trade, index) => (
+              <div key={index} className={`trade-item ${trade.side.toLowerCase()}`}>
+                <div className="trade-header">
+                  <span className="trade-symbol">{trade.symbol}</span>
+                  <span className="trade-side">{trade.side}</span>
+                  <span className="trade-time">
+                    {new Date(trade.timestamp).toLocaleString()}
+                  </span>
+                </div>
+                <div className="trade-details">
+                  <span>Qty: {trade.quantity}</span>
+                  <span>Price: {formatPrice(trade.price)}</span>
+                  <span>Value: {formatPrice(trade.quantity * trade.price)}</span>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-        {signal.indicators.stochastic_k && (
-          <div className="indicator-row">
-            <span>Stochastic</span>
-            <span>{signal.indicators.stochastic_k.toFixed(1)} / {signal.indicators.stochastic_d.toFixed(1)}</span>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -493,7 +698,7 @@ function App() {
   
   const fetchSignals = async () => {
     try {
-      const response = await axios.get(`${API}/doge/signals`);
+      const response = await axios.get(`${API}/signals`);
       setSignals(response.data);
     } catch (error) {
       console.error('Error fetching signals:', error);
@@ -554,7 +759,7 @@ function App() {
           [data.data.symbol]: data.data
         }));
       } else if (data.type === 'signal') {
-        setSignals(prev => [...prev, data.data].slice(-10));
+        setSignals(prev => [...prev, data.data].slice(-20));
       }
     };
     
@@ -573,7 +778,7 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>🚀 Advanced Crypto Trading Platform</h1>
+        <h1>🚀 Advanced Multi-Coin Trading Platform</h1>
         <div className="header-controls">
           <div className="tab-selector">
             <button 
@@ -589,10 +794,16 @@ function App() {
               Portfolio
             </button>
             <button 
-              className={activeTab === 'analysis' ? 'active' : ''}
-              onClick={() => setActiveTab('analysis')}
+              className={activeTab === 'backtesting' ? 'active' : ''}
+              onClick={() => setActiveTab('backtesting')}
             >
-              Analysis
+              Backtesting
+            </button>
+            <button 
+              className={activeTab === 'notifications' ? 'active' : ''}
+              onClick={() => setActiveTab('notifications')}
+            >
+              Notifications
             </button>
           </div>
           <div className={`connection-status ${connectionStatus}`}>
@@ -606,9 +817,10 @@ function App() {
         {activeTab === 'trading' && (
           <div className="trading-dashboard">
             <div className="left-panel">
-              <MultiCoinPriceCard 
+              <ExtendedMultiCoinCard 
                 multiCoinData={multiCoinData} 
                 onSelectCoin={setSelectedSymbol}
+                selectedSymbol={selectedSymbol}
               />
               
               <div className="timeframe-selector">
@@ -619,6 +831,12 @@ function App() {
                     onClick={() => setSelectedTimeframe('15m')}
                   >
                     15m
+                  </button>
+                  <button 
+                    className={selectedTimeframe === '1h' ? 'active' : ''}
+                    onClick={() => setSelectedTimeframe('1h')}
+                  >
+                    1h
                   </button>
                   <button 
                     className={selectedTimeframe === '4h' ? 'active' : ''}
@@ -645,15 +863,26 @@ function App() {
             
             <div className="right-panel">
               <div className="signals-container">
-                <h3>Trading Signals</h3>
+                <h3>Multi-Coin Trading Signals</h3>
                 <div className="signals-list">
                   {signals.length > 0 ? (
-                    signals.slice(-5).reverse().map((signal, index) => (
-                      <EnhancedSignalCard key={signal.id || index} signal={signal} />
+                    signals.slice(-8).reverse().map((signal, index) => (
+                      <div key={signal.id || index} className={`signal-card ${signal.signal_type.toLowerCase()}`}>
+                        <div className="signal-header">
+                          <span className="signal-symbol">{signal.symbol}</span>
+                          <span className="signal-type">{signal.signal_type}</span>
+                          <span className="signal-strength">{signal.strength.toFixed(0)}%</span>
+                        </div>
+                        <div className="signal-details">
+                          <div>Price: {formatPrice(signal.price)}</div>
+                          <div>RSI: {signal.indicators.rsi.toFixed(1)}</div>
+                          <div>Time: {new Date(signal.timestamp).toLocaleTimeString()}</div>
+                        </div>
+                      </div>
                     ))
                   ) : (
                     <div className="no-signals">
-                      <p>Analyzing market conditions...</p>
+                      <p>Scanning 15 cryptocurrencies...</p>
                       <div className="loading-spinner"></div>
                     </div>
                   )}
@@ -665,25 +894,28 @@ function App() {
         
         {activeTab === 'portfolio' && (
           <div className="portfolio-dashboard">
-            <Portfolio 
+            <EnhancedPortfolio 
               portfolio={portfolio} 
               onExecuteTrade={executeTrade}
             />
           </div>
         )}
         
-        {activeTab === 'analysis' && (
-          <div className="analysis-dashboard">
-            <AdvancedTechnicalAnalysis 
-              analysis={analysis} 
-              selectedSymbol={selectedSymbol}
-            />
+        {activeTab === 'backtesting' && (
+          <div className="backtesting-dashboard">
+            <BacktestingPanel selectedSymbol={selectedSymbol} />
+          </div>
+        )}
+        
+        {activeTab === 'notifications' && (
+          <div className="notifications-dashboard">
+            <NotificationSettings />
           </div>
         )}
       </main>
       
       <footer className="app-footer">
-        <p>⚠️ This is a paper trading platform for educational purposes only. Always do your own research before trading.</p>
+        <p>⚠️ Advanced Multi-Coin Trading Platform - Paper Trading Only | 15 Supported Cryptocurrencies | Enhanced Notifications</p>
       </footer>
     </div>
   );
