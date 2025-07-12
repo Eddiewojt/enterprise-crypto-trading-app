@@ -2488,7 +2488,7 @@ async def execute_automated_signal(signal_data: dict):
             "quantity": quantity,
             "price": price,
             "signal_strength": strength,
-            "executed_at": datetime.utcnow(),
+            "executed_at": datetime.utcnow().isoformat(),
             "user_id": "default_user"
         }
         await db.automation_logs.insert_one(automation_log)
