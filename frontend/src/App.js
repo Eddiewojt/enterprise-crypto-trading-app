@@ -2251,9 +2251,73 @@ function App() {
           {portfolioData.message && (
             <div className="performance-message">
               ⚠️ {portfolioData.message}
+              <button 
+                className="setup-exchange-btn"
+                onClick={() => setShowExchangeSetup(true)}
+                style={{
+                  marginLeft: '1rem',
+                  padding: '0.5rem 1rem',
+                  background: 'linear-gradient(45deg, #059669, #10b981)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                🔧 Setup Legitimate Exchange
+              </button>
             </div>
           )}
         </div>
+
+        {/* Available Exchanges Section */}
+        {availableExchanges.length > 0 && (
+          <div className="exchanges-section">
+            <h2>🌍 Available Legitimate Exchanges</h2>
+            
+            <div className="exchanges-grid">
+              {availableExchanges.map((exchange, index) => (
+                <div key={index} className={`exchange-card ${exchange.status}`}>
+                  <div className="exchange-header">
+                    <h3>{exchange.name}</h3>
+                    <span className={`exchange-status ${exchange.status}`}>
+                      {exchange.status === 'available' ? '🟢 AVAILABLE' : '🔴 BLOCKED'}
+                    </span>
+                    {recommendedExchange && recommendedExchange.id === exchange.id && (
+                      <span className="recommended-badge">⭐ RECOMMENDED</span>
+                    )}
+                  </div>
+                  
+                  <div className="exchange-info">
+                    <div className="compliance-level">
+                      <span className="label">Compliance:</span>
+                      <span className="value">{exchange.compliance}</span>
+                    </div>
+                    <div className="regions">
+                      <span className="label">Regions:</span>
+                      <span className="value">{exchange.regions ? exchange.regions.join(', ') : 'Global'}</span>
+                    </div>
+                  </div>
+                  
+                  {exchange.status === 'available' && (
+                    <button 
+                      className="setup-btn"
+                      onClick={() => handleExchangeSetup(exchange.id)}
+                    >
+                      🚀 Setup {exchange.name}
+                    </button>
+                  )}
+                  
+                  {exchange.status === 'blocked' && exchange.error && (
+                    <div className="error-message">
+                      ⚠️ {exchange.error}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="quick-actions">
