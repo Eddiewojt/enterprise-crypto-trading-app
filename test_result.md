@@ -235,7 +235,7 @@ backend:
         comment: "Minor issue: /api/backtest/results endpoint returns 500 error due to MongoDB ObjectId serialization problems. The backtesting engine itself works perfectly and saves results to database, but retrieval fails due to ObjectId not being JSON serializable. This is a minor serialization issue that doesn't affect core backtesting functionality."
       - working: true
         agent: "testing"
-        comment: "VERIFIED WORKING: /api/backtest/results endpoint is actually working correctly. The endpoint already had proper ObjectId to string conversion (lines 2166-2169). Successfully retrieving backtest results with proper JSON serialization. Previous error reports were inaccurate - this endpoint has been working properly."
+        comment: "✅ VERIFIED: Backtest results storage working correctly. /api/backtest/results endpoint functioning properly with ObjectId conversion already implemented. Issue was already resolved."
 
 frontend:
   - task: "Trading Dashboard UI"
