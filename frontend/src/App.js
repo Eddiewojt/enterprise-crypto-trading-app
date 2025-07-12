@@ -1121,6 +1121,10 @@ function App() {
   const [notification, setNotification] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [marketSentiment, setMarketSentiment] = useState(null);
+  const [availableExchanges, setAvailableExchanges] = useState([]);
+  const [recommendedExchange, setRecommendedExchange] = useState(null);
+  const [showExchangeSetup, setShowExchangeSetup] = useState(false);
+  const [selectedExchange, setSelectedExchange] = useState(null);
   const [portfolioData, setPortfolioData] = useState({
     total_value: 0,
     daily_change: 0,
