@@ -1812,6 +1812,168 @@ function App() {
           </button>
         </div>
 
+        {/* Premium Proxy Pool Configuration Modal */}
+        {showPremiumProxy && (
+          <div className="modal-overlay" onClick={() => setShowPremiumProxy(false)}>
+            <div className="modal premium-proxy-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🌍 Premium Global Trading Access</h2>
+                <button className="close-btn" onClick={() => setShowPremiumProxy(false)}>×</button>
+              </div>
+              
+              <div className="modal-content">
+                <div className="premium-intro">
+                  <h3>🚀 Enterprise-Grade Global Access</h3>
+                  <p>Configure multiple premium proxy providers for maximum uptime and global reach.</p>
+                  
+                  <div className="benefits-grid">
+                    <div className="benefit">
+                      <span className="icon">🌍</span>
+                      <span>Trade from anywhere</span>
+                    </div>
+                    <div className="benefit">
+                      <span className="icon">⚡</span>
+                      <span>99.9% uptime guarantee</span>
+                    </div>
+                    <div className="benefit">
+                      <span className="icon">🔄</span>
+                      <span>Automatic failover</span>
+                    </div>
+                    <div className="benefit">
+                      <span className="icon">🔒</span>
+                      <span>Enterprise security</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="providers-config">
+                  {/* Smartproxy Configuration */}
+                  <div className="provider-section">
+                    <div className="provider-header">
+                      <h4>🟢 Smartproxy (Recommended)</h4>
+                      <span className="provider-tag priority-1">Priority 1</span>
+                    </div>
+                    <p>40M+ residential IPs, perfect for crypto trading</p>
+                    <div className="signup-link">
+                      <a href="https://smartproxy.com" target="_blank" rel="noopener noreferrer">
+                        Sign up: smartproxy.com (Starting $12.5/month)
+                      </a>
+                    </div>
+                    <div className="provider-form">
+                      <input
+                        type="text"
+                        placeholder="Username"
+                        value={premiumProxyConfig.smartproxy.username}
+                        onChange={(e) => setPremiumProxyConfig({
+                          ...premiumProxyConfig,
+                          smartproxy: { ...premiumProxyConfig.smartproxy, username: e.target.value }
+                        })}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={premiumProxyConfig.smartproxy.password}
+                        onChange={(e) => setPremiumProxyConfig({
+                          ...premiumProxyConfig,
+                          smartproxy: { ...premiumProxyConfig.smartproxy, password: e.target.value }
+                        })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bright Data Configuration */}
+                  <div className="provider-section">
+                    <div className="provider-header">
+                      <h4>🔵 Bright Data (Premium)</h4>
+                      <span className="provider-tag priority-2">Priority 2</span>
+                    </div>
+                    <p>Fortune 500 trusted, enterprise-grade infrastructure</p>
+                    <div className="signup-link">
+                      <a href="https://brightdata.com" target="_blank" rel="noopener noreferrer">
+                        Sign up: brightdata.com (Enterprise pricing)
+                      </a>
+                    </div>
+                    <div className="provider-form">
+                      <input
+                        type="text"
+                        placeholder="Username"
+                        value={premiumProxyConfig.brightdata.username}
+                        onChange={(e) => setPremiumProxyConfig({
+                          ...premiumProxyConfig,
+                          brightdata: { ...premiumProxyConfig.brightdata, username: e.target.value }
+                        })}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={premiumProxyConfig.brightdata.password}
+                        onChange={(e) => setPremiumProxyConfig({
+                          ...premiumProxyConfig,
+                          brightdata: { ...premiumProxyConfig.brightdata, password: e.target.value }
+                        })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Oxylabs Configuration */}
+                  <div className="provider-section">
+                    <div className="provider-header">
+                      <h4>🟠 Oxylabs (Elite)</h4>
+                      <span className="provider-tag priority-3">Priority 3</span>
+                    </div>
+                    <p>Premium residential and datacenter proxies</p>
+                    <div className="signup-link">
+                      <a href="https://oxylabs.io" target="_blank" rel="noopener noreferrer">
+                        Sign up: oxylabs.io (Professional plans)
+                      </a>
+                    </div>
+                    <div className="provider-form">
+                      <input
+                        type="text"
+                        placeholder="Username"
+                        value={premiumProxyConfig.oxylabs.username}
+                        onChange={(e) => setPremiumProxyConfig({
+                          ...premiumProxyConfig,
+                          oxylabs: { ...premiumProxyConfig.oxylabs, username: e.target.value }
+                        })}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={premiumProxyConfig.oxylabs.password}
+                        onChange={(e) => setPremiumProxyConfig({
+                          ...premiumProxyConfig,
+                          oxylabs: { ...premiumProxyConfig.oxylabs, password: e.target.value }
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    className="configure-premium-btn"
+                    onClick={configurePremiumProxy}
+                    disabled={!premiumProxyConfig.smartproxy.username && !premiumProxyConfig.brightdata.username && !premiumProxyConfig.oxylabs.username}
+                  >
+                    🚀 Configure Premium Pool
+                  </button>
+                </div>
+
+                <div className="premium-info">
+                  <h4>💡 How It Works</h4>
+                  <ul>
+                    <li>Configure at least one provider to start</li>
+                    <li>System automatically uses highest priority available proxy</li>
+                    <li>Automatic failover if primary proxy fails</li>
+                    <li>All providers work together for maximum uptime</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Proxy Configuration Modal */}
         {showProxyConfig && (
           <div className="modal-overlay" onClick={() => setShowProxyConfig(false)}>
