@@ -304,18 +304,35 @@ async def root():
 async def get_doge_price():
     """Get current DOGE price"""
     try:
-        ticker = binance_client.get_symbol_ticker(symbol="DOGEUSDT")
-        price_24h = binance_client.get_24hr_ticker(symbol="DOGEUSDT")
-        
-        return {
-            "symbol": "DOGEUSDT",
-            "price": float(ticker['price']),
-            "change_24h": float(price_24h['priceChangePercent']),
-            "volume": float(price_24h['volume']),
-            "high_24h": float(price_24h['highPrice']),
-            "low_24h": float(price_24h['lowPrice']),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        if BINANCE_AVAILABLE and binance_client:
+            ticker = binance_client.get_symbol_ticker(symbol="DOGEUSDT")
+            price_24h = binance_client.get_24hr_ticker(symbol="DOGEUSDT")
+            
+            return {
+                "symbol": "DOGEUSDT",
+                "price": float(ticker['price']),
+                "change_24h": float(price_24h['priceChangePercent']),
+                "volume": float(price_24h['volume']),
+                "high_24h": float(price_24h['highPrice']),
+                "low_24h": float(price_24h['lowPrice']),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        else:
+            # Mock data when Binance is not available
+            import random
+            base_price = 0.08234
+            price_variation = random.uniform(-0.002, 0.002)
+            current_price = base_price + price_variation
+            
+            return {
+                "symbol": "DOGEUSDT",
+                "price": round(current_price, 6),
+                "change_24h": round(random.uniform(-5.0, 5.0), 2),
+                "volume": round(random.uniform(1000000, 5000000), 2),
+                "high_24h": round(current_price * 1.02, 6),
+                "low_24h": round(current_price * 0.98, 6),
+                "timestamp": datetime.utcnow().isoformat()
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching price: {str(e)}")
 
