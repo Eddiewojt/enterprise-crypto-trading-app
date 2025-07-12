@@ -220,7 +220,7 @@ backend:
         comment: "Portfolio management has MongoDB ObjectId serialization issues causing 500 errors on /api/portfolio/trades endpoint. Core portfolio structure works (/api/portfolio returns valid data), paper trade execution works (/api/portfolio/trade), but trade history retrieval fails due to MongoDB ObjectId not being JSON serializable. This is a minor serialization issue, not a core functionality problem."
       - working: true
         agent: "testing"
-        comment: "FIXED: MongoDB ObjectId serialization issue resolved. Added ObjectId to string conversion in /api/portfolio endpoint (lines 2235-2237). All portfolio endpoints now working: ✅ /api/portfolio (portfolio overview), ✅ /api/portfolio/trade (paper trading), ✅ /api/portfolio/trades (trade history). Portfolio management fully functional with proper data persistence and retrieval."
+        comment: "✅ FIXED: MongoDB ObjectId serialization issue resolved. Added ObjectId to string conversion in /api/portfolio endpoint. All portfolio endpoints now working correctly: /api/portfolio, /api/portfolio/trades, and /api/portfolio/trade all return 200 OK with proper data."
 
   - task: "Backtest Results Storage"
     implemented: true
