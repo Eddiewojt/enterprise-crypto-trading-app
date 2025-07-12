@@ -2334,6 +2334,202 @@ input:checked + .slider:before {
   margin-bottom: 0.25rem;
 }
 
+/* =================== TRADING SIGNALS STYLES =================== */
+
+.signals-section {
+  margin: 2rem 0;
+}
+
+.signals-section h2 {
+  color: white;
+  margin-bottom: 1.5rem;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.signal-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.signal-card.strong-buy {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.signal-card.buy {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.signal-card.hold {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.signal-card.sell {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.signal-card.strong-sell {
+  border-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.signal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.signal-header h3 {
+  color: white;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.current-price {
+  color: #60a5fa;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.signal-display {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.signal-indicator {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.signal-indicator.strong-buy {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 2px solid rgba(34, 197, 94, 0.4);
+  animation: pulse 2s infinite;
+}
+
+.signal-indicator.buy {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 2px solid rgba(34, 197, 94, 0.3);
+}
+
+.signal-indicator.hold {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.signal-indicator.sell {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.signal-indicator.strong-sell {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  animation: pulse 2s infinite;
+}
+
+.signal-strength {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.technical-indicators {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.indicator .label {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.indicator .value {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.indicator .value.oversold {
+  color: #22c55e;
+}
+
+.indicator .value.overbought {
+  color: #ef4444;
+}
+
+.indicator .value.neutral {
+  color: #f59e0b;
+}
+
+.indicator .value.buy {
+  color: #22c55e;
+}
+
+.indicator .value.sell {
+  color: #ef4444;
+}
+
+.signal-timestamp {
+  color: #6b7280;
+  font-size: 0.75rem;
+  text-align: center;
+  font-style: italic;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* Strong sell pulse */
+.signal-indicator.strong-sell {
+  animation: pulseSell 2s infinite;
+}
+
+@keyframes pulseSell {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 /* =================== TRADING MODE CONTROLS =================== */
 
 .mode-indicator {
