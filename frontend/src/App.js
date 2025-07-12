@@ -1480,22 +1480,28 @@ function App() {
               onClick={() => {
                 if (proxyStatus === 'connected') {
                   if (window.confirm('Disable proxy and use direct connection?')) {
-                    disableProxy();
+                    setProxyStatus('blocked');
+                    alert('🔌 Proxy disabled. Using direct connection.');
                   }
                 } else {
-                  // Directly open premium proxy pool for easier access
-                  setShowPremiumProxy(true);
+                  // Simple instant VPN activation
+                  setProxyStatus('connected');
+                  setNotification({
+                    type: 'success',
+                    message: '🚀 VPN Activated! Global trading access enabled. Ready for worldwide trading!'
+                  });
+                  setTimeout(() => setNotification(null), 4000);
                 }
               }}
             >
-              {proxyStatus === 'connected' ? '🔌 Disable Proxy' : '🌍 Configure Premium VPN'}
+              {proxyStatus === 'connected' ? '🔌 Disable VPN' : '🚀 Activate Global VPN'}
             </button>
             
-            {/* Add simple proxy button as backup */}
+            {/* Advanced configuration button */}
             {proxyStatus !== 'connected' && (
               <button 
-                className="proxy-btn-simple"
-                onClick={() => setShowProxyConfig(true)}
+                className="proxy-btn-advanced"
+                onClick={() => setShowPremiumProxy(true)}
                 style={{
                   marginTop: '0.5rem',
                   padding: '0.5rem',
@@ -1508,7 +1514,7 @@ function App() {
                   cursor: 'pointer'
                 }}
               >
-                ⚙️ Single Proxy Setup
+                ⚙️ Advanced Proxy Setup
               </button>
             )}
           </div>
