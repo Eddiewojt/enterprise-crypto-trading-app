@@ -1125,6 +1125,9 @@ function App() {
   const [recommendedExchange, setRecommendedExchange] = useState(null);
   const [showExchangeSetup, setShowExchangeSetup] = useState(false);
   const [selectedExchange, setSelectedExchange] = useState(null);
+  const [show3CommasSetup, setShow3CommasSetup] = useState(false);
+  const [threeCommasStatus, setThreeCommasStatus] = useState('disabled');
+  const [threeCommasBots, setThreeCommasBots] = useState([]);
   const [portfolioData, setPortfolioData] = useState({
     total_value: 0,
     daily_change: 0,
