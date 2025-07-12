@@ -1099,6 +1099,7 @@ function App() {
   const [showBotCreator, setShowBotCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProxyConfig, setShowProxyConfig] = useState(false);
+  const [showPremiumProxy, setShowPremiumProxy] = useState(false);
   const [proxyConfig, setProxyConfig] = useState({
     enabled: false,
     type: 'http',
@@ -1107,7 +1108,14 @@ function App() {
     username: '',
     password: ''
   });
+  const [premiumProxyConfig, setPremiumProxyConfig] = useState({
+    smartproxy: { username: '', password: '' },
+    brightdata: { username: '', password: '' },
+    oxylabs: { username: '', password: '' }
+  });
   const [proxyStatus, setProxyStatus] = useState('unknown');
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [marketSentiment, setMarketSentiment] = useState(null);
   const wsRef = useRef(null);
   
   // Automation functions
