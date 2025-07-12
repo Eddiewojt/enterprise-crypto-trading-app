@@ -780,7 +780,7 @@ body {
   color: #4ade80 !important;
 }
 
-/* ===== ULTRA SIMPLE SIGNALS LAYOUT ===== */
+/* ===== CRYPTO SIGNALS LIST LAYOUT ===== */
 
 * {
   margin: 0;
@@ -791,126 +791,217 @@ body {
 body {
   background: #000000;
   font-family: 'Arial', sans-serif;
-  overflow-x: hidden;
+  color: #ffffff;
 }
 
 .app {
   min-height: 100vh;
   background: #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 1rem;
 }
 
-.simple-signals {
-  width: 100%;
+.crypto-signals-list {
   max-width: 600px;
-  padding: 2rem;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border-bottom: 2px solid #333;
+}
+
+.header h1 {
+  font-size: 1.8rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.last-update {
+  color: #888;
+  font-size: 0.9rem;
 }
 
 .signals-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  align-items: center;
+  gap: 0.75rem;
 }
 
-.simple-signal {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  border-radius: 1rem;
-  text-align: center;
-  border: 3px solid;
-  background: transparent;
+.crypto-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #111;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
   transition: all 0.3s ease;
 }
 
-.simple-signal:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+.crypto-row:hover {
+  transform: translateX(5px);
+  background: #1a1a1a;
 }
 
-.simple-signal.buy {
-  border-color: #22c55e;
+.crypto-row.buy {
+  border-left-color: #22c55e;
 }
 
-.simple-signal.sell {
-  border-color: #ef4444;
+.crypto-row.sell {
+  border-left-color: #ef4444;
 }
 
-.signal-action {
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
+.crypto-row.hold {
+  border-left-color: #eab308;
 }
 
-.buy .signal-action {
-  color: #22c55e;
+.crypto-info {
+  flex: 1;
 }
 
-.sell .signal-action {
-  color: #ef4444;
-}
-
-.signal-crypto {
-  font-size: 2rem;
-  font-weight: 700;
+.crypto-name {
+  font-size: 1.2rem;
+  font-weight: bold;
   color: #ffffff;
-  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
 }
 
-.no-signal {
+.crypto-price {
+  font-size: 0.9rem;
+  color: #ccc;
+  font-family: 'Courier New', monospace;
+}
+
+.change.positive {
+  color: #22c55e;
+  margin-left: 0.5rem;
+}
+
+.change.negative {
+  color: #ef4444;
+  margin-left: 0.5rem;
+}
+
+.signal-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.signal-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  font-size: 0.9rem;
+  min-width: 60px;
   text-align: center;
-  padding: 3rem 2rem;
-  border: 3px solid #64748b;
-  border-radius: 1rem;
-  background: transparent;
-  max-width: 400px;
-  width: 100%;
 }
 
-.waiting {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: #64748b;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
+.signal-badge.buy {
+  background: #22c55e;
+  color: #000000;
 }
 
-.for-signal {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #64748b;
-  letter-spacing: 0.05em;
+.signal-badge.sell {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.signal-badge.hold {
+  background: #eab308;
+  color: #000000;
+}
+
+.signal-details {
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+.signal-strength {
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.signal-time {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #111;
+  border-radius: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 0.25rem;
+}
+
+.legend-color.buy {
+  background: #22c55e;
+}
+
+.legend-color.sell {
+  background: #ef4444;
+}
+
+.legend-color.hold {
+  background: #eab308;
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .simple-signals {
-    padding: 1rem;
+  .app {
+    padding: 0.5rem;
   }
   
-  .simple-signal {
-    padding: 1.5rem;
-  }
-  
-  .signal-action {
-    font-size: 2.5rem;
-  }
-  
-  .signal-crypto {
+  .header h1 {
     font-size: 1.5rem;
   }
   
-  .waiting {
-    font-size: 2rem;
+  .crypto-row {
+    padding: 0.75rem;
   }
   
-  .for-signal {
-    font-size: 1.2rem;
+  .crypto-name {
+    font-size: 1.1rem;
+  }
+  
+  .signal-info {
+    gap: 0.5rem;
+  }
+  
+  .signal-badge {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 50px;
+  }
+  
+  .legend {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .legend-item {
+    justify-content: center;
   }
 }
 
