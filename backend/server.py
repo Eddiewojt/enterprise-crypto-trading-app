@@ -16,7 +16,7 @@ from binance.client import Client
 import pandas as pd
 import numpy as np
 import threading
-from binance.websockets import BinanceSocketManager
+from binance.streams import BinanceSocketManager
 import websocket
 from contextlib import asynccontextmanager
 
