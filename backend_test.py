@@ -45,7 +45,12 @@ class DOGETradingAppTester:
             'binance_enable_real_trading': False,
             'binance_safety_settings': False,
             'binance_execute_real_trade': False,
-            'binance_notification_system': False
+            'binance_notification_system': False,
+            'premium_ai_market_analysis': False,
+            'premium_market_sentiment': False,
+            'premium_enhanced_technical_analysis': False,
+            'premium_proxy_status': False,
+            'premium_safety_limits': False
         }
         self.errors = []
         
