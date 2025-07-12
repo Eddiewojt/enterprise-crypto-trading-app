@@ -26,7 +26,7 @@ const { width, height } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
 // API Configuration
-const API_BASE_URL = 'https://f19d9252-961c-487e-b0a1-776ae11418d6.preview.emergentagent.com/api';
+const API_BASE_URL = 'https://36f48d60-486f-41c7-8472-952629162bae.preview.emergentagent.com/api';
 
 // Main App Component
 const EnterpriseCryptoApp = () => {
