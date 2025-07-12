@@ -1304,6 +1304,11 @@ async def get_trade_history():
         trades_cursor = db.trades.find().sort("timestamp", -1).limit(100)
         trades_list = await trades_cursor.to_list(length=None)
         
+        # Convert ObjectId to string for JSON serialization
+        for trade in trades_list:
+            if '_id' in trade:
+                trade['_id'] = str(trade['_id'])
+        
         return {
             "trades": trades_list,
             "total_trades": len(trades_list)
