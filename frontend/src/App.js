@@ -1586,6 +1586,7 @@ function App() {
     fetchMarketSentiment(selectedSymbol);
     fetchPortfolioData();
     fetchBotPerformance();
+    detectAvailableExchanges();
   }, []);
 
   // Auto Trading Execution
