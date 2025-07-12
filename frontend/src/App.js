@@ -1548,6 +1548,7 @@ function App() {
     fetchAiAnalysis(selectedSymbol);
     fetchMarketSentiment(selectedSymbol);
     fetchPortfolioData();
+    fetchBotPerformance();
   }, []);
 
   // Auto Trading Execution
