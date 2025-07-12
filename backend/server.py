@@ -549,6 +549,31 @@ async def send_all_notifications(subject: str, message: str):
         send_telegram_notification(message)
     )
 
+@api_router.post("/test/telegram")
+async def test_telegram_notification():
+    """Test Telegram notification system"""
+    try:
+        test_message = "🎉 *Enterprise Trading Platform*\n\n" \
+                      "✅ Telegram notifications are now *ACTIVE*!\n\n" \
+                      "You will receive alerts for:\n" \
+                      "📈 Strong trading signals\n" \
+                      "🤖 Automation executions\n" \
+                      "⚠️ Risk management alerts\n" \
+                      "💰 Portfolio updates\n\n" \
+                      f"Test sent at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        
+        await send_telegram_notification(test_message)
+        
+        return {
+            "status": "success",
+            "message": "Test Telegram notification sent successfully!",
+            "chat_id": os.environ.get('TELEGRAM_CHAT_ID'),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send test notification: {str(e)}")
+
 # Backtesting Engine
 def run_backtest(symbol: str, timeframe: str, start_date: str, end_date: str, strategy: str, initial_capital: float = 10000.0):
     """Run backtesting on historical data"""
