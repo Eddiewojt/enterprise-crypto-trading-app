@@ -2045,60 +2045,6 @@ function App() {
           </div>
         </div>
 
-            {/* Grid Bot */}
-            <div className="bot-card active">
-              <div className="bot-header">
-                <h4>📊 Grid Bot - BTC</h4>
-                <span className="bot-status active">RUNNING</span>
-              </div>
-              <div className="bot-stats">
-                <div className="stat">
-                  <span className="label">Range:</span>
-                  <span className="value">$42K - $44K</span>
-                </div>
-                <div className="stat">
-                  <span className="label">Trades:</span>
-                  <span className="value">23 completed</span>
-                </div>
-                <div className="stat">
-                  <span className="label">Profit:</span>
-                  <span className="value positive">+$145.80 (+4.2%)</span>
-                </div>
-              </div>
-              <div className="bot-controls">
-                <button className="pause-btn">⏸️ Pause</button>
-                <button className="settings-btn">⚙️ Settings</button>
-              </div>
-            </div>
-
-            {/* Momentum Bot */}
-            <div className="bot-card active">
-              <div className="bot-header">
-                <h4>⚡ Momentum Bot - ETH</h4>
-                <span className="bot-status active">RUNNING</span>
-              </div>
-              <div className="bot-stats">
-                <div className="stat">
-                  <span className="label">Position:</span>
-                  <span className="value">0.5 ETH</span>
-                </div>
-                <div className="stat">
-                  <span className="label">Entry:</span>
-                  <span className="value">$2,580</span>
-                </div>
-                <div className="stat">
-                  <span className="label">Profit:</span>
-                  <span className="value negative">-$23.40 (-1.8%)</span>
-                </div>
-              </div>
-              <div className="bot-controls">
-                <button className="pause-btn">⏸️ Pause</button>
-                <button className="settings-btn">⚙️ Settings</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Live Signals with Auto-Execute */}
         <div className="signals-section">
           <h2>🎯 Live Signals & Auto-Execution</h2>
