@@ -1114,6 +1114,7 @@ function App() {
     oxylabs: { username: '', password: '' }
   });
   const [proxyStatus, setProxyStatus] = useState('unknown');
+  const [notification, setNotification] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [marketSentiment, setMarketSentiment] = useState(null);
   const [portfolioData, setPortfolioData] = useState({
