@@ -58,63 +58,121 @@ SUPPORTED_COINS = [
 ]
 
 # Binance client setup with proxy support
+# Binance client setup with premium proxy pool support
+PROXY_POOL = []
+
+def initialize_proxy_pool():
+    """Initialize premium proxy pool with multiple providers"""
+    global PROXY_POOL
+    PROXY_POOL = []
+    
+    pool_enabled = os.environ.get('PROXY_POOL_ENABLED', 'false').lower() == 'true'
+    if not pool_enabled:
+        return
+    
+    # Smartproxy (Residential)
+    if os.environ.get('SMARTPROXY_USER') and os.environ.get('SMARTPROXY_PASS'):
+        PROXY_POOL.append({
+            'name': 'Smartproxy',
+            'type': 'http',
+            'host': os.environ.get('SMARTPROXY_HOST'),
+            'port': os.environ.get('SMARTPROXY_PORT'),
+            'username': os.environ.get('SMARTPROXY_USER'),
+            'password': os.environ.get('SMARTPROXY_PASS'),
+            'priority': 1
+        })
+    
+    # Bright Data (Premium)
+    if os.environ.get('BRIGHTDATA_USER') and os.environ.get('BRIGHTDATA_PASS'):
+        PROXY_POOL.append({
+            'name': 'BrightData',
+            'type': 'http',
+            'host': os.environ.get('BRIGHTDATA_HOST'),
+            'port': os.environ.get('BRIGHTDATA_PORT'),
+            'username': os.environ.get('BRIGHTDATA_USER'),
+            'password': os.environ.get('BRIGHTDATA_PASS'),
+            'priority': 2
+        })
+    
+    # Oxylabs (Enterprise)
+    if os.environ.get('OXYLABS_USER') and os.environ.get('OXYLABS_PASS'):
+        PROXY_POOL.append({
+            'name': 'Oxylabs',
+            'type': 'http',
+            'host': os.environ.get('OXYLABS_HOST'),
+            'port': os.environ.get('OXYLABS_PORT'),
+            'username': os.environ.get('OXYLABS_USER'),
+            'password': os.environ.get('OXYLABS_PASS'),
+            'priority': 3
+        })
+    
+    logging.info(f"Initialized proxy pool with {len(PROXY_POOL)} providers")
+
+def get_active_proxy():
+    """Get the best available proxy from the pool"""
+    pool_enabled = os.environ.get('PROXY_POOL_ENABLED', 'false').lower() == 'true'
+    
+    if pool_enabled and PROXY_POOL:
+        # Return highest priority (lowest number) proxy
+        return sorted(PROXY_POOL, key=lambda x: x['priority'])[0]
+    
+    # Fallback to single proxy configuration
+    proxy_enabled = os.environ.get('PROXY_ENABLED', 'false').lower() == 'true'
+    if proxy_enabled:
+        return {
+            'name': 'Manual',
+            'type': os.environ.get('PROXY_TYPE', 'http'),
+            'host': os.environ.get('PROXY_HOST', ''),
+            'port': os.environ.get('PROXY_PORT', ''),
+            'username': os.environ.get('PROXY_USERNAME', ''),
+            'password': os.environ.get('PROXY_PASSWORD', ''),
+            'priority': 99
+        }
+    
+    return None
+
 def create_binance_client():
-    """Create Binance client with optional proxy configuration"""
+    """Create Binance client with premium proxy pool support"""
     try:
-        # Get proxy configuration
-        proxy_enabled = os.environ.get('PROXY_ENABLED', 'false').lower() == 'true'
+        proxy = get_active_proxy()
         
-        if proxy_enabled:
-            proxy_type = os.environ.get('PROXY_TYPE', 'http')
-            proxy_host = os.environ.get('PROXY_HOST', '')
-            proxy_port = os.environ.get('PROXY_PORT', '')
-            proxy_username = os.environ.get('PROXY_USERNAME', '')
-            proxy_password = os.environ.get('PROXY_PASSWORD', '')
-            
-            if proxy_host and proxy_port:
-                if proxy_type.lower() == 'socks5':
-                    # Configure SOCKS5 proxy
-                    if proxy_username and proxy_password:
-                        socks.set_default_proxy(socks.SOCKS5, proxy_host, int(proxy_port), 
-                                              username=proxy_username, password=proxy_password)
-                    else:
-                        socks.set_default_proxy(socks.SOCKS5, proxy_host, int(proxy_port))
-                    socket.socket = socks.socksocket
-                    logging.info(f"SOCKS5 proxy configured: {proxy_host}:{proxy_port}")
-                    
-                    # Create client without additional proxy config (using global socket)
-                    client = Client(
-                        api_key=os.environ.get('BINANCE_API_KEY', ''),
-                        api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
-                        testnet=False
-                    )
+        if proxy and proxy['host'] and proxy['port']:
+            if proxy['type'].lower() == 'socks5':
+                # Configure SOCKS5 proxy
+                if proxy['username'] and proxy['password']:
+                    socks.set_default_proxy(socks.SOCKS5, proxy['host'], int(proxy['port']), 
+                                          username=proxy['username'], password=proxy['password'])
                 else:
-                    # Configure HTTP proxy
-                    if proxy_username and proxy_password:
-                        proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_host}:{proxy_port}"
-                    else:
-                        proxy_url = f"http://{proxy_host}:{proxy_port}"
-                    
-                    proxies = {
-                        'http': proxy_url,
-                        'https': proxy_url
-                    }
-                    
-                    logging.info(f"HTTP proxy configured: {proxy_host}:{proxy_port}")
-                    
-                    # Create client with proxy configuration
-                    client = Client(
-                        api_key=os.environ.get('BINANCE_API_KEY', ''),
-                        api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
-                        testnet=False,
-                        requests_params={'proxies': proxies, 'timeout': 30}
-                    )
-            else:
-                logging.warning("Proxy enabled but host/port not configured")
+                    socks.set_default_proxy(socks.SOCKS5, proxy['host'], int(proxy['port']))
+                socket.socket = socks.socksocket
+                logging.info(f"SOCKS5 proxy configured: {proxy['name']} - {proxy['host']}:{proxy['port']}")
+                
+                # Create client without additional proxy config (using global socket)
                 client = Client(
                     api_key=os.environ.get('BINANCE_API_KEY', ''),
                     api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
                     testnet=False
+                )
+            else:
+                # Configure HTTP proxy
+                if proxy['username'] and proxy['password']:
+                    proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['host']}:{proxy['port']}"
+                else:
+                    proxy_url = f"http://{proxy['host']}:{proxy['port']}"
+                
+                proxies = {
+                    'http': proxy_url,
+                    'https': proxy_url
+                }
+                
+                logging.info(f"HTTP proxy configured: {proxy['name']} - {proxy['host']}:{proxy['port']}")
+                
+                # Create client with proxy configuration
+                client = Client(
+                    api_key=os.environ.get('BINANCE_API_KEY', ''),
+                    api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
+                    testnet=False,
+                    requests_params={'proxies': proxies, 'timeout': 30}
                 )
         else:
             # No proxy configuration
@@ -133,7 +191,8 @@ def create_binance_client():
         logging.warning(f"Binance API not available: {e}")
         return None, False
 
-# Initialize Binance client
+# Initialize proxy pool and Binance client
+initialize_proxy_pool()
 binance_client, BINANCE_AVAILABLE = create_binance_client()
 
 # Create the main app
