@@ -1578,6 +1578,59 @@ function App() {
       console.error('Error getting exchange setup:', error);
     }
   };
+
+  const fetch3CommasStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/3commas/status`);
+      setThreeCommasStatus(response.data.status);
+      
+      if (response.data.status === 'connected') {
+        // Fetch bots if connected
+        const botsResponse = await axios.get(`${API}/3commas/bots`);
+        setThreeCommasBots(botsResponse.data.bots || []);
+      }
+      
+      console.log('✅ 3commas status:', response.data);
+    } catch (error) {
+      console.error('Error fetching 3commas status:', error);
+      setThreeCommasStatus('error');
+    }
+  };
+
+  const configure3Commas = async (apiKey, apiSecret) => {
+    try {
+      const response = await axios.post(`${API}/3commas/configure`, {
+        api_key: apiKey,
+        api_secret: apiSecret
+      });
+      
+      if (response.data.status === 'configured') {
+        setThreeCommasStatus('connected');
+        setShow3CommasSetup(false);
+        
+        setNotification({
+          type: 'success',
+          message: `🚀 3commas Connected! ${response.data.accounts} exchange accounts detected. Legitimate trading ready!`
+        });
+        setTimeout(() => setNotification(null), 6000);
+        
+        // Fetch bots
+        await fetch3CommasStatus();
+      } else {
+        setNotification({
+          type: 'error',
+          message: '❌ 3commas configuration failed: ' + response.data.message
+        });
+        setTimeout(() => setNotification(null), 5000);
+      }
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: '❌ Error configuring 3commas: ' + (error.response?.data?.message || error.message)
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
+  };
   
   // Fetch initial data
   useEffect(() => {
