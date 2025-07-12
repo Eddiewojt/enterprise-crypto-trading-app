@@ -1275,6 +1275,29 @@ function App() {
           </div>
           
           <div className="control-card">
+            <h3>🌍 Global Access</h3>
+            <div className={`status-badge ${proxyStatus}`}>
+              {proxyStatus === 'connected' ? '🟢 GLOBAL READY' : 
+               proxyStatus === 'blocked' ? '🔴 REGION BLOCKED' : 
+               proxyStatus === 'failed' ? '🟡 PROXY FAILED' : '⚪ CHECKING...'}
+            </div>
+            <button 
+              className={`proxy-btn ${proxyStatus === 'connected' ? 'connected' : 'configure'}`}
+              onClick={() => {
+                if (proxyStatus === 'connected') {
+                  if (window.confirm('Disable proxy and use direct connection?')) {
+                    disableProxy();
+                  }
+                } else {
+                  setShowProxyConfig(true);
+                }
+              }}
+            >
+              {proxyStatus === 'connected' ? '🔌 Disable Proxy' : '🌍 Configure VPN'}
+            </button>
+          </div>
+          
+          <div className="control-card">
             <h3>📊 Active Bots</h3>
             <div className="active-bots">
               <span className="bot-count">3</span>
