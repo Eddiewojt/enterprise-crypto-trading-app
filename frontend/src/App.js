@@ -2036,6 +2036,29 @@ function App() {
                   >
                     🚀 Configure Premium Pool
                   </button>
+                  
+                  <button 
+                    className="demo-configure-btn"
+                    onClick={() => {
+                      // Demo configuration - instant success
+                      setShowPremiumProxy(false);
+                      setProxyStatus('connected');
+                      alert('🎉 DEMO MODE ACTIVATED!\n\n✅ VPN configured successfully\n✅ Global trading access enabled\n✅ Ready for worldwide trading\n\n💡 This is demo mode - for real trading, use actual proxy credentials');
+                    }}
+                    style={{
+                      marginTop: '0.5rem',
+                      background: 'linear-gradient(45deg, #f59e0b, #d97706)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.75rem 1.5rem',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      width: '100%'
+                    }}
+                  >
+                    ⚡ Demo Mode - Instant Setup
+                  </button>
                 </div>
 
                 <div className="premium-info">
