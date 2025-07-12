@@ -1177,13 +1177,55 @@ function App() {
 
   const fetchTradingStatus = async () => {
     try {
-      const response = await axios.get(`${API}/trading/status`);
+      const response = await axios.get(`${API}/state/trading`);
       const tradingData = response.data;
       
+      // Restore trading state from backend
+      setTradingMode(tradingData.trading_mode || 'manual');
+      setMasterSwitch(tradingData.master_switch || 'disabled');
+      setAutomationConfig(prev => ({
+        ...prev,
+        auto_trading_enabled: tradingData.bots_active || false,
+        trading_mode: tradingData.trading_mode || 'manual'
+      }));
+      
       console.log('✅ Trading status loaded from backend:', tradingData);
+      console.log(`🤖 Trading Mode: ${tradingData.trading_mode}`);
+      console.log(`🔧 Master Switch: ${tradingData.master_switch}`);
     } catch (error) {
       console.error('Error fetching trading status:', error);
     }
+  };
+
+  const saveTradingState = async (newState) => {
+    try {
+      await axios.post(`${API}/state/trading/save`, newState);
+      console.log('✅ Trading state saved to backend:', newState);
+    } catch (error) {
+      console.error('Error saving trading state:', error);
+    }
+  };
+
+  const toggleTradingMode = async () => {
+    const newMode = tradingMode === 'manual' ? 'auto' : 'manual';
+    const newSwitch = newMode === 'auto' ? 'enabled' : 'disabled';
+    
+    setTradingMode(newMode);
+    setMasterSwitch(newSwitch);
+    
+    // Save state to backend for persistence
+    await saveTradingState({
+      trading_mode: newMode,
+      master_switch: newSwitch,
+      bots_active: newMode === 'auto',
+      auto_execution: newMode === 'auto'
+    });
+    
+    setNotification({
+      type: 'success',
+      message: `🤖 Trading Mode: ${newMode.toUpperCase()} - Settings saved and will persist!`
+    });
+    setTimeout(() => setNotification(null), 4000);
   };
 
   const configureProxy = async () => {
