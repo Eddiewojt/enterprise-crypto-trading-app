@@ -1370,8 +1370,12 @@ function App() {
           
           <div className="control-card">
             <h3>💰 Portfolio Value</h3>
-            <div className="portfolio-value">$2,450.67</div>
-            <div className="portfolio-change">+127.34 (+5.5%) Today</div>
+            <div className="portfolio-value">${portfolioData.total_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="portfolio-change">
+              {portfolioData.daily_change >= 0 ? '+' : ''}
+              ${Math.abs(portfolioData.daily_change).toFixed(2)} 
+              ({portfolioData.daily_change >= 0 ? '+' : '-'}{Math.abs(portfolioData.daily_change_pct).toFixed(1)}%) Today
+            </div>
           </div>
           
           <div className="control-card">
