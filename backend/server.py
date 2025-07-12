@@ -2668,6 +2668,259 @@ async def check_automation_rules():
             logging.error(f"Error in automation checker: {e}")
             await asyncio.sleep(60)  # Wait longer on error
 
+# =================== REAL BINANCE TRADING ===================
+
+@api_router.post("/binance/enable-real-trading")
+async def enable_real_trading():
+    """Enable real money trading with Binance"""
+    try:
+        # Test Binance connection first
+        if not BINANCE_AVAILABLE or not binance_client:
+            return {"status": "error", "message": "Binance client not available"}
+        
+        try:
+            # Test API connection
+            account_info = binance_client.get_account()
+            if not account_info:
+                return {"status": "error", "message": "Cannot connect to Binance API"}
+            
+            # Check if trading is enabled
+            if not account_info.get('canTrade', False):
+                return {"status": "error", "message": "Binance API does not have trading permissions"}
+            
+        except Exception as e:
+            return {"status": "error", "message": f"Binance API test failed: {str(e)}"}
+        
+        # Update environment variable
+        os.environ['BINANCE_REAL_TRADING_ENABLED'] = 'true'
+        
+        # Send confirmation notification
+        notification_msg = "🚨 REAL MONEY TRADING ENABLED!\n\n" \
+                          "Your automation platform is now connected to Binance and will execute real trades.\n\n" \
+                          f"Safety limits:\n" \
+                          f"• Max per trade: ${os.environ.get('MAX_TRADE_AMOUNT', '100')}\n" \
+                          f"• Daily limit: ${os.environ.get('DAILY_TRADE_LIMIT', '500')}\n" \
+                          f"• Stop loss: {os.environ.get('STOP_LOSS_PERCENTAGE', '5')}%\n" \
+                          f"• Max daily loss: ${os.environ.get('MAX_DAILY_LOSS', '200')}\n\n" \
+                          f"Emergency stop available anytime!"
+        
+        # Send notifications
+        await asyncio.gather(
+            send_email_notification("🚨 Real Trading Enabled", notification_msg),
+            send_telegram_notification(notification_msg)
+        )
+        
+        return {
+            "status": "enabled",
+            "message": "Real money trading is now ACTIVE",
+            "safety_limits": {
+                "max_trade_amount": os.environ.get('MAX_TRADE_AMOUNT', '100'),
+                "daily_limit": os.environ.get('DAILY_TRADE_LIMIT', '500'),
+                "stop_loss_pct": os.environ.get('STOP_LOSS_PERCENTAGE', '5'),
+                "max_daily_loss": os.environ.get('MAX_DAILY_LOSS', '200')
+            }
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Error enabling real trading: {str(e)}"}
+
+@api_router.post("/binance/disable-real-trading")
+async def disable_real_trading():
+    """Disable real money trading (emergency stop)"""
+    try:
+        os.environ['BINANCE_REAL_TRADING_ENABLED'] = 'false'
+        
+        notification_msg = "🛑 REAL TRADING DISABLED!\n\n" \
+                          "Emergency stop activated. All future trades will be paper trades only.\n\n" \
+                          "Your safety is our priority."
+        
+        await asyncio.gather(
+            send_email_notification("🛑 Trading Stopped", notification_msg),
+            send_telegram_notification(notification_msg)
+        )
+        
+        return {
+            "status": "disabled",
+            "message": "Real trading has been disabled. Switched to paper trading mode."
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Error disabling real trading: {str(e)}"}
+
+@api_router.get("/binance/account-info")
+async def get_binance_account_info():
+    """Get Binance account information"""
+    try:
+        if not BINANCE_AVAILABLE or not binance_client:
+            return {"status": "error", "message": "Binance client not available"}
+        
+        account_info = binance_client.get_account()
+        
+        # Get account balances with value > 0
+        balances = []
+        for balance in account_info.get('balances', []):
+            free_balance = float(balance['free'])
+            locked_balance = float(balance['locked'])
+            total_balance = free_balance + locked_balance
+            
+            if total_balance > 0:
+                balances.append({
+                    'asset': balance['asset'],
+                    'free': free_balance,
+                    'locked': locked_balance,
+                    'total': total_balance
+                })
+        
+        return {
+            "trading_enabled": account_info.get('canTrade', False),
+            "balances": balances,
+            "maker_commission": account_info.get('makerCommission', 0),
+            "taker_commission": account_info.get('takerCommission', 0),
+            "real_trading_active": os.environ.get('BINANCE_REAL_TRADING_ENABLED', 'false').lower() == 'true',
+            "account_type": account_info.get('accountType', 'SPOT')
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Error fetching account info: {str(e)}"}
+
+@api_router.post("/binance/execute-real-trade")
+async def execute_real_binance_trade(trade_data: dict):
+    """Execute real trade on Binance with safety controls"""
+    try:
+        # Check if real trading is enabled
+        if os.environ.get('BINANCE_REAL_TRADING_ENABLED', 'false').lower() != 'true':
+            return {"status": "disabled", "message": "Real trading is disabled. Use /binance/enable-real-trading first."}
+        
+        symbol = trade_data.get('symbol')
+        signal_type = trade_data.get('signal_type')  # 'BUY' or 'SELL'
+        strength = trade_data.get('strength', 0)
+        
+        # Get current price
+        if BINANCE_AVAILABLE and binance_client:
+            ticker = binance_client.get_symbol_ticker(symbol=symbol)
+            current_price = float(ticker['price'])
+        else:
+            return {"status": "error", "message": "Cannot get current price"}
+        
+        # Check signal strength threshold
+        if strength < 70:
+            return {"status": "skipped", "message": f"Signal strength {strength}% below 70% threshold"}
+        
+        # Get risk management settings
+        max_trade_amount = float(os.environ.get('MAX_TRADE_AMOUNT', '100'))
+        daily_limit = float(os.environ.get('DAILY_TRADE_LIMIT', '500'))
+        stop_loss_pct = float(os.environ.get('STOP_LOSS_PERCENTAGE', '5'))
+        max_daily_loss = float(os.environ.get('MAX_DAILY_LOSS', '200'))
+        
+        # Calculate conservative trade amount
+        base_amount = min(max_trade_amount, 50)  # Start very conservative
+        trade_amount = base_amount * (strength / 100)
+        
+        if trade_amount < 25:  # Minimum trade size
+            return {"status": "too_small", "message": "Trade amount too small after risk controls"}
+        
+        # Execute the trade
+        try:
+            if signal_type == 'BUY':
+                # Place market buy order
+                order = binance_client.order_market_buy(
+                    symbol=symbol,
+                    quoteOrderQty=trade_amount  # Buy with USD amount
+                )
+            elif signal_type == 'SELL':
+                # Get account info to check balance
+                account_info = binance_client.get_account()
+                asset = symbol.replace('USDT', '')
+                
+                asset_balance = 0
+                for balance in account_info['balances']:
+                    if balance['asset'] == asset:
+                        asset_balance = float(balance['free'])
+                        break
+                
+                if asset_balance <= 0:
+                    return {"status": "no_balance", "message": f"No {asset} balance to sell"}
+                
+                # Calculate quantity to sell (use percentage of holdings)
+                sell_quantity = min(asset_balance, trade_amount / current_price)
+                
+                # Place market sell order
+                order = binance_client.order_market_sell(
+                    symbol=symbol,
+                    quantity=sell_quantity
+                )
+            else:
+                return {"status": "error", "message": "Invalid signal type"}
+            
+            # Record successful trade
+            real_trade = {
+                "id": str(uuid.uuid4()),
+                "symbol": symbol,
+                "side": signal_type,
+                "amount": trade_amount,
+                "price": current_price,
+                "signal_strength": strength,
+                "order_id": order['orderId'],
+                "executed_at": datetime.utcnow(),
+                "user_id": "default_user",
+                "status": "executed",
+                "platform": "binance_real"
+            }
+            
+            await db.real_trades.insert_one(real_trade)
+            
+            # Send success notification
+            notification_msg = f"🚀 REAL TRADE EXECUTED!\n\n" \
+                              f"Action: {signal_type} {symbol.replace('USDT', '')}\n" \
+                              f"Amount: ${trade_amount:.2f}\n" \
+                              f"Price: ${current_price:.6f}\n" \
+                              f"Strength: {strength}%\n" \
+                              f"Order ID: {order['orderId']}\n" \
+                              f"Time: {datetime.utcnow().strftime('%H:%M:%S')}"
+            
+            # Send notifications
+            await asyncio.gather(
+                send_email_notification("🚀 Real Trade Executed", notification_msg),
+                send_telegram_notification(notification_msg)
+            )
+            
+            return {
+                "status": "executed",
+                "trade": real_trade,
+                "binance_order": order,
+                "message": f"✅ Real {signal_type} executed: ${trade_amount:.2f} of {symbol.replace('USDT', '')}"
+            }
+            
+        except Exception as binance_error:
+            error_msg = str(binance_error)
+            
+            # Record failed trade
+            failed_trade = {
+                "id": str(uuid.uuid4()),
+                "symbol": symbol,
+                "side": signal_type,
+                "amount": trade_amount,
+                "error": error_msg,
+                "attempted_at": datetime.utcnow(),
+                "user_id": "default_user",
+                "status": "failed"
+            }
+            await db.trade_failures.insert_one(failed_trade)
+            
+            # Send error notification
+            error_notification = f"❌ TRADE FAILED!\n\n" \
+                               f"Symbol: {symbol}\n" \
+                               f"Action: {signal_type}\n" \
+                               f"Error: {error_msg}\n" \
+                               f"Time: {datetime.utcnow().strftime('%H:%M:%S')}"
+            
+            await send_telegram_notification(error_notification)
+            
+            return {"status": "failed", "error": error_msg}
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Trade execution error: {str(e)}"}
+
 async def evaluate_rule_condition(rule: AutomationRule, current_price: float) -> bool:
     """Evaluate if a rule condition is met"""
     try:
