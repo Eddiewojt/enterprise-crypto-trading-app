@@ -1559,11 +1559,36 @@ function App() {
           </div>
           
           <div className="control-card">
-            <h3>🌍 Global Access</h3>
+            <h3>💎 Enterprise Limits</h3>
+            <div className="enterprise-limits">
+              <div className="limit-item">
+                <span className="limit-label">Per Trade:</span>
+                <span className="limit-value">$5,000</span>
+              </div>
+              <div className="limit-item">
+                <span className="limit-label">Daily Limit:</span>
+                <span className="limit-value">$50,000</span>
+              </div>
+              <div className="limit-item">
+                <span className="limit-label">Stop Loss:</span>
+                <span className="limit-value">2%</span>
+              </div>
+              <div className="limit-item">
+                <span className="limit-label">Take Profit:</span>
+                <span className="limit-value">15%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="control-card">
+            <h3>🌍 Enterprise Global Access</h3>
             <div className={`status-badge ${proxyStatus}`}>
-              {proxyStatus === 'connected' ? '🟢 GLOBAL READY' : 
+              {proxyStatus === 'connected' ? '🟢 ENTERPRISE READY' : 
                proxyStatus === 'blocked' ? '🔴 REGION BLOCKED' : 
                proxyStatus === 'failed' ? '🟡 PROXY FAILED' : '⚪ CHECKING...'}
+            </div>
+            <div className="provider-count">
+              {proxyStatus === 'connected' ? '5 Premium Providers Active' : 'Enterprise Proxy Pool Available'}
             </div>
             <button 
               className={`proxy-btn ${proxyStatus === 'connected' ? 'connected' : 'configure'}`}
