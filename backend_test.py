@@ -34,7 +34,11 @@ class DOGETradingAppTester:
             'backtesting_engine': False,
             'backtest_results_storage': False,
             'multi_coin_support': False,
-            'portfolio_management': False
+            'portfolio_management': False,
+            'automation_configuration': False,
+            'automation_rules': False,
+            'automation_execution': False,
+            'automation_logs': False
         }
         self.errors = []
         
