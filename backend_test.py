@@ -2088,6 +2088,12 @@ class DOGETradingAppTester:
         print("\n🚨 Testing Binance enable real trading...")
         self.test_binance_enable_real_trading()
         
+        print("\n💰 Testing Binance wallet balance (NEW REVIEW FOCUS)...")
+        self.test_binance_wallet_balance()
+        
+        print("\n🤖 Testing Trading Bot Performance (NEW REVIEW FOCUS)...")
+        self.test_trading_bot_performance()
+        
         print("\n🌐 Testing proxy configuration status...")
         self.test_proxy_configuration_endpoints()
         
