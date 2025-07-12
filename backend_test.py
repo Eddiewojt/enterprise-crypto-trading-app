@@ -1052,15 +1052,19 @@ class DOGETradingAppTester:
             return False
             
     def test_binance_enable_real_trading(self):
-        """Test enabling real money trading on Binance"""
+        """Test enabling real money trading on Binance - FOCUS AREA FROM REVIEW"""
         try:
-            print("\n🚨 Testing Binance Enable Real Trading...")
+            print("\n🚨 Testing Binance Enable Real Trading (REVIEW FOCUS)...")
+            print("🎯 TESTING: POST /api/binance/enable-real-trading endpoint that's failing")
             
             # Test POST /api/binance/enable-real-trading
             response = requests.post(f"{self.base_url}/binance/enable-real-trading", timeout=20)
             
+            print(f"📊 Response Status: {response.status_code}")
+            
             if response.status_code == 200:
                 data = response.json()
+                print(f"📋 Response Data: {json.dumps(data, indent=2)}")
                 
                 # Validate response structure
                 required_fields = ['status', 'message', 'safety_limits']
@@ -1089,11 +1093,26 @@ class DOGETradingAppTester:
                 else:
                     self.log_error("Enable Real Trading", f"Missing required fields: {data}")
                     return False
+            elif response.status_code == 502:
+                print("🚨 DETECTED: 502 Bad Gateway - This indicates geographical restrictions!")
+                print("🌍 ISSUE: Binance API calls being blocked due to location")
+                print("🔍 TROUBLESHOOTING: The VPN/proxy is NOT properly routing Binance requests")
+                self.log_error("Enable Real Trading", f"502 Bad Gateway - VPN/proxy not routing properly: {response.text}")
+                return False
+            elif response.status_code == 500:
+                print("🚨 DETECTED: 500 Internal Server Error")
+                print("🔍 ANALYSIS: Backend error - possibly due to Binance API connection failure")
+                print(f"📄 Response Text: {response.text}")
+                self.log_error("Enable Real Trading", f"500 Internal Server Error - Backend issue: {response.text}")
+                return False
             else:
+                print(f"❌ HTTP Error: {response.status_code}")
+                print(f"📄 Response Text: {response.text}")
                 self.log_error("Enable Real Trading", f"HTTP {response.status_code}: {response.text}")
                 return False
                 
         except Exception as e:
+            print(f"💥 Exception occurred: {str(e)}")
             self.log_error("Enable Real Trading", e)
             return False
             
