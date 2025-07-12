@@ -501,9 +501,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Premium Enhanced Technical Analysis"
+    - "Binance Account Connection"
+    - "Binance Enable Real Trading"
+    - "Proxy Configuration Endpoints"
   stuck_tasks:
-    - "Premium Enhanced Technical Analysis"
+    - "Binance Account Connection"
+    - "Binance Enable Real Trading"
   test_all: false
   test_priority: "high_first"
   premium_features_tested: true
