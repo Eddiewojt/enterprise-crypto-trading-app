@@ -167,15 +167,18 @@ backend:
         
   - task: "API Endpoints"
     implemented: true
-    working: "unknown"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
         comment: "Created endpoints for price data, klines, signals, and technical analysis"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: All API endpoints functional. Root endpoint (/) returns proper message. Price endpoint (/doge/price) returns valid data. Klines endpoint (/doge/klines) returns candlestick data for both 15m and 4h timeframes (50 candlesticks each). Analysis endpoint (/doge/analysis) returns technical indicators. Signals endpoint (/doge/signals) returns signal array. All endpoints handle errors gracefully and return proper HTTP status codes."
 
 frontend:
   - task: "Trading Dashboard UI"
