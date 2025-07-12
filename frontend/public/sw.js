@@ -31,7 +31,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('✅ Service Worker: Force activated - taking control');
   event.waitUntil(
-    clients.claim() // Take control of all pages immediately
+    self.clients.claim() // Take control of all pages immediately
   );
 });
 
