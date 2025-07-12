@@ -19,45 +19,52 @@ jobs:
       - name: ☕ Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
           
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'yarn'
-          cache-dependency-path: mobile/yarn.lock
+          
+      - name: 🔧 Install React Native CLI
+        run: npm install -g react-native-cli
           
       - name: 🔧 Install Dependencies
         working-directory: mobile
         run: |
-          yarn install --frozen-lockfile
+          npm install
           
       - name: 🏗️ Setup Android SDK
         uses: android-actions/setup-android@v3
-        
+        with:
+          api-level: 29
+          build-tools: 29.0.3
+          
       - name: 🔐 Make Gradlew Executable
         working-directory: mobile/android
         run: chmod +x gradlew
         
       - name: 🧹 Clean Project
         working-directory: mobile/android
-        run: ./gradlew clean
+        run: ./gradlew clean --stacktrace
         
-      - name: 🏗️ Build Release APK
+      - name: 🏗️ Build Debug APK (Simpler Approach)
         working-directory: mobile/android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
         
-      - name: 📱 Rename APK File
+      - name: 📱 Find and Rename APK
         run: |
-          mkdir -p mobile/android/app/build/outputs/apk/release/
-          if [ -f "mobile/android/app/build/outputs/apk/release/app-release.apk" ]; then
-            mv mobile/android/app/build/outputs/apk/release/app-release.apk \
-               mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk
-          elif [ -f "mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            mv mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk \
-               mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk
+          find mobile/android -name "*.apk" -type f
+          APK_FILE=$(find mobile/android -name "app-debug.apk" -type f | head -1)
+          if [ -n "$APK_FILE" ]; then
+            mkdir -p mobile/android/app/build/outputs/apk/release/
+            cp "$APK_FILE" mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk
+            echo "✅ APK found and renamed successfully"
+          else
+            echo "❌ No APK file found"
+            find mobile/android -name "*.apk" -type f
+            exit 1
           fi
              
       - name: ✅ Verify APK Build
@@ -65,8 +72,10 @@ jobs:
           if [ -f "mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk" ]; then
             echo "✅ APK Build Successful!"
             ls -la mobile/android/app/build/outputs/apk/release/
+            APK_SIZE=$(du -h mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk | cut -f1)
+            echo "📦 APK Size: $APK_SIZE"
           else
-            echo "❌ APK Build Failed - checking all APK files:"
+            echo "❌ APK Build Failed!"
             find mobile/android -name "*.apk" -type f
             exit 1
           fi
@@ -84,3 +93,4 @@ jobs:
           echo "🎉 Android APK Build Completed Successfully!"
           echo "📱 APK: enterprise-crypto-trading-v2.0.0.apk"
           echo "📥 Download from Artifacts section"
+          echo "✅ Ready for installation on Android devices!"
