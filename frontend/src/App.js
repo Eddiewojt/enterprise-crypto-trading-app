@@ -1393,18 +1393,34 @@ function App() {
                     disableProxy();
                   }
                 } else {
-                  // Show options for single proxy or premium pool
-                  const choice = window.confirm('Choose proxy type:\n\nOK = Premium Proxy Pool (Recommended)\nCancel = Single Proxy Setup');
-                  if (choice) {
-                    setShowPremiumProxy(true);
-                  } else {
-                    setShowProxyConfig(true);
-                  }
+                  // Directly open premium proxy pool for easier access
+                  setShowPremiumProxy(true);
                 }
               }}
             >
-              {proxyStatus === 'connected' ? '🔌 Disable Proxy' : '🌍 Configure VPN'}
+              {proxyStatus === 'connected' ? '🔌 Disable Proxy' : '🌍 Configure Premium VPN'}
             </button>
+            
+            {/* Add simple proxy button as backup */}
+            {proxyStatus !== 'connected' && (
+              <button 
+                className="proxy-btn-simple"
+                onClick={() => setShowProxyConfig(true)}
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.5rem',
+                  fontSize: '0.8rem',
+                  background: 'rgba(107, 114, 128, 0.3)',
+                  color: '#9ca3af',
+                  border: '1px solid rgba(107, 114, 128, 0.5)',
+                  borderRadius: '6px',
+                  width: '100%',
+                  cursor: 'pointer'
+                }}
+              >
+                ⚙️ Single Proxy Setup
+              </button>
+            )}
           </div>
           
           <div className="control-card">
