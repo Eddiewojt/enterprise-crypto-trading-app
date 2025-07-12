@@ -1763,8 +1763,8 @@ function App() {
           <div className="performance-grid">
             <div className="perf-card">
               <h4>📊 Total Profit</h4>
-              <div className="perf-value positive">+$340.15</div>
-              <div className="perf-percent">+16.8% All Time</div>
+              <div className="perf-value positive">+${portfolioData.daily_change.toFixed(2)}</div>
+              <div className="perf-percent">+{portfolioData.daily_change_pct.toFixed(1)}% All Time</div>
             </div>
             
             <div className="perf-card">
