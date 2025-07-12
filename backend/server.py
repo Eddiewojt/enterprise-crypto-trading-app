@@ -22,6 +22,8 @@ from contextlib import asynccontextmanager
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import httpx
+import requests
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -39,6 +41,14 @@ signals = []
 is_websocket_running = False
 portfolio_data = {}
 multi_coin_data = {}
+backtesting_results = {}
+
+# Extended coin list for multi-coin support
+SUPPORTED_COINS = [
+    'DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'BNBUSDT', 
+    'SOLUSDT', 'XRPUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT',
+    'LINKUSDT', 'UNIUSDT', 'LTCUSDT', 'BCHUSDT', 'ATOMUSDT'
+]
 
 # Binance client setup
 try:
@@ -114,6 +124,34 @@ class TradeRequest(BaseModel):
     side: str  # 'BUY' or 'SELL'
     quantity: float
     price: Optional[float] = None  # If None, use current market price
+
+class BacktestRequest(BaseModel):
+    symbol: str
+    timeframe: str
+    start_date: str
+    end_date: str
+    strategy: str  # 'rsi', 'macd', 'combined'
+    initial_capital: float = 10000.0
+
+class BacktestResult(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    symbol: str
+    strategy: str
+    timeframe: str
+    start_date: str
+    end_date: str
+    initial_capital: float
+    final_capital: float
+    total_return: float
+    total_return_percentage: float
+    total_trades: int
+    winning_trades: int
+    losing_trades: int
+    win_rate: float
+    max_drawdown: float
+    sharpe_ratio: float
+    trades: List[Dict]
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 # Advanced Technical Analysis Functions
 def calculate_rsi(prices, window=14):
@@ -196,7 +234,7 @@ def calculate_volume_indicators(prices, volumes):
     
     return vwap, obv
 
-def generate_advanced_signal(prices, volumes, high_prices, low_prices, timeframe='15m'):
+def generate_advanced_signal(prices, volumes, high_prices, low_prices, symbol='DOGEUSDT', timeframe='15m'):
     """Generate trading signal based on multiple advanced indicators"""
     if len(prices) < 50:
         return None
@@ -282,9 +320,9 @@ def generate_advanced_signal(prices, volumes, high_prices, low_prices, timeframe
             strength = min(100, (sell_signals / total_signals) * 100)
         
         # Only return strong signals
-        if strength >= 65:  # Increased threshold for advanced signals
+        if strength >= 65:  # Threshold for advanced signals
             return TradingSignal(
-                symbol='DOGEUSDT',
+                symbol=symbol,
                 signal_type=signal_type,
                 strength=strength,
                 indicators={
@@ -365,7 +403,7 @@ async def save_portfolio_to_db(symbol: str, portfolio_data: dict, current_price:
         upsert=True
     )
 
-# Email notification function
+# Enhanced Notification Functions
 async def send_email_notification(subject: str, message: str):
     """Send email notification"""
     try:
@@ -376,7 +414,7 @@ async def send_email_notification(subject: str, message: str):
         # You'll need to set these in your .env file
         sender_email = os.environ.get('SMTP_EMAIL', 'your_email@gmail.com')
         sender_password = os.environ.get('SMTP_PASSWORD', 'your_app_password')
-        recipient_email = "eddiewojt1@gmail.com"
+        recipient_email = os.environ.get('NOTIFICATION_EMAIL', 'eddiewojt1@gmail.com')
         
         msg = MIMEMultipart()
         msg['From'] = sender_email
@@ -396,6 +434,266 @@ async def send_email_notification(subject: str, message: str):
         
     except Exception as e:
         logging.error(f"Failed to send email: {e}")
+
+async def send_sms_notification(message: str):
+    """Send SMS notification via Twilio"""
+    try:
+        # Mock Twilio SMS for demo
+        # In production, you would use actual Twilio credentials
+        account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+        auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+        from_phone = os.environ.get('TWILIO_PHONE_NUMBER')
+        to_phone = os.environ.get('NOTIFICATION_PHONE')
+        
+        if account_sid and auth_token and account_sid != 'demo_account_sid':
+            from twilio.rest import Client
+            client = Client(account_sid, auth_token)
+            
+            message = client.messages.create(
+                body=message,
+                from_=from_phone,
+                to=to_phone
+            )
+            
+            logging.info(f"SMS sent successfully to {to_phone}")
+        else:
+            logging.info(f"SMS would be sent to {to_phone}: {message}")
+            
+    except Exception as e:
+        logging.error(f"Failed to send SMS: {e}")
+
+async def send_telegram_notification(message: str):
+    """Send Telegram notification"""
+    try:
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+        chat_id = os.environ.get('TELEGRAM_CHAT_ID')
+        
+        if bot_token and chat_id and bot_token != 'demo_bot_token':
+            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            data = {
+                'chat_id': chat_id,
+                'text': message,
+                'parse_mode': 'Markdown'
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=data)
+                
+            if response.status_code == 200:
+                logging.info(f"Telegram message sent successfully to {chat_id}")
+            else:
+                logging.error(f"Failed to send Telegram message: {response.text}")
+        else:
+            logging.info(f"Telegram would be sent to {chat_id}: {message}")
+            
+    except Exception as e:
+        logging.error(f"Failed to send Telegram notification: {e}")
+
+async def send_all_notifications(subject: str, message: str):
+    """Send notifications via all channels"""
+    await asyncio.gather(
+        send_email_notification(subject, message),
+        send_sms_notification(message),
+        send_telegram_notification(message)
+    )
+
+# Backtesting Engine
+def run_backtest(symbol: str, timeframe: str, start_date: str, end_date: str, strategy: str, initial_capital: float = 10000.0):
+    """Run backtesting on historical data"""
+    try:
+        # Generate mock historical data for demo
+        # In production, you would fetch actual historical data
+        dates = pd.date_range(start=start_date, end=end_date, freq='H')
+        base_price = 0.08234 if symbol == 'DOGEUSDT' else 43000 if symbol == 'BTCUSDT' else 2600
+        
+        # Generate realistic price movements
+        np.random.seed(42)  # For reproducible results
+        returns = np.random.normal(0, 0.02, len(dates))
+        prices = [base_price]
+        
+        for i in range(1, len(dates)):
+            prices.append(prices[-1] * (1 + returns[i]))
+        
+        # Generate volumes
+        volumes = np.random.uniform(10000, 50000, len(dates))
+        
+        # Generate highs and lows
+        highs = [p * (1 + np.random.uniform(0, 0.01)) for p in prices]
+        lows = [p * (1 - np.random.uniform(0, 0.01)) for p in prices]
+        
+        # Run strategy
+        trades = []
+        capital = initial_capital
+        position = 0
+        position_price = 0
+        
+        for i in range(50, len(prices)):  # Start after enough data for indicators
+            current_prices = prices[max(0, i-100):i+1]
+            current_volumes = volumes[max(0, i-100):i+1]
+            current_highs = highs[max(0, i-100):i+1]
+            current_lows = lows[max(0, i-100):i+1]
+            
+            if len(current_prices) < 50:
+                continue
+            
+            # Calculate indicators based on strategy
+            if strategy == 'rsi':
+                rsi = calculate_rsi(current_prices)
+                current_rsi = rsi[-1]
+                
+                if current_rsi < 30 and position <= 0:  # Buy signal
+                    quantity = capital / prices[i]
+                    position = quantity
+                    position_price = prices[i]
+                    capital = 0
+                    trades.append({
+                        'timestamp': dates[i].isoformat(),
+                        'side': 'BUY',
+                        'price': prices[i],
+                        'quantity': quantity,
+                        'value': prices[i] * quantity
+                    })
+                elif current_rsi > 70 and position > 0:  # Sell signal
+                    capital = position * prices[i]
+                    trades.append({
+                        'timestamp': dates[i].isoformat(),
+                        'side': 'SELL',
+                        'price': prices[i],
+                        'quantity': position,
+                        'value': prices[i] * position
+                    })
+                    position = 0
+                    position_price = 0
+                    
+            elif strategy == 'macd':
+                macd, signal_line, histogram = calculate_macd(current_prices)
+                
+                if macd[-1] > signal_line[-1] and histogram[-1] > histogram[-2] and position <= 0:  # Buy signal
+                    quantity = capital / prices[i]
+                    position = quantity
+                    position_price = prices[i]
+                    capital = 0
+                    trades.append({
+                        'timestamp': dates[i].isoformat(),
+                        'side': 'BUY',
+                        'price': prices[i],
+                        'quantity': quantity,
+                        'value': prices[i] * quantity
+                    })
+                elif macd[-1] < signal_line[-1] and histogram[-1] < histogram[-2] and position > 0:  # Sell signal
+                    capital = position * prices[i]
+                    trades.append({
+                        'timestamp': dates[i].isoformat(),
+                        'side': 'SELL',
+                        'price': prices[i],
+                        'quantity': position,
+                        'value': prices[i] * position
+                    })
+                    position = 0
+                    position_price = 0
+                    
+            elif strategy == 'combined':
+                # Use the same logic as generate_advanced_signal
+                signal = generate_advanced_signal(current_prices, current_volumes, current_highs, current_lows, symbol, timeframe)
+                
+                if signal and signal.signal_type == 'BUY' and position <= 0:
+                    quantity = capital / prices[i]
+                    position = quantity
+                    position_price = prices[i]
+                    capital = 0
+                    trades.append({
+                        'timestamp': dates[i].isoformat(),
+                        'side': 'BUY',
+                        'price': prices[i],
+                        'quantity': quantity,
+                        'value': prices[i] * quantity
+                    })
+                elif signal and signal.signal_type == 'SELL' and position > 0:
+                    capital = position * prices[i]
+                    trades.append({
+                        'timestamp': dates[i].isoformat(),
+                        'side': 'SELL',
+                        'price': prices[i],
+                        'quantity': position,
+                        'value': prices[i] * position
+                    })
+                    position = 0
+                    position_price = 0
+        
+        # Calculate final capital
+        final_capital = capital + (position * prices[-1] if position > 0 else 0)
+        
+        # Calculate metrics
+        total_return = final_capital - initial_capital
+        total_return_percentage = (total_return / initial_capital) * 100
+        
+        buy_trades = [t for t in trades if t['side'] == 'BUY']
+        sell_trades = [t for t in trades if t['side'] == 'SELL']
+        
+        # Calculate win/loss trades
+        winning_trades = 0
+        losing_trades = 0
+        
+        for i in range(min(len(buy_trades), len(sell_trades))):
+            if sell_trades[i]['price'] > buy_trades[i]['price']:
+                winning_trades += 1
+            else:
+                losing_trades += 1
+        
+        win_rate = (winning_trades / max(1, winning_trades + losing_trades)) * 100
+        
+        # Calculate max drawdown (simplified)
+        max_drawdown = 0
+        peak = initial_capital
+        for i, trade in enumerate(trades):
+            if trade['side'] == 'SELL':
+                current_capital = trade['value']
+                if current_capital > peak:
+                    peak = current_capital
+                drawdown = (peak - current_capital) / peak * 100
+                max_drawdown = max(max_drawdown, drawdown)
+        
+        # Calculate Sharpe ratio (simplified)
+        if len(trades) > 0:
+            returns = []
+            for i in range(1, len(trades)):
+                if trades[i]['side'] == 'SELL' and trades[i-1]['side'] == 'BUY':
+                    ret = (trades[i]['price'] - trades[i-1]['price']) / trades[i-1]['price']
+                    returns.append(ret)
+            
+            if len(returns) > 0:
+                avg_return = np.mean(returns)
+                std_return = np.std(returns)
+                sharpe_ratio = avg_return / std_return if std_return > 0 else 0
+            else:
+                sharpe_ratio = 0
+        else:
+            sharpe_ratio = 0
+        
+        result = BacktestResult(
+            symbol=symbol,
+            strategy=strategy,
+            timeframe=timeframe,
+            start_date=start_date,
+            end_date=end_date,
+            initial_capital=initial_capital,
+            final_capital=final_capital,
+            total_return=total_return,
+            total_return_percentage=total_return_percentage,
+            total_trades=len(trades),
+            winning_trades=winning_trades,
+            losing_trades=losing_trades,
+            win_rate=win_rate,
+            max_drawdown=max_drawdown,
+            sharpe_ratio=sharpe_ratio,
+            trades=trades
+        )
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Backtesting error: {e}")
+        return None
 
 # WebSocket connection manager
 async def connect_websocket(websocket: WebSocket):
@@ -467,24 +765,26 @@ def handle_socket_message(msg):
                 coin_data['prices'], 
                 coin_data['volumes'], 
                 coin_data['highs'], 
-                coin_data['lows']
+                coin_data['lows'],
+                symbol
             )
             if signal:
                 signals.append(signal)
                 if len(signals) > 50:
                     signals.pop(0)
                 
-                # Send email notification for strong signals
-                if signal.strength >= 80:
-                    asyncio.create_task(send_email_notification(
-                        f"Strong {signal.signal_type} Signal - {symbol}",
-                        f"Strong {signal.signal_type} signal detected for {symbol}\n"
-                        f"Strength: {signal.strength:.1f}%\n"
-                        f"Price: ${signal.price:.6f}\n"
-                        f"Timeframe: {signal.timeframe}\n"
-                        f"RSI: {signal.indicators['rsi']:.1f}\n"
-                        f"MACD: {signal.indicators['macd']:.6f}\n"
-                        f"Time: {signal.timestamp}"
+                # Send notifications for strong signals
+                if signal.strength >= 75:
+                    coin_name = symbol.replace('USDT', '')
+                    notification_message = f"🚀 Strong {signal.signal_type} Signal - {coin_name}\n" \
+                                         f"Strength: {signal.strength:.1f}%\n" \
+                                         f"Price: ${signal.price:.6f}\n" \
+                                         f"RSI: {signal.indicators['rsi']:.1f}\n" \
+                                         f"MACD: {signal.indicators['macd']:.6f}"
+                    
+                    asyncio.create_task(send_all_notifications(
+                        f"Strong {signal.signal_type} Signal - {coin_name}",
+                        notification_message
                     ))
                 
                 # Broadcast signal to all connected clients
@@ -506,15 +806,12 @@ def start_binance_websocket():
     if not is_websocket_running:
         is_websocket_running = True
         
-        # Multi-coin symbols to track
-        symbols_to_track = ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'BNBUSDT']
-        
         if BINANCE_AVAILABLE and binance_client:
             async def websocket_coroutine():
                 try:
                     bm = BinanceSocketManager(binance_client)
                     # Subscribe to multiple symbols
-                    for symbol in symbols_to_track:
+                    for symbol in SUPPORTED_COINS:
                         ts = bm.symbol_ticker_socket(symbol)
                         
                         async with ts as tscm:
@@ -543,11 +840,11 @@ def start_binance_websocket():
                 import time
                 
                 mock_prices = {
-                    'DOGEUSDT': 0.08234,
-                    'BTCUSDT': 43000,
-                    'ETHUSDT': 2600,
-                    'ADAUSDT': 0.45,
-                    'BNBUSDT': 320
+                    'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                    'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                    'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                    'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                    'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
                 }
                 
                 try:
@@ -568,7 +865,7 @@ def start_binance_websocket():
                             
                             handle_socket_message(mock_message)
                         
-                        time.sleep(3)  # Update every 3 seconds
+                        time.sleep(2)  # Update every 2 seconds
                         
                 except Exception as e:
                     logging.error(f"Mock WebSocket error: {e}")
@@ -583,17 +880,30 @@ def start_binance_websocket():
 # API Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Advanced DOGE Trading App API"}
+    return {"message": "Advanced Multi-Coin Trading Platform API"}
+
+@api_router.get("/supported-coins")
+async def get_supported_coins():
+    """Get list of supported coins"""
+    coin_info = []
+    for symbol in SUPPORTED_COINS:
+        coin_name = symbol.replace('USDT', '')
+        coin_info.append({
+            'symbol': symbol,
+            'name': coin_name,
+            'base_asset': coin_name,
+            'quote_asset': 'USDT'
+        })
+    return coin_info
 
 @api_router.get("/multi-coin/prices")
 async def get_multi_coin_prices():
-    """Get current prices for multiple coins"""
+    """Get current prices for all supported coins"""
     try:
-        symbols = ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'BNBUSDT']
         prices = {}
         
         if BINANCE_AVAILABLE and binance_client:
-            for symbol in symbols:
+            for symbol in SUPPORTED_COINS:
                 try:
                     ticker = binance_client.get_symbol_ticker(symbol=symbol)
                     price_24h = binance_client.get_ticker(symbol=symbol)
@@ -610,14 +920,14 @@ async def get_multi_coin_prices():
                 except:
                     continue
         else:
-            # Mock data for multiple coins
+            # Mock data for all supported coins
             import random
             mock_prices = {
-                'DOGEUSDT': 0.08234,
-                'BTCUSDT': 43000,
-                'ETHUSDT': 2600,
-                'ADAUSDT': 0.45,
-                'BNBUSDT': 320
+                'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
             }
             
             for symbol, base_price in mock_prices.items():
@@ -626,11 +936,11 @@ async def get_multi_coin_prices():
                 
                 prices[symbol] = {
                     "symbol": symbol,
-                    "price": round(current_price, 6 if symbol == 'DOGEUSDT' else 2),
+                    "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
                     "change_24h": round(random.uniform(-5.0, 5.0), 2),
                     "volume": round(random.uniform(100000, 1000000), 2),
-                    "high_24h": round(current_price * 1.02, 6 if symbol == 'DOGEUSDT' else 2),
-                    "low_24h": round(current_price * 0.98, 6 if symbol == 'DOGEUSDT' else 2),
+                    "high_24h": round(current_price * 1.02, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "low_24h": round(current_price * 0.98, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
                     "timestamp": datetime.utcnow().isoformat()
                 }
         
@@ -639,16 +949,21 @@ async def get_multi_coin_prices():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching multi-coin prices: {str(e)}")
 
-@api_router.get("/doge/price")
-async def get_doge_price():
-    """Get current DOGE price"""
+@api_router.get("/{symbol}/price")
+async def get_coin_price(symbol: str):
+    """Get current price for a specific coin"""
     try:
+        symbol_upper = symbol.upper() + 'USDT'
+        
+        if symbol_upper not in SUPPORTED_COINS:
+            raise HTTPException(status_code=400, detail=f"Unsupported coin: {symbol}")
+        
         if BINANCE_AVAILABLE and binance_client:
-            ticker = binance_client.get_symbol_ticker(symbol="DOGEUSDT")
-            price_24h = binance_client.get_ticker(symbol="DOGEUSDT")
+            ticker = binance_client.get_symbol_ticker(symbol=symbol_upper)
+            price_24h = binance_client.get_ticker(symbol=symbol_upper)
             
             return {
-                "symbol": "DOGEUSDT",
+                "symbol": symbol_upper,
                 "price": float(ticker['price']),
                 "change_24h": float(price_24h['priceChangePercent']),
                 "volume": float(price_24h['volume']),
@@ -657,31 +972,44 @@ async def get_doge_price():
                 "timestamp": datetime.utcnow().isoformat()
             }
         else:
-            # Mock data when Binance is not available
+            # Mock data
             import random
-            base_price = 0.08234
+            mock_prices = {
+                'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
+            }
+            
+            base_price = mock_prices.get(symbol_upper, 1.0)
             price_variation = random.uniform(-0.002, 0.002)
-            current_price = base_price + price_variation
+            current_price = base_price * (1 + price_variation)
             
             return {
-                "symbol": "DOGEUSDT",
-                "price": round(current_price, 6),
+                "symbol": symbol_upper,
+                "price": round(current_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
                 "change_24h": round(random.uniform(-5.0, 5.0), 2),
-                "volume": round(random.uniform(1000000, 5000000), 2),
-                "high_24h": round(current_price * 1.02, 6),
-                "low_24h": round(current_price * 0.98, 6),
+                "volume": round(random.uniform(100000, 1000000), 2),
+                "high_24h": round(current_price * 1.02, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                "low_24h": round(current_price * 0.98, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
                 "timestamp": datetime.utcnow().isoformat()
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching price: {str(e)}")
 
-@api_router.get("/doge/klines")
-async def get_doge_klines(timeframe: str = "15m", limit: int = 100):
-    """Get DOGE candlestick data for advanced charting"""
+@api_router.get("/{symbol}/klines")
+async def get_coin_klines(symbol: str, timeframe: str = "15m", limit: int = 100):
+    """Get candlestick data for a specific coin"""
     try:
+        symbol_upper = symbol.upper() + 'USDT'
+        
+        if symbol_upper not in SUPPORTED_COINS:
+            raise HTTPException(status_code=400, detail=f"Unsupported coin: {symbol}")
+        
         if BINANCE_AVAILABLE and binance_client:
             klines = binance_client.get_klines(
-                symbol="DOGEUSDT",
+                symbol=symbol_upper,
                 interval=timeframe,
                 limit=limit
             )
@@ -703,65 +1031,81 @@ async def get_doge_klines(timeframe: str = "15m", limit: int = 100):
             import random
             from datetime import timedelta
             
-            formatted_klines = []
-            base_price = 0.08234
+            mock_prices = {
+                'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
+            }
+            
+            base_price = mock_prices.get(symbol_upper, 1.0)
             current_time = datetime.utcnow()
             
-            # Generate mock klines
+            formatted_klines = []
             for i in range(limit):
                 timestamp = int((current_time - timedelta(minutes=15*i)).timestamp() * 1000)
                 price_variation = random.uniform(-0.001, 0.001)
-                open_price = base_price + price_variation
-                close_price = open_price + random.uniform(-0.0005, 0.0005)
-                high_price = max(open_price, close_price) + random.uniform(0, 0.0002)
-                low_price = min(open_price, close_price) - random.uniform(0, 0.0002)
+                open_price = base_price * (1 + price_variation)
+                close_price = open_price * (1 + random.uniform(-0.01, 0.01))
+                high_price = max(open_price, close_price) * (1 + random.uniform(0, 0.005))
+                low_price = min(open_price, close_price) * (1 - random.uniform(0, 0.005))
                 
                 formatted_klines.append({
                     "timestamp": timestamp,
-                    "open": round(open_price, 6),
-                    "high": round(high_price, 6),
-                    "low": round(low_price, 6),
-                    "close": round(close_price, 6),
+                    "open": round(open_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "high": round(high_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "low": round(low_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "close": round(close_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
                     "volume": round(random.uniform(10000, 50000), 2)
                 })
             
-            return list(reversed(formatted_klines))  # Return in chronological order
+            return list(reversed(formatted_klines))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching klines: {str(e)}")
 
-@api_router.get("/doge/signals")
-async def get_trading_signals():
-    """Get recent trading signals"""
-    return signals[-10:]  # Return last 10 signals
-
-@api_router.get("/doge/analysis")
-async def get_advanced_analysis(timeframe: str = "15m"):
-    """Get advanced technical analysis for DOGE"""
+@api_router.get("/{symbol}/analysis")
+async def get_coin_analysis(symbol: str, timeframe: str = "15m"):
+    """Get advanced technical analysis for a specific coin"""
     try:
+        symbol_upper = symbol.upper() + 'USDT'
+        
+        if symbol_upper not in SUPPORTED_COINS:
+            raise HTTPException(status_code=400, detail=f"Unsupported coin: {symbol}")
+        
         if BINANCE_AVAILABLE and binance_client:
             # Get historical data from Binance
             klines = binance_client.get_klines(
-                symbol="DOGEUSDT",
+                symbol=symbol_upper,
                 interval=timeframe,
                 limit=100
             )
-            prices = [float(kline[4]) for kline in klines]  # Close prices
-            volumes = [float(kline[5]) for kline in klines]  # Volumes
-            highs = [float(kline[2]) for kline in klines]  # High prices
-            lows = [float(kline[3]) for kline in klines]  # Low prices
+            prices = [float(kline[4]) for kline in klines]
+            volumes = [float(kline[5]) for kline in klines]
+            highs = [float(kline[2]) for kline in klines]
+            lows = [float(kline[3]) for kline in klines]
         else:
             # Use mock data
-            if 'DOGEUSDT' in multi_coin_data and len(multi_coin_data['DOGEUSDT']['prices']) > 0:
-                prices = multi_coin_data['DOGEUSDT']['prices']
-                volumes = multi_coin_data['DOGEUSDT']['volumes']
-                highs = multi_coin_data['DOGEUSDT']['highs']
-                lows = multi_coin_data['DOGEUSDT']['lows']
+            if symbol_upper in multi_coin_data and len(multi_coin_data[symbol_upper]['prices']) > 0:
+                prices = multi_coin_data[symbol_upper]['prices']
+                volumes = multi_coin_data[symbol_upper]['volumes']
+                highs = multi_coin_data[symbol_upper]['highs']
+                lows = multi_coin_data[symbol_upper]['lows']
             else:
                 import random
-                prices = [0.08234 + random.uniform(-0.001, 0.001) for _ in range(100)]
+                mock_prices = {
+                    'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                    'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                    'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                    'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                    'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
+                }
+                
+                base_price = mock_prices.get(symbol_upper, 1.0)
+                prices = [base_price * (1 + random.uniform(-0.001, 0.001)) for _ in range(100)]
                 volumes = [random.uniform(10000, 50000) for _ in range(100)]
-                highs = [p + random.uniform(0, 0.0002) for p in prices]
-                lows = [p - random.uniform(0, 0.0002) for p in prices]
+                highs = [p * (1 + random.uniform(0, 0.005)) for p in prices]
+                lows = [p * (1 - random.uniform(0, 0.005)) for p in prices]
         
         if len(prices) < 50:
             return {"error": "Not enough data for advanced analysis"}
@@ -775,7 +1119,7 @@ async def get_advanced_analysis(timeframe: str = "15m"):
         vwap, obv = calculate_volume_indicators(prices, volumes)
         
         return {
-            "symbol": "DOGEUSDT",
+            "symbol": symbol_upper,
             "timeframe": timeframe,
             "current_price": prices[-1],
             "indicators": {
@@ -815,6 +1159,56 @@ async def get_advanced_analysis(timeframe: str = "15m"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in technical analysis: {str(e)}")
 
+@api_router.get("/signals")
+async def get_all_signals():
+    """Get recent trading signals for all coins"""
+    return signals[-20:]  # Return last 20 signals
+
+@api_router.get("/{symbol}/signals")
+async def get_coin_signals(symbol: str):
+    """Get recent trading signals for a specific coin"""
+    symbol_upper = symbol.upper() + 'USDT'
+    coin_signals = [s for s in signals if s.symbol == symbol_upper]
+    return coin_signals[-10:]  # Return last 10 signals for the coin
+
+@api_router.post("/backtest")
+async def run_backtest_endpoint(request: BacktestRequest):
+    """Run backtesting on historical data"""
+    try:
+        symbol_upper = request.symbol.upper() + 'USDT' if not request.symbol.endswith('USDT') else request.symbol.upper()
+        
+        if symbol_upper not in SUPPORTED_COINS:
+            raise HTTPException(status_code=400, detail=f"Unsupported coin: {request.symbol}")
+        
+        result = run_backtest(
+            symbol_upper,
+            request.timeframe,
+            request.start_date,
+            request.end_date,
+            request.strategy,
+            request.initial_capital
+        )
+        
+        if result:
+            # Save backtest result to database
+            await db.backtests.insert_one(result.dict())
+            return result
+        else:
+            raise HTTPException(status_code=500, detail="Backtesting failed")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in backtesting: {str(e)}")
+
+@api_router.get("/backtest/results")
+async def get_backtest_results():
+    """Get recent backtest results"""
+    try:
+        results_cursor = db.backtests.find().sort("timestamp", -1).limit(10)
+        results_list = await results_cursor.to_list(length=None)
+        return results_list
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching backtest results: {str(e)}")
+
 @api_router.post("/portfolio/trade")
 async def execute_paper_trade(trade_request: TradeRequest):
     """Execute a paper trade"""
@@ -827,11 +1221,11 @@ async def execute_paper_trade(trade_request: TradeRequest):
             else:
                 # Use mock price
                 mock_prices = {
-                    'DOGEUSDT': 0.08234,
-                    'BTCUSDT': 43000,
-                    'ETHUSDT': 2600,
-                    'ADAUSDT': 0.45,
-                    'BNBUSDT': 320
+                    'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                    'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                    'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                    'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                    'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
                 }
                 trade_request.price = mock_prices.get(trade_request.symbol, 1.0)
         
@@ -901,7 +1295,7 @@ async def get_portfolio():
 async def get_trade_history():
     """Get trade history"""
     try:
-        trades_cursor = db.trades.find().sort("timestamp", -1).limit(50)
+        trades_cursor = db.trades.find().sort("timestamp", -1).limit(100)
         trades_list = await trades_cursor.to_list(length=None)
         
         return {
