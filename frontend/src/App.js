@@ -1091,11 +1091,14 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [automationConfig, setAutomationConfig] = useState({
     auto_trading_enabled: false,
-    max_trade_amount: 1000,
+    max_trade_amount: 5000,
     risk_level: 'medium',
     stop_loss_enabled: true,
-    take_profit_enabled: true
+    take_profit_enabled: true,
+    trading_mode: 'manual'
   });
+  const [tradingMode, setTradingMode] = useState('manual'); // 'auto' or 'manual'
+  const [masterSwitch, setMasterSwitch] = useState('disabled'); // 'enabled' or 'disabled'
   const [showBotCreator, setShowBotCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProxyConfig, setShowProxyConfig] = useState(false);
