@@ -1896,6 +1896,472 @@ input:checked + .slider:before {
   margin-right: 0.5rem;
 }
 
+/* =================== PREMIUM AI ANALYSIS STYLES =================== */
+
+.premium-ai-section {
+  margin: 2rem 0;
+}
+
+.premium-ai-section h2 {
+  color: white;
+  margin-bottom: 1.5rem;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.ai-analysis-card,
+.sentiment-card,
+.enhanced-signals-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-analysis-card h3,
+.sentiment-card h3,
+.enhanced-signals-card h3 {
+  color: #3b82f6;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.ai-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-provider {
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.provider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.provider-name {
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+.confidence-score {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.analysis-content {
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.analysis-content p {
+  margin-bottom: 0.5rem;
+}
+
+/* Sentiment Styles */
+.sentiment-overview {
+  margin-bottom: 1rem;
+}
+
+.sentiment-score {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sentiment-indicator {
+  font-size: 2.5rem;
+}
+
+.sentiment-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.sentiment-title {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.sentiment-title.bullish,
+.sentiment.bullish {
+  color: #22c55e;
+}
+
+.sentiment-title.bearish,
+.sentiment.bearish {
+  color: #ef4444;
+}
+
+.sentiment-title.neutral,
+.sentiment.neutral {
+  color: #f59e0b;
+}
+
+.sentiment-percentage {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.news-headlines h4 {
+  color: #d1d5db;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.headline {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.headline-title {
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+.headline-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.source {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.headline-sentiment {
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.headline-sentiment.positive {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.headline-sentiment.negative {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.headline-sentiment.neutral {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+/* Enhanced Signals Styles */
+.enhanced-signals-card {
+  grid-column: span 2;
+}
+
+.trend-analysis,
+.key-levels,
+.momentum-indicators {
+  margin-bottom: 1.5rem;
+}
+
+.trend-analysis h4,
+.key-levels h4,
+.momentum-indicators h4 {
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.trend-indicators,
+.momentum-grid {
+  display: flex;
+  gap: 1rem;
+}
+
+.trend-item,
+.momentum-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  flex: 1;
+}
+
+.timeframe,
+.indicator {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.trend {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.trend.bullish,
+.signal.buy {
+  color: #22c55e;
+}
+
+.trend.bearish,
+.signal.sell {
+  color: #ef4444;
+}
+
+.trend.neutral {
+  color: #f59e0b;
+}
+
+.levels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.level-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.level-title {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.resistance-level {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.support-level {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Premium Proxy Pool Styles */
+.premium-proxy-modal {
+  max-width: 800px;
+}
+
+.premium-intro {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.premium-intro h3 {
+  color: #3b82f6;
+  margin-bottom: 0.5rem;
+}
+
+.premium-intro p {
+  color: #cbd5e1;
+  margin-bottom: 1.5rem;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.benefit .icon {
+  font-size: 1.2rem;
+}
+
+.providers-config {
+  margin-bottom: 2rem;
+}
+
+.provider-section {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.provider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.provider-header h4 {
+  color: white;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.provider-tag {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.provider-tag.priority-1 {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.provider-tag.priority-2 {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.provider-tag.priority-3 {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.provider-section p {
+  color: #9ca3af;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.signup-link {
+  margin-bottom: 1rem;
+}
+
+.signup-link a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+.provider-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.configure-premium-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #059669, #10b981);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.configure-premium-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+}
+
+.configure-premium-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.premium-info {
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.premium-info h4 {
+  color: #22c55e;
+  margin-bottom: 0.5rem;
+}
+
+.premium-info ul {
+  color: #d1fae5;
+  font-size: 0.9rem;
+  padding-left: 1rem;
+}
+
+.premium-info li {
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ai-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .enhanced-signals-card {
+    grid-column: span 1;
+  }
+  
+  .trend-indicators,
+  .momentum-grid {
+    flex-direction: column;
+  }
+  
+  .levels-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .provider-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .proxy-config-modal {
