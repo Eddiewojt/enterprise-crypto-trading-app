@@ -1246,6 +1246,15 @@ function App() {
         // Update proxy status
         setProxyStatus('connected');
         
+        // Show success notification
+        setNotification({
+          type: 'success',
+          message: '🚀 VPN Configured Successfully! Global trading access enabled.'
+        });
+        
+        // Clear notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+        
         // Show success message with timeout to ensure it shows
         setTimeout(() => {
           const successMsg = `🚀 SUCCESS! Premium Proxy Pool Configured!\n\n✅ ${response.data.providers.join(', ')} ready\n✅ Global trading access enabled\n✅ Automatic failover active\n\n⚠️ Note: Demo credentials configured\nFor real trading, use actual proxy credentials`;
