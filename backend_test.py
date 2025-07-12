@@ -1427,6 +1427,8 @@ if __name__ == "__main__":
     results = tester.run_all_tests()
     
     # Exit with error code if any critical tests failed
-    critical_tests = ['binance_api_integration', 'api_endpoints', 'backtesting_engine', 'backtest_results_storage', 'automation_configuration', 'automation_rules']
+    critical_tests = ['binance_api_integration', 'api_endpoints', 'backtesting_engine', 'backtest_results_storage', 
+                     'automation_configuration', 'automation_rules', 'binance_account_connection', 
+                     'binance_enable_real_trading', 'binance_safety_settings', 'binance_execute_real_trade']
     if not all(results[test] for test in critical_tests):
         sys.exit(1)
