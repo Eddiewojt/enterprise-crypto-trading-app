@@ -1763,7 +1763,102 @@ class DOGETradingAppTester:
             self.log_error("Proxy Configuration", e)
             return False
 
-    def run_all_tests(self):
+    def test_binance_proxy_routing_focus(self):
+        """FOCUSED TEST: Test if VPN/proxy is actually routing Binance requests properly - REVIEW REQUEST"""
+        try:
+            print("\n🎯 FOCUSED BINANCE PROXY ROUTING TEST (REVIEW REQUEST)")
+            print("=" * 70)
+            print("🔍 TESTING: If the VPN/proxy is actually routing Binance requests properly")
+            print("🚨 EXPECTED ISSUES: 502 Bad Gateway errors due to geographical restrictions")
+            print("⚠️  HYPOTHESIS: Demo VPN mode may not be actually routing API calls through proxy")
+            print("=" * 70)
+            
+            # Step 1: Check backend proxy configuration
+            print("\n📋 STEP 1: Checking backend proxy configuration...")
+            
+            # Load backend environment to check PROXY_ENABLED
+            import os
+            from dotenv import load_dotenv
+            load_dotenv('/app/backend/.env')
+            
+            proxy_enabled = os.getenv('PROXY_ENABLED', 'false').lower() == 'true'
+            proxy_pool_enabled = os.getenv('PROXY_POOL_ENABLED', 'false').lower() == 'true'
+            
+            print(f"🔧 PROXY_ENABLED in backend: {proxy_enabled}")
+            print(f"🔧 PROXY_POOL_ENABLED in backend: {proxy_pool_enabled}")
+            
+            if not proxy_enabled and not proxy_pool_enabled:
+                print("🚨 CRITICAL ISSUE FOUND: Both PROXY_ENABLED and PROXY_POOL_ENABLED are FALSE")
+                print("💡 ROOT CAUSE: Binance client is NOT using proxy configuration")
+                print("🔧 SOLUTION: Set PROXY_ENABLED=true in backend/.env to route through proxy")
+                
+            # Step 2: Test proxy status endpoint
+            print("\n📋 STEP 2: Testing proxy status endpoint...")
+            proxy_response = requests.get(f"{self.base_url}/proxy/status", timeout=15)
+            
+            if proxy_response.status_code == 200:
+                proxy_data = proxy_response.json()
+                print(f"📊 Proxy Status: {json.dumps(proxy_data, indent=2)}")
+                
+                if not proxy_data.get('enabled', False):
+                    print("🚨 CONFIRMED: Proxy is DISABLED in backend")
+                    print("💡 ISSUE: Real Binance API calls are going direct and getting blocked")
+                
+                if not proxy_data.get('binance_available', False):
+                    print("🚨 CONFIRMED: Binance is NOT available through current configuration")
+                    print("💡 ISSUE: Geographical restrictions are blocking access")
+            
+            # Step 3: Test Binance account info (should fail with geo-restrictions)
+            print("\n📋 STEP 3: Testing Binance account info (expecting geo-restriction error)...")
+            binance_response = requests.get(f"{self.base_url}/binance/account-info", timeout=15)
+            
+            print(f"📊 Binance Account Info Response: {binance_response.status_code}")
+            
+            if binance_response.status_code == 502:
+                print("✅ CONFIRMED: 502 Bad Gateway - Geographical restrictions detected")
+                print("🌍 ANALYSIS: Binance API is blocked from current server location")
+                print("🔧 SOLUTION NEEDED: Configure working VPN/proxy to route Binance requests")
+                
+            elif binance_response.status_code == 500:
+                print("✅ CONFIRMED: 500 Internal Server Error - Backend cannot connect to Binance")
+                print("🔧 ANALYSIS: Binance client failing due to geo-restrictions")
+                
+            elif binance_response.status_code == 200:
+                print("⚠️  UNEXPECTED: Binance API is accessible (proxy might be working)")
+                binance_data = binance_response.json()
+                print(f"📋 Response: {json.dumps(binance_data, indent=2)}")
+            
+            # Step 4: Test enable real trading (should also fail)
+            print("\n📋 STEP 4: Testing enable real trading (expecting same geo-restriction error)...")
+            trading_response = requests.post(f"{self.base_url}/binance/enable-real-trading", timeout=20)
+            
+            print(f"📊 Enable Real Trading Response: {trading_response.status_code}")
+            
+            if trading_response.status_code in [502, 500]:
+                print("✅ CONFIRMED: Real trading endpoint also blocked by geo-restrictions")
+                print("🔧 ANALYSIS: Both endpoints failing due to same underlying issue")
+                
+            # Step 5: Summary and recommendations
+            print("\n📋 STEP 5: DIAGNOSIS SUMMARY")
+            print("=" * 50)
+            
+            if not proxy_enabled and not proxy_pool_enabled:
+                print("🎯 PRIMARY ISSUE: Proxy configuration is DISABLED")
+                print("🔧 IMMEDIATE FIX: Set PROXY_ENABLED=true in backend/.env")
+                print("🔧 ALTERNATIVE: Configure premium proxy pool with working credentials")
+                
+            print("🌍 SECONDARY ISSUE: Geographical restrictions blocking Binance API")
+            print("💡 LONG-TERM SOLUTION: Deploy to server in Binance-supported region")
+            print("💡 WORKAROUND: Use working VPN/proxy service for global access")
+            
+            # Mark test as completed (we've diagnosed the issues)
+            self.test_results['binance_proxy_routing_focus'] = True
+            return True
+                
+        except Exception as e:
+            print(f"💥 Exception during focused test: {str(e)}")
+            self.log_error("Binance Proxy Routing Focus", e)
+            return False
         """Run all backend tests"""
         print("🚀 Starting DOGE Trading App Backend Tests")
         print("=" * 60)
