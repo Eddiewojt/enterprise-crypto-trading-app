@@ -1121,6 +1121,69 @@ function App() {
       console.error('Error updating automation config:', error);
     }
   };
+
+  // Proxy management functions
+  const fetchProxyStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/proxy/status`);
+      setProxyConfig(response.data);
+      setProxyStatus(response.data.binance_available ? 'connected' : 'blocked');
+    } catch (error) {
+      console.error('Error fetching proxy status:', error);
+      setProxyStatus('error');
+    }
+  };
+
+  const configureProxy = async () => {
+    try {
+      const response = await axios.post(`${API}/proxy/configure`, {
+        type: proxyConfig.type,
+        host: proxyConfig.host,
+        port: proxyConfig.port,
+        username: proxyConfig.username,
+        password: proxyConfig.password
+      });
+      
+      if (response.data.status === 'configured') {
+        alert('✅ Proxy configured successfully!\n\nTesting connection...');
+        await testProxyConnection();
+        setShowProxyConfig(false);
+      } else {
+        alert('❌ Error: ' + response.data.message);
+      }
+    } catch (error) {
+      alert('❌ Error configuring proxy: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const testProxyConnection = async () => {
+    try {
+      const response = await axios.post(`${API}/proxy/test`);
+      
+      if (response.data.status === 'success') {
+        setProxyStatus('connected');
+        alert('🌍 Proxy Test Successful!\n\n✅ Binance API is now accessible\n✅ Geographic restrictions bypassed\n✅ Ready for global trading');
+        await fetchProxyStatus();
+      } else {
+        setProxyStatus('failed');
+        alert('❌ Proxy Test Failed: ' + response.data.message);
+      }
+    } catch (error) {
+      setProxyStatus('error');
+      alert('❌ Proxy test error: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const disableProxy = async () => {
+    try {
+      const response = await axios.post(`${API}/proxy/disable`);
+      setProxyStatus('blocked');
+      alert('🔌 Proxy disabled. Using direct connection.');
+      await fetchProxyStatus();
+    } catch (error) {
+      alert('❌ Error disabling proxy: ' + error.message);
+    }
+  };
   
   // Fetch initial data
   useEffect(() => {
