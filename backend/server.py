@@ -2487,8 +2487,16 @@ async def execute_automated_signal(signal_data: dict):
         await db.automation_logs.insert_one(automation_log_db)
         
         # Create response-safe automation log
-        automation_log_response = automation_log_db.copy()
-        automation_log_response['executed_at'] = automation_log_response['executed_at'].isoformat()
+        automation_log_response = {
+            "id": automation_log_db["id"],
+            "symbol": automation_log_db["symbol"],
+            "action": automation_log_db["action"],
+            "quantity": automation_log_db["quantity"],
+            "price": automation_log_db["price"],
+            "signal_strength": automation_log_db["signal_strength"],
+            "executed_at": automation_log_db["executed_at"].isoformat(),
+            "user_id": automation_log_db["user_id"]
+        }
         
         return {
             "status": "executed",
