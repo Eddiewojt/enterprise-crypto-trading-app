@@ -2000,40 +2000,50 @@ function App() {
         </div>
 
         {/* Trading Bots Section */}
-        <div className="trading-bots-section">
-          <div className="section-header">
-            <h2>🤖 Automated Trading Bots</h2>
-            <button className="add-bot-btn" onClick={() => setShowBotCreator(true)}>
-              + Add Bot
-            </button>
-          </div>
+        <div className="bots-section">
+          <h2>🤖 Trading Bots Performance</h2>
           
           <div className="bots-grid">
-            {/* DCA Bot */}
-            <div className="bot-card active">
-              <div className="bot-header">
-                <h4>💎 DCA Bot - DOGE</h4>
-                <span className="bot-status active">RUNNING</span>
-              </div>
-              <div className="bot-stats">
-                <div className="stat">
-                  <span className="label">Invested:</span>
-                  <span className="value">$500.00</span>
+            {botData.map((bot, index) => (
+              <div key={index} className={`bot-card ${bot.status.toLowerCase()}`}>
+                <div className="bot-header">
+                  <h3>{bot.name}</h3>
+                  <span className={`bot-status ${bot.status.toLowerCase()}`}>
+                    {bot.status === 'NOT_TRADING' ? '⚪ NOT TRADING' : 
+                     bot.status === 'READY' ? '🟡 READY' : '🟢 RUNNING'}
+                  </span>
                 </div>
-                <div className="stat">
-                  <span className="label">Profit:</span>
-                  <span className="value positive">+$67.50 (+13.5%)</span>
+                
+                <div className="bot-metrics">
+                  <div className="profit-display">
+                    <span className="profit-label">P&L:</span>
+                    <span className={`profit-value ${bot.profit >= 0 ? 'positive' : 'negative'}`}>
+                      ${bot.profit.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="profit-percentage">
+                    <span className="pct-label">%:</span>
+                    <span className={`pct-value ${bot.profit_pct >= 0 ? 'positive' : 'negative'}`}>
+                      {bot.profit_pct >= 0 ? '+' : ''}{bot.profit_pct.toFixed(1)}%
+                    </span>
+                  </div>
+                  
+                  <div className="trades-count">
+                    <span className="trades-label">Trades Today:</span>
+                    <span className="trades-value">{bot.trades_today}</span>
+                  </div>
                 </div>
-                <div className="stat">
-                  <span className="label">Next Buy:</span>
-                  <span className="value">$50 in 2h 15m</span>
-                </div>
+                
+                {bot.message && (
+                  <div className="bot-message">
+                    {bot.message}
+                  </div>
+                )}
               </div>
-              <div className="bot-controls">
-                <button className="pause-btn">⏸️ Pause</button>
-                <button className="settings-btn">⚙️ Settings</button>
-              </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
             {/* Grid Bot */}
             <div className="bot-card active">
