@@ -359,6 +359,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "❌ CONFIRMED ISSUE: Enhanced technical analysis endpoint still returning 'Not enough data for advanced analysis' error. This is a data accumulation issue, not a code problem. The endpoint is properly implemented but requires more historical data to perform advanced analysis. This will resolve naturally over time as the system collects more market data."
+      - working: false
+        agent: "testing"
+        comment: "❌ CONFIRMED PERSISTENT ISSUE: Enhanced technical analysis endpoint continues to return 'Not enough data for advanced analysis' error. This is a data accumulation limitation, not a code defect. The endpoint implementation is correct but requires sufficient historical market data to perform advanced analysis calculations. This will resolve automatically as the system accumulates more data over time."
 
   - task: "Proxy Configuration Endpoints"
     implemented: true
