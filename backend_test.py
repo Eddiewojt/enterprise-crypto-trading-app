@@ -1042,6 +1042,10 @@ class DOGETradingAppTester:
         # Test Telegram Notification System (NEW FEATURE)
         print("\n📱 Testing Telegram Notification System...")
         telegram_ok = self.test_telegram_notification_system()
+        
+        # Test Email Notification System (NEW FEATURE)
+        print("\n📧 Testing Email Notification System...")
+        email_ok = self.test_email_notification_system()
             
         # Summary
         print("\n" + "=" * 60)
