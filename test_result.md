@@ -278,15 +278,18 @@ backend:
 
   - task: "Binance Enable Real Trading"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "testing"
         comment: "✅ ENABLE REAL TRADING IMPLEMENTED: POST /api/binance/enable-real-trading endpoint properly implemented with safety validation, notification sending, and environment variable updates. Proper response structure with status, message, and safety_limits fields. Integration with both Telegram and Email notifications for real trading activation alerts. ⚠️ Geographic Limitation: Binance API access blocked from current server location, but implementation is correct."
+      - working: false
+        agent: "testing"
+        comment: "❌ PROXY NOT RESOLVING 502 ERRORS: POST /api/binance/enable-real-trading still returns error response {'status': 'error', 'message': 'Binance client not available'} despite proxy being enabled. The 502 error mentioned in review request is NOT resolved. The proxy configuration (PROXY_ENABLED=true, demo.proxy.com:8080) is not successfully routing Binance API calls. Demo proxy credentials are insufficient for bypassing geographical restrictions."
 
   - task: "Binance Safety Settings"
     implemented: true
