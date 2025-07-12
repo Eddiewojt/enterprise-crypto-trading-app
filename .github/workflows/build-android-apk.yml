@@ -1,0 +1,211 @@
+name: 🚀 Build Android APK - Enterprise Crypto Trading App
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-android-apk.yml'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - 'release'
+          - 'debug'
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '11'
+
+jobs:
+  build-android:
+    name: 📱 Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: ☕ Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: mobile/yarn.lock
+          
+      - name: 🔧 Install Dependencies
+        working-directory: mobile
+        run: |
+          yarn install --frozen-lockfile
+          
+      - name: 🏗️ Setup Gradle Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            mobile/android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+            
+      - name: 🔐 Make Gradlew Executable
+        working-directory: mobile/android
+        run: chmod +x gradlew
+        
+      - name: 🧹 Clean Project
+        working-directory: mobile/android
+        run: ./gradlew clean
+        
+      - name: 🏗️ Build Release APK
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease
+        
+      - name: 📱 Rename APK File
+        run: |
+          mv mobile/android/app/build/outputs/apk/release/app-release.apk \
+             mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk
+             
+      - name: ✅ Verify APK Build
+        run: |
+          if [ -f "mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk" ]; then
+            echo "✅ APK Build Successful!"
+            ls -la mobile/android/app/build/outputs/apk/release/
+          else
+            echo "❌ APK Build Failed!"
+            exit 1
+          fi
+          
+      - name: 📊 APK Information
+        run: |
+          APK_PATH="mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk"
+          APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+          echo "📱 APK File: enterprise-crypto-trading-v2.0.0.apk"
+          echo "📦 APK Size: $APK_SIZE"
+          echo "🎯 Build Type: Release"
+          echo "📅 Build Date: $(date)"
+          
+      - name: 🚀 Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-crypto-trading-apk-v2.0.0
+          path: mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk
+          retention-days: 30
+          
+      - name: 📋 Create Release (on main branch)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: android-v2.0.0-${{ github.run_number }}
+          release_name: 📱 Enterprise Crypto Trading App v2.0.0 (Build ${{ github.run_number }})
+          body: |
+            🚀 **Enterprise AI Trading Platform - Android Release**
+            
+            ## 📱 Download APK
+            - **File:** enterprise-crypto-trading-v2.0.0.apk
+            - **Version:** 2.0.0 (Build ${{ github.run_number }})
+            - **Platform:** Android (API 21+)
+            - **Build Date:** ${{ github.event.head_commit.timestamp }}
+            
+            ## ✨ Features Included
+            🤖 **AI Trading Features:**
+            - Real-time price predictions (95% confidence)
+            - Advanced sentiment analysis
+            - Pattern recognition AI
+            - Smart portfolio optimization
+            
+            💼 **Professional Trading:**
+            - Live cryptocurrency prices (15+ coins)
+            - Advanced technical indicators
+            - Automated trading bots (6 strategies)
+            - Paper trading simulation
+            
+            🌾 **DeFi Integration:**
+            - Yield farming opportunities
+            - Staking rewards optimization
+            - Cross-exchange arbitrage detection
+            - Liquidity pool analysis
+            
+            📊 **Portfolio Management:**
+            - Real-time P&L tracking
+            - Performance analytics
+            - Multi-coin diversification
+            - Risk management tools
+            
+            🔔 **Smart Notifications:**
+            - Custom price alerts
+            - AI trading signals
+            - Portfolio updates
+            - Market analysis
+            
+            ## 📥 Installation Instructions
+            1. Download the APK file from the Assets section below
+            2. Enable "Install from Unknown Sources" on your Android device
+            3. Install the APK file
+            4. Launch "Enterprise Crypto Trading" app
+            5. Grant necessary permissions for full functionality
+            
+            ## ⚠️ Security Note
+            This APK is signed and safe to install. Always download from official releases only.
+            
+            ---
+            **Built with GitHub Actions | Enterprise-Grade CI/CD**
+          draft: false
+          prerelease: false
+          
+      - name: 📎 Upload APK to Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: mobile/android/app/build/outputs/apk/release/enterprise-crypto-trading-v2.0.0.apk
+          asset_name: enterprise-crypto-trading-v2.0.0.apk
+          asset_content_type: application/vnd.android.package-archive
+          
+      - name: 🎉 Build Summary
+        if: success()
+        run: |
+          echo "🎉 Android APK Build Completed Successfully!"
+          echo ""
+          echo "📱 APK Details:"
+          echo "   - Name: enterprise-crypto-trading-v2.0.0.apk"
+          echo "   - Platform: Android (API 21+)"
+          echo "   - Build: Release"
+          echo "   - Architecture: Universal"
+          echo ""
+          echo "📥 Download Options:"
+          echo "   1. Artifacts section (30 day retention)"
+          echo "   2. Release section (permanent)"
+          echo ""
+          echo "✅ Ready for testing and distribution!"
+          
+      - name: ❌ Build Failure Notification
+        if: failure()
+        run: |
+          echo "❌ Android APK Build Failed!"
+          echo ""
+          echo "🔍 Check the following:"
+          echo "   - Gradle build logs above"
+          echo "   - Dependencies compatibility"
+          echo "   - Android SDK configuration"
+          echo ""
+          echo "💡 Common fixes:"
+          echo "   - Update dependencies in mobile/package.json"
+          echo "   - Check Android SDK versions"
+          echo "   - Verify Gradle configuration"
