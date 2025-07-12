@@ -62,7 +62,7 @@ SUPPORTED_COINS = [
 PROXY_POOL = []
 
 def initialize_proxy_pool():
-    """Initialize premium proxy pool with multiple providers"""
+    """Initialize enterprise proxy pool with multiple premium providers"""
     global PROXY_POOL
     PROXY_POOL = []
     
@@ -70,7 +70,7 @@ def initialize_proxy_pool():
     if not pool_enabled:
         return
     
-    # Smartproxy (Residential)
+    # Smartproxy (Primary) - Most reliable for crypto trading
     if os.environ.get('SMARTPROXY_USER') and os.environ.get('SMARTPROXY_PASS'):
         PROXY_POOL.append({
             'name': 'Smartproxy',
@@ -79,10 +79,11 @@ def initialize_proxy_pool():
             'port': os.environ.get('SMARTPROXY_PORT'),
             'username': os.environ.get('SMARTPROXY_USER'),
             'password': os.environ.get('SMARTPROXY_PASS'),
-            'priority': 1
+            'priority': 1,
+            'description': 'Primary: 65M+ IPs, crypto-optimized'
         })
     
-    # Bright Data (Premium)
+    # Bright Data (Enterprise) - Fortune 500 trusted
     if os.environ.get('BRIGHTDATA_USER') and os.environ.get('BRIGHTDATA_PASS'):
         PROXY_POOL.append({
             'name': 'BrightData',
@@ -91,10 +92,11 @@ def initialize_proxy_pool():
             'port': os.environ.get('BRIGHTDATA_PORT'),
             'username': os.environ.get('BRIGHTDATA_USER'),
             'password': os.environ.get('BRIGHTDATA_PASS'),
-            'priority': 2
+            'priority': 2,
+            'description': 'Enterprise: 72M+ IPs, ML-driven'
         })
     
-    # Oxylabs (Enterprise)
+    # Oxylabs (Premium) - 100M+ IPs
     if os.environ.get('OXYLABS_USER') and os.environ.get('OXYLABS_PASS'):
         PROXY_POOL.append({
             'name': 'Oxylabs',
@@ -103,10 +105,41 @@ def initialize_proxy_pool():
             'port': os.environ.get('OXYLABS_PORT'),
             'username': os.environ.get('OXYLABS_USER'),
             'password': os.environ.get('OXYLABS_PASS'),
-            'priority': 3
+            'priority': 3,
+            'description': 'Premium: 100M+ IPs, enterprise-grade'
         })
     
-    logging.info(f"Initialized proxy pool with {len(PROXY_POOL)} providers")
+    # IPRoyal (Backup) - High performance
+    if os.environ.get('IPROYAL_USER') and os.environ.get('IPROYAL_PASS'):
+        PROXY_POOL.append({
+            'name': 'IPRoyal',
+            'type': 'http',
+            'host': os.environ.get('IPROYAL_HOST'),
+            'port': os.environ.get('IPROYAL_PORT'),
+            'username': os.environ.get('IPROYAL_USER'),
+            'password': os.environ.get('IPROYAL_PASS'),
+            'priority': 4,
+            'description': 'Backup: 2M+ IPs, high-speed'
+        })
+    
+    # Proxy-Seller (Failover) - Dynamic IPs
+    if os.environ.get('PROXYSELLER_USER') and os.environ.get('PROXYSELLER_PASS'):
+        PROXY_POOL.append({
+            'name': 'ProxySeller',
+            'type': 'http',
+            'host': os.environ.get('PROXYSELLER_HOST'),
+            'port': os.environ.get('PROXYSELLER_PORT'),
+            'username': os.environ.get('PROXYSELLER_USER'),
+            'password': os.environ.get('PROXYSELLER_PASS'),
+            'priority': 5,
+            'description': 'Failover: 200+ countries, dynamic'
+        })
+    
+    logging.info(f"Enterprise proxy pool initialized with {len(PROXY_POOL)} premium providers")
+    
+    # Log provider details for transparency
+    for proxy in PROXY_POOL:
+        logging.info(f"✅ {proxy['name']}: Priority {proxy['priority']} - {proxy['description']}")
 
 def get_active_proxy():
     """Get the best available proxy from the pool"""
