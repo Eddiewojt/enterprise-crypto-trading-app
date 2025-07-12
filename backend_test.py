@@ -944,6 +944,19 @@ class DOGETradingAppTester:
         # Test Portfolio Management
         print("\n💼 Testing Portfolio Management...")
         portfolio_ok = self.test_portfolio_management()
+        
+        # Test Automation Features (NEW ENTERPRISE FEATURES)
+        print("\n⚙️ Testing Automation Configuration...")
+        automation_config_ok = self.test_automation_configuration()
+        
+        print("\n📋 Testing Automation Rules...")
+        automation_rules_ok = self.test_automation_rules()
+        
+        print("\n🤖 Testing Automation Execution...")
+        automation_execution_ok = self.test_automation_execution()
+        
+        print("\n📊 Testing Automation Logs...")
+        automation_logs_ok = self.test_automation_logs()
             
         # Summary
         print("\n" + "=" * 60)
