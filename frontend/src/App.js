@@ -1188,6 +1188,7 @@ function App() {
   // Fetch initial data
   useEffect(() => {
     fetchMultiCoinData();
+    fetchProxyStatus();
   }, []);
   
   // Setup WebSocket connection
