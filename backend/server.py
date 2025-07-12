@@ -258,13 +258,29 @@ def start_binance_websocket():
     if not is_websocket_running:
         is_websocket_running = True
         
-        def websocket_thread():
+        async def websocket_coroutine():
             try:
                 bm = BinanceSocketManager(binance_client)
-                conn_key = bm.start_symbol_ticker_socket('DOGEUSDT', handle_socket_message)
-                bm.start()
+                ts = bm.symbol_ticker_socket('DOGEUSDT')
+                
+                async with ts as tscm:
+                    while True:
+                        res = await tscm.recv()
+                        handle_socket_message(res)
+                        
             except Exception as e:
                 logging.error(f"WebSocket error: {e}")
+                global is_websocket_running
+                is_websocket_running = False
+        
+        def websocket_thread():
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(websocket_coroutine())
+            except Exception as e:
+                logging.error(f"WebSocket thread error: {e}")
+                global is_websocket_running
                 is_websocket_running = False
         
         thread = threading.Thread(target=websocket_thread, daemon=True)
