@@ -25,6 +25,9 @@ from email.mime.multipart import MIMEMultipart
 import httpx
 import requests
 
+# Import our AI/ML Engine
+from ml_engine import ml_engine
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
