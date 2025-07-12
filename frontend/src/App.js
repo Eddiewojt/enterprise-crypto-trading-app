@@ -1100,6 +1100,18 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const wsRef = useRef(null);
   
+  // Automation functions
+  const updateAutomationConfig = async (updates) => {
+    try {
+      const updatedConfig = { ...automationConfig, ...updates };
+      // Send to backend
+      await axios.put(`${API}/automation/config`, updatedConfig);
+      setAutomationConfig(updatedConfig);
+    } catch (error) {
+      console.error('Error updating automation config:', error);
+    }
+  };
+  
   // Fetch initial data
   useEffect(() => {
     fetchMultiCoinData();
