@@ -233,6 +233,327 @@ class DOGETradingAppTester:
             self.log_error("WebSocket Connection", e)
             return False
             
+    def test_backtesting_engine(self):
+        """Test comprehensive backtesting functionality"""
+        try:
+            print("\n🔬 Testing Backtesting Engine...")
+            
+            # Test 1: DOGE with combined strategy (past 6 months)
+            backtest_request_1 = {
+                "symbol": "doge",
+                "timeframe": "15m",
+                "start_date": "2024-07-01",
+                "end_date": "2025-01-01",
+                "strategy": "combined",
+                "initial_capital": 10000.0
+            }
+            
+            response = requests.post(f"{self.base_url}/backtest", 
+                                   json=backtest_request_1, 
+                                   timeout=30)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Validate response structure
+                required_fields = [
+                    'symbol', 'strategy', 'timeframe', 'start_date', 'end_date',
+                    'initial_capital', 'final_capital', 'total_return', 'total_return_percentage',
+                    'total_trades', 'winning_trades', 'losing_trades', 'win_rate',
+                    'max_drawdown', 'sharpe_ratio', 'trades'
+                ]
+                
+                if all(field in data for field in required_fields):
+                    # Validate data types and ranges
+                    if (isinstance(data['initial_capital'], (int, float)) and
+                        isinstance(data['final_capital'], (int, float)) and
+                        isinstance(data['total_return'], (int, float)) and
+                        isinstance(data['total_trades'], int) and
+                        isinstance(data['trades'], list) and
+                        data['symbol'] == 'DOGEUSDT' and
+                        data['strategy'] == 'combined'):
+                        
+                        self.log_success("Backtest DOGE Combined Strategy", 
+                                       f"Return: {data['total_return_percentage']:.2f}%, Trades: {data['total_trades']}")
+                        
+                        # Test 2: BTC with RSI strategy
+                        backtest_request_2 = {
+                            "symbol": "btc",
+                            "timeframe": "1h",
+                            "start_date": "2024-07-01",
+                            "end_date": "2025-01-01",
+                            "strategy": "rsi",
+                            "initial_capital": 50000.0
+                        }
+                        
+                        response_2 = requests.post(f"{self.base_url}/backtest", 
+                                                 json=backtest_request_2, 
+                                                 timeout=30)
+                        
+                        if response_2.status_code == 200:
+                            data_2 = response_2.json()
+                            if all(field in data_2 for field in required_fields):
+                                self.log_success("Backtest BTC RSI Strategy", 
+                                               f"Return: {data_2['total_return_percentage']:.2f}%, Trades: {data_2['total_trades']}")
+                                
+                                # Test 3: ETH with MACD strategy
+                                backtest_request_3 = {
+                                    "symbol": "eth",
+                                    "timeframe": "4h",
+                                    "start_date": "2024-07-01",
+                                    "end_date": "2025-01-01",
+                                    "strategy": "macd",
+                                    "initial_capital": 25000.0
+                                }
+                                
+                                response_3 = requests.post(f"{self.base_url}/backtest", 
+                                                         json=backtest_request_3, 
+                                                         timeout=30)
+                                
+                                if response_3.status_code == 200:
+                                    data_3 = response_3.json()
+                                    if all(field in data_3 for field in required_fields):
+                                        self.log_success("Backtest ETH MACD Strategy", 
+                                                       f"Return: {data_3['total_return_percentage']:.2f}%, Trades: {data_3['total_trades']}")
+                                        
+                                        # Validate trade history structure
+                                        if len(data['trades']) > 0:
+                                            trade = data['trades'][0]
+                                            trade_fields = ['timestamp', 'side', 'price', 'quantity', 'value']
+                                            if all(field in trade for field in trade_fields):
+                                                self.log_success("Trade History Validation", 
+                                                               f"Trade format valid: {trade['side']} at ${trade['price']}")
+                                                self.test_results['backtesting_engine'] = True
+                                                return True
+                                        else:
+                                            # No trades is also valid for some strategies
+                                            self.log_success("Backtesting Engine", "All strategies tested successfully")
+                                            self.test_results['backtesting_engine'] = True
+                                            return True
+                                            
+                self.log_error("Backtesting Engine", f"Invalid response format: {data}")
+                return False
+            else:
+                self.log_error("Backtesting Engine", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Backtesting Engine", e)
+            return False
+            
+    def test_backtest_edge_cases(self):
+        """Test backtesting edge cases and error handling"""
+        try:
+            print("\n🧪 Testing Backtest Edge Cases...")
+            
+            # Test invalid symbol
+            invalid_request = {
+                "symbol": "invalid_coin",
+                "timeframe": "15m",
+                "start_date": "2024-07-01",
+                "end_date": "2025-01-01",
+                "strategy": "rsi",
+                "initial_capital": 10000.0
+            }
+            
+            response = requests.post(f"{self.base_url}/backtest", 
+                                   json=invalid_request, 
+                                   timeout=15)
+            
+            if response.status_code == 400:
+                self.log_success("Invalid Symbol Handling", "Correctly rejected invalid symbol")
+            else:
+                self.log_error("Invalid Symbol Handling", f"Expected 400, got {response.status_code}")
+                
+            # Test invalid strategy
+            invalid_strategy = {
+                "symbol": "doge",
+                "timeframe": "15m",
+                "start_date": "2024-07-01",
+                "end_date": "2025-01-01",
+                "strategy": "invalid_strategy",
+                "initial_capital": 10000.0
+            }
+            
+            response = requests.post(f"{self.base_url}/backtest", 
+                                   json=invalid_strategy, 
+                                   timeout=15)
+            
+            # Should either reject or handle gracefully
+            if response.status_code in [400, 500]:
+                self.log_success("Invalid Strategy Handling", f"Handled invalid strategy (status: {response.status_code})")
+            else:
+                self.log_error("Invalid Strategy Handling", f"Unexpected status: {response.status_code}")
+                
+            return True
+            
+        except Exception as e:
+            self.log_error("Backtest Edge Cases", e)
+            return False
+            
+    def test_backtest_results_storage(self):
+        """Test backtest results storage and retrieval"""
+        try:
+            print("\n💾 Testing Backtest Results Storage...")
+            
+            # First run a backtest to ensure we have data
+            backtest_request = {
+                "symbol": "doge",
+                "timeframe": "15m",
+                "start_date": "2024-07-01",
+                "end_date": "2025-01-01",
+                "strategy": "rsi",
+                "initial_capital": 5000.0
+            }
+            
+            # Run backtest
+            response = requests.post(f"{self.base_url}/backtest", 
+                                   json=backtest_request, 
+                                   timeout=30)
+            
+            if response.status_code == 200:
+                # Now test results retrieval
+                results_response = requests.get(f"{self.base_url}/backtest/results", timeout=15)
+                
+                if results_response.status_code == 200:
+                    results_data = results_response.json()
+                    
+                    if isinstance(results_data, list):
+                        self.log_success("Backtest Results Retrieval", f"Retrieved {len(results_data)} results")
+                        
+                        if len(results_data) > 0:
+                            result = results_data[0]
+                            required_fields = ['symbol', 'strategy', 'timeframe', 'total_return_percentage']
+                            
+                            if all(field in result for field in required_fields):
+                                self.log_success("Results Data Validation", 
+                                               f"Latest result: {result['symbol']} {result['strategy']}")
+                                self.test_results['backtest_results_storage'] = True
+                                return True
+                        else:
+                            self.log_success("Backtest Results Storage", "Results endpoint working (no data yet)")
+                            self.test_results['backtest_results_storage'] = True
+                            return True
+                            
+                    self.log_error("Backtest Results Storage", f"Invalid results format: {results_data}")
+                    return False
+                else:
+                    self.log_error("Backtest Results Storage", f"HTTP {results_response.status_code}")
+                    return False
+            else:
+                self.log_error("Backtest Results Storage", "Failed to run initial backtest")
+                return False
+                
+        except Exception as e:
+            self.log_error("Backtest Results Storage", e)
+            return False
+            
+    def test_multi_coin_support(self):
+        """Test multi-coin support functionality"""
+        try:
+            print("\n🪙 Testing Multi-Coin Support...")
+            
+            # Test supported coins endpoint
+            response = requests.get(f"{self.base_url}/supported-coins", timeout=15)
+            
+            if response.status_code == 200:
+                coins_data = response.json()
+                
+                if isinstance(coins_data, list) and len(coins_data) > 0:
+                    self.log_success("Supported Coins", f"Found {len(coins_data)} supported coins")
+                    
+                    # Test multi-coin prices
+                    prices_response = requests.get(f"{self.base_url}/multi-coin/prices", timeout=15)
+                    
+                    if prices_response.status_code == 200:
+                        prices_data = prices_response.json()
+                        
+                        if isinstance(prices_data, dict) and len(prices_data) > 0:
+                            self.log_success("Multi-Coin Prices", f"Retrieved prices for {len(prices_data)} coins")
+                            
+                            # Test individual coin endpoints
+                            test_coins = ['btc', 'eth', 'doge']
+                            successful_tests = 0
+                            
+                            for coin in test_coins:
+                                coin_response = requests.get(f"{self.base_url}/{coin}/price", timeout=10)
+                                if coin_response.status_code == 200:
+                                    coin_data = coin_response.json()
+                                    if 'symbol' in coin_data and 'price' in coin_data:
+                                        successful_tests += 1
+                                        
+                            if successful_tests >= 2:
+                                self.log_success("Individual Coin Endpoints", f"Tested {successful_tests}/{len(test_coins)} coins")
+                                self.test_results['multi_coin_support'] = True
+                                return True
+                                
+                self.log_error("Multi-Coin Support", "Invalid response format")
+                return False
+            else:
+                self.log_error("Multi-Coin Support", f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Multi-Coin Support", e)
+            return False
+            
+    def test_portfolio_management(self):
+        """Test portfolio management functionality"""
+        try:
+            print("\n💼 Testing Portfolio Management...")
+            
+            # Test portfolio endpoint
+            portfolio_response = requests.get(f"{self.base_url}/portfolio", timeout=15)
+            
+            if portfolio_response.status_code == 200:
+                portfolio_data = portfolio_response.json()
+                
+                if 'holdings' in portfolio_data and 'summary' in portfolio_data:
+                    self.log_success("Portfolio Retrieval", "Portfolio structure valid")
+                    
+                    # Test paper trade execution
+                    trade_request = {
+                        "symbol": "DOGEUSDT",
+                        "side": "BUY",
+                        "quantity": 1000.0,
+                        "price": None  # Use current market price
+                    }
+                    
+                    trade_response = requests.post(f"{self.base_url}/portfolio/trade", 
+                                                 json=trade_request, 
+                                                 timeout=15)
+                    
+                    if trade_response.status_code == 200:
+                        trade_data = trade_response.json()
+                        
+                        if 'trade_id' in trade_data and 'total_value' in trade_data:
+                            self.log_success("Paper Trade Execution", 
+                                           f"Trade executed: {trade_data['side']} {trade_data['quantity']} {trade_data['symbol']}")
+                            
+                            # Test trade history
+                            history_response = requests.get(f"{self.base_url}/portfolio/trades", timeout=15)
+                            
+                            if history_response.status_code == 200:
+                                history_data = history_response.json()
+                                
+                                if 'trades' in history_data and isinstance(history_data['trades'], list):
+                                    self.log_success("Trade History", f"Retrieved {len(history_data['trades'])} trades")
+                                    self.test_results['portfolio_management'] = True
+                                    return True
+                                    
+                    self.log_error("Portfolio Management", "Trade execution failed")
+                    return False
+                    
+                self.log_error("Portfolio Management", "Invalid portfolio format")
+                return False
+            else:
+                self.log_error("Portfolio Management", f"HTTP {portfolio_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Portfolio Management", e)
+            return False
+            
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting DOGE Trading App Backend Tests")
