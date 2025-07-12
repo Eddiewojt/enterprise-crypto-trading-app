@@ -1351,11 +1351,58 @@ function App() {
                     
                     <div className="execution-status">
                       {autoExecute ? (
-                        <div className="auto-executing">
+                        <div 
+                          className="auto-executing"
+                          onClick={async () => {
+                            try {
+                              const tradeData = {
+                                symbol: symbol,
+                                signal_type: signalType,
+                                strength: signalStrength
+                              };
+                              
+                              const response = await axios.post(`${API}/binance/execute-real-trade`, tradeData);
+                              
+                              if (response.data.status === 'executed') {
+                                alert(`✅ REAL TRADE EXECUTED!\n\n${response.data.message}\n\nOrder ID: ${response.data.binance_order?.orderId}`);
+                              } else if (response.data.status === 'disabled') {
+                                alert('⚠️ Real trading is disabled. Enable it first using the "ENABLE REAL TRADING" button.');
+                              } else {
+                                alert(`ℹ️ ${response.data.message}`);
+                              }
+                            } catch (error) {
+                              alert('❌ Trade failed: ' + (error.response?.data?.message || error.message));
+                            }
+                          }}
+                        >
                           ⚡ AUTO EXECUTING
                         </div>
                       ) : signalStrength >= 70 ? (
-                        <button className="manual-execute">
+                        <button 
+                          className="manual-execute"
+                          onClick={async () => {
+                            const confirmed = window.confirm(`Execute ${signalType} order for ${coinName}?\n\nThis will use real money if real trading is enabled.`);
+                            if (confirmed) {
+                              try {
+                                const tradeData = {
+                                  symbol: symbol,
+                                  signal_type: signalType,
+                                  strength: signalStrength
+                                };
+                                
+                                const response = await axios.post(`${API}/binance/execute-real-trade`, tradeData);
+                                
+                                if (response.data.status === 'executed') {
+                                  alert(`✅ TRADE EXECUTED!\n\n${response.data.message}\n\nOrder ID: ${response.data.binance_order?.orderId}`);
+                                } else {
+                                  alert(`ℹ️ ${response.data.message}`);
+                                }
+                              } catch (error) {
+                                alert('❌ Trade failed: ' + (error.response?.data?.message || error.message));
+                              }
+                            }
+                          }}
+                        >
                           🚀 Execute
                         </button>
                       ) : (
