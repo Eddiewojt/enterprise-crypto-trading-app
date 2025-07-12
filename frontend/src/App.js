@@ -1401,6 +1401,38 @@ function App() {
   
   return (
     <div className="app">
+      {/* Notification System */}
+      {notification && (
+        <div className={`notification ${notification.type}`} style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: notification.type === 'success' ? '#059669' : '#dc2626',
+          color: 'white',
+          padding: '1rem 1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          zIndex: 10000,
+          fontWeight: '600',
+          maxWidth: '400px'
+        }}>
+          {notification.message}
+          <button 
+            onClick={() => setNotification(null)}
+            style={{
+              marginLeft: '10px',
+              background: 'transparent',
+              border: 'none',
+              color: 'white',
+              fontSize: '18px',
+              cursor: 'pointer'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      
       <main className="automation-platform">
         <div className="header">
           <h1>🤖 Automated Trading Platform</h1>
