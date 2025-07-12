@@ -1089,6 +1089,15 @@ function App() {
   const [selectedTimeframe, setSelectedTimeframe] = useState('15m');
   const [activeTab, setActiveTab] = useState('ai-trading');
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [automationConfig, setAutomationConfig] = useState({
+    auto_trading_enabled: false,
+    max_trade_amount: 1000,
+    risk_level: 'medium',
+    stop_loss_enabled: true,
+    take_profit_enabled: true
+  });
+  const [showBotCreator, setShowBotCreator] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const wsRef = useRef(null);
   
   // Fetch initial data
