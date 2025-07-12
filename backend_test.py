@@ -1389,6 +1389,14 @@ class DOGETradingAppTester:
         # Test Email Notification System (NEW FEATURE)
         print("\n📧 Testing Email Notification System...")
         email_ok = self.test_email_notification_system()
+        
+        # Test Binance Real Trading Integration (CRITICAL NEW FEATURE)
+        print("\n🚨 Testing Binance Real Trading Integration...")
+        binance_account_ok = self.test_binance_account_connection()
+        binance_enable_ok = self.test_binance_enable_real_trading()
+        binance_safety_ok = self.test_binance_safety_settings()
+        binance_trade_ok = self.test_binance_execute_real_trade()
+        binance_notifications_ok = self.test_binance_notification_system()
             
         # Summary
         print("\n" + "=" * 60)
