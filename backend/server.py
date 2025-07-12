@@ -3411,6 +3411,156 @@ async def get_proxy_pool_status():
     except Exception as e:
         return {'status': 'error', 'message': f'Error getting proxy status: {str(e)}'}
 
+# =================== PERSISTENT STATE MANAGEMENT ===================
+
+@api_router.get("/state/trading")
+async def get_trading_state():
+    """Get current trading state (auto/manual)"""
+    try:
+        trading_mode = os.environ.get('TRADING_MODE', 'manual')
+        master_switch = os.environ.get('MASTER_TRADING_SWITCH', 'disabled')
+        bots_active = os.environ.get('BOTS_ACTIVE', 'false').lower() == 'true'
+        auto_execution = os.environ.get('AUTO_EXECUTION', 'false').lower() == 'true'
+        
+        return {
+            "trading_mode": trading_mode,
+            "master_switch": master_switch,
+            "bots_active": bots_active,
+            "auto_execution": auto_execution,
+            "real_trading_enabled": os.environ.get('BINANCE_REAL_TRADING_ENABLED', 'false').lower() == 'true'
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+@api_router.post("/state/trading/save")
+async def save_trading_state(state: dict):
+    """Save trading state to persist across app restarts"""
+    try:
+        # Save to environment variables (persistent)
+        os.environ['TRADING_MODE'] = state.get('trading_mode', 'manual')
+        os.environ['MASTER_TRADING_SWITCH'] = state.get('master_switch', 'disabled')
+        os.environ['BOTS_ACTIVE'] = str(state.get('bots_active', False)).lower()
+        os.environ['AUTO_EXECUTION'] = str(state.get('auto_execution', False)).lower()
+        
+        # Update .env file for permanent persistence
+        env_path = '/app/backend/.env'
+        with open(env_path, 'r') as f:
+            lines = f.readlines()
+        
+        # Update specific lines
+        updated_lines = []
+        found_trading_mode = False
+        found_master_switch = False
+        found_bots_active = False
+        found_auto_execution = False
+        
+        for line in lines:
+            if line.startswith('TRADING_MODE='):
+                updated_lines.append(f'TRADING_MODE="{state.get("trading_mode", "manual")}"\n')
+                found_trading_mode = True
+            elif line.startswith('MASTER_TRADING_SWITCH='):
+                updated_lines.append(f'MASTER_TRADING_SWITCH="{state.get("master_switch", "disabled")}"\n')
+                found_master_switch = True
+            elif line.startswith('BOTS_ACTIVE='):
+                updated_lines.append(f'BOTS_ACTIVE="{str(state.get("bots_active", False)).lower()}"\n')
+                found_bots_active = True
+            elif line.startswith('AUTO_EXECUTION='):
+                updated_lines.append(f'AUTO_EXECUTION="{str(state.get("auto_execution", False)).lower()}"\n')
+                found_auto_execution = True
+            else:
+                updated_lines.append(line)
+        
+        # Add missing variables if not found
+        if not found_trading_mode:
+            updated_lines.append(f'TRADING_MODE="{state.get("trading_mode", "manual")}"\n')
+        if not found_master_switch:
+            updated_lines.append(f'MASTER_TRADING_SWITCH="{state.get("master_switch", "disabled")}"\n')
+        if not found_bots_active:
+            updated_lines.append(f'BOTS_ACTIVE="{str(state.get("bots_active", False)).lower()}"\n')
+        if not found_auto_execution:
+            updated_lines.append(f'AUTO_EXECUTION="{str(state.get("auto_execution", False)).lower()}"\n')
+        
+        # Write back to file
+        with open(env_path, 'w') as f:
+            f.writelines(updated_lines)
+        
+        logging.info(f"Trading state saved: {state}")
+        
+        return {
+            "status": "saved",
+            "message": "Trading state saved successfully",
+            "state": state
+        }
+        
+    except Exception as e:
+        logging.error(f"Error saving trading state: {e}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.post("/trading/execute-signal")
+async def execute_trading_signal(signal_data: dict):
+    """Execute a real trading signal"""
+    try:
+        # Check if auto execution is enabled
+        auto_execution = os.environ.get('AUTO_EXECUTION', 'false').lower() == 'true'
+        if not auto_execution:
+            return {"status": "skipped", "message": "Auto execution disabled"}
+        
+        symbol = signal_data.get('symbol', 'DOGEUSDT')
+        signal_type = signal_data.get('signal_type', 'BUY')
+        amount = float(signal_data.get('amount', 100))
+        
+        # For demo mode, simulate trade execution
+        demo_mode = os.environ.get('DEMO_TRADING_MODE', 'false').lower() == 'true'
+        
+        if demo_mode or not BINANCE_AVAILABLE:
+            # Simulate trade execution
+            trade_result = {
+                "trade_id": f"DEMO_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+                "symbol": symbol,
+                "side": signal_type,
+                "amount": amount,
+                "price": signal_data.get('price', 0.08234),
+                "status": "FILLED",
+                "timestamp": datetime.utcnow().isoformat(),
+                "demo": True
+            }
+            
+            # Log the simulated trade
+            logging.info(f"✅ DEMO TRADE EXECUTED: {signal_type} {amount} {symbol} at ${trade_result['price']}")
+            
+            # Send notifications
+            if signal_type == 'BUY':
+                await send_telegram_notification(
+                    f"🤖 AUTO BUY EXECUTED\n\n"
+                    f"💰 Symbol: {symbol}\n"
+                    f"📊 Amount: ${amount}\n"
+                    f"💎 Price: ${trade_result['price']}\n"
+                    f"⏰ Time: {datetime.utcnow().strftime('%H:%M:%S')}\n"
+                    f"🎯 Mode: Demo Trading"
+                )
+            else:
+                await send_telegram_notification(
+                    f"🤖 AUTO SELL EXECUTED\n\n"
+                    f"💰 Symbol: {symbol}\n"
+                    f"📊 Amount: ${amount}\n"
+                    f"💎 Price: ${trade_result['price']}\n"
+                    f"⏰ Time: {datetime.utcnow().strftime('%H:%M:%S')}\n"
+                    f"🎯 Mode: Demo Trading"
+                )
+            
+            return {
+                "status": "executed",
+                "trade": trade_result,
+                "message": f"Demo trade executed: {signal_type} {symbol}"
+            }
+        
+        # Real trading execution would go here
+        return {"status": "demo", "message": "Real trading requires geographic access"}
+        
+    except Exception as e:
+        logging.error(f"Error executing trading signal: {e}")
+        return {"status": "error", "message": str(e)}
+
 # =================== PROXY MANAGEMENT ===================
 
 @api_router.post("/proxy/configure")
