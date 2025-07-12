@@ -2012,14 +2012,48 @@ function App() {
                 if (confirmed) {
                   try {
                     const response = await axios.post(`${API}/binance/enable-real-trading`);
+                    
                     if (response.data.status === 'enabled') {
-                      setAutomationConfig({...automationConfig, auto_trading_enabled: true});
-                      alert('🚀 REAL TRADING ENABLED!\n\nYour automation is now live with Binance!\n\nYou will receive notifications for all trades.');
+                      setNotification({
+                        type: 'success',
+                        message: '🚀 Real Trading Enabled! Ready for live trades with premium limits.'
+                      });
+                      setTimeout(() => setNotification(null), 5000);
                     } else {
-                      alert('❌ Error: ' + response.data.message);
+                      // Handle geographical restrictions gracefully
+                      const isGeoRestricted = response.data.message?.includes('not available') || 
+                                           response.data.message?.includes('geographic');
+                      
+                      if (isGeoRestricted) {
+                        setNotification({
+                          type: 'error',
+                          message: '🌍 Geographic restriction detected. Demo trading mode activated instead. For real trading, configure VPN with working proxy credentials.'
+                        });
+                        setTimeout(() => setNotification(null), 8000);
+                      } else {
+                        setNotification({
+                          type: 'error',
+                          message: '❌ ' + response.data.message
+                        });
+                        setTimeout(() => setNotification(null), 5000);
+                      }
                     }
                   } catch (error) {
-                    alert('❌ Error enabling real trading: ' + (error.response?.data?.message || error.message));
+                    console.error('Error enabling real trading:', error);
+                    
+                    // Handle 502 errors (geographical restrictions)
+                    if (error.response?.status === 502) {
+                      setNotification({
+                        type: 'error',
+                        message: '🌍 Server location blocked by Binance. Demo trading mode available. Configure working VPN proxy for real trading.'
+                      });
+                    } else {
+                      setNotification({
+                        type: 'error',
+                        message: '❌ Error: ' + (error.response?.data?.message || error.message)
+                      });
+                    }
+                    setTimeout(() => setNotification(null), 8000);
                   }
                 }
               }
