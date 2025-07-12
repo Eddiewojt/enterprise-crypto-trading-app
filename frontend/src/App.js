@@ -1368,6 +1368,138 @@ function App() {
           </div>
         </div>
 
+        {/* Premium AI Analysis Section */}
+        <div className="premium-ai-section">
+          <h2>🤖 Premium AI Market Analysis</h2>
+          
+          <div className="ai-analysis-grid">
+            {/* AI Analysis Card */}
+            {aiAnalysis && (
+              <div className="ai-analysis-card">
+                <h3>🧠 AI Intelligence</h3>
+                <div className="ai-providers">
+                  {Object.entries(aiAnalysis.ai_analysis).map(([provider, analysis]) => (
+                    <div key={provider} className="ai-provider">
+                      <div className="provider-header">
+                        <span className="provider-name">{analysis.provider}</span>
+                        <span className="confidence-score">{analysis.confidence}% confidence</span>
+                      </div>
+                      <div className="analysis-content">
+                        {analysis.analysis.split('\n').map((line, i) => (
+                          <p key={i}>{line}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Market Sentiment Card */}
+            {marketSentiment && (
+              <div className="sentiment-card">
+                <h3>📰 Market Sentiment</h3>
+                <div className="sentiment-overview">
+                  <div className="sentiment-score">
+                    <span className={`sentiment-indicator ${marketSentiment.overall_sentiment.toLowerCase()}`}>
+                      {marketSentiment.overall_sentiment === 'BULLISH' ? '🐂' : 
+                       marketSentiment.overall_sentiment === 'BEARISH' ? '🐻' : '⚡'}
+                    </span>
+                    <div className="sentiment-details">
+                      <div className="sentiment-title">{marketSentiment.overall_sentiment}</div>
+                      <div className="sentiment-percentage">{marketSentiment.sentiment_score}%</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="news-headlines">
+                  <h4>Latest Headlines ({marketSentiment.news_count})</h4>
+                  {marketSentiment.headlines.slice(0, 3).map((headline, i) => (
+                    <div key={i} className="headline">
+                      <div className="headline-title">{headline.title}</div>
+                      <div className="headline-meta">
+                        <span className="source">{headline.source}</span>
+                        <span className={`headline-sentiment ${headline.sentiment.toLowerCase()}`}>
+                          {headline.sentiment}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Enhanced Signals Card */}
+            {aiAnalysis && aiAnalysis.enhanced_signals && (
+              <div className="enhanced-signals-card">
+                <h3>⚡ Enhanced Technical Signals</h3>
+                
+                <div className="trend-analysis">
+                  <h4>📈 Multi-Timeframe Trend</h4>
+                  <div className="trend-indicators">
+                    <div className="trend-item">
+                      <span className="timeframe">Short-term:</span>
+                      <span className={`trend ${aiAnalysis.enhanced_signals.trend_analysis.short_term.toLowerCase()}`}>
+                        {aiAnalysis.enhanced_signals.trend_analysis.short_term}
+                      </span>
+                    </div>
+                    <div className="trend-item">
+                      <span className="timeframe">Medium-term:</span>
+                      <span className={`trend ${aiAnalysis.enhanced_signals.trend_analysis.medium_term.toLowerCase()}`}>
+                        {aiAnalysis.enhanced_signals.trend_analysis.medium_term}
+                      </span>
+                    </div>
+                    <div className="trend-item">
+                      <span className="timeframe">Long-term:</span>
+                      <span className={`trend ${aiAnalysis.enhanced_signals.trend_analysis.long_term.toLowerCase()}`}>
+                        {aiAnalysis.enhanced_signals.trend_analysis.long_term}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="key-levels">
+                  <h4>🎯 Key Price Levels</h4>
+                  <div className="levels-grid">
+                    <div className="level-group">
+                      <span className="level-title">Resistance:</span>
+                      {aiAnalysis.enhanced_signals.key_levels.resistance.map((level, i) => (
+                        <span key={i} className="resistance-level">${level.toFixed(6)}</span>
+                      ))}
+                    </div>
+                    <div className="level-group">
+                      <span className="level-title">Support:</span>
+                      {aiAnalysis.enhanced_signals.key_levels.support.map((level, i) => (
+                        <span key={i} className="support-level">${level.toFixed(6)}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="momentum-indicators">
+                  <h4>📊 Momentum Analysis</h4>
+                  <div className="momentum-grid">
+                    <div className="momentum-item">
+                      <span className="indicator">RSI(14):</span>
+                      <span className="value">{aiAnalysis.enhanced_signals.momentum.rsi_14}</span>
+                    </div>
+                    <div className="momentum-item">
+                      <span className="indicator">MACD:</span>
+                      <span className={`signal ${aiAnalysis.enhanced_signals.momentum.macd_signal.toLowerCase()}`}>
+                        {aiAnalysis.enhanced_signals.momentum.macd_signal}
+                      </span>
+                    </div>
+                    <div className="momentum-item">
+                      <span className="indicator">Volume:</span>
+                      <span className="trend">{aiAnalysis.enhanced_signals.momentum.volume_trend}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Trading Bots Section */}
         <div className="trading-bots-section">
           <div className="section-header">
