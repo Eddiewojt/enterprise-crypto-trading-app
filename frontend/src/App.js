@@ -874,6 +874,12 @@ function App() {
             >
               ⚡ Arbitrage
             </button>
+            <button 
+              className={activeTab === 'automation' ? 'active' : ''}
+              onClick={() => setActiveTab('automation')}
+            >
+              🎯 Automation
+            </button>
           </div>
           
           <div className={`connection-status ${connectionStatus}`}>
