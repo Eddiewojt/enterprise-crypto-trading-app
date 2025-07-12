@@ -126,33 +126,38 @@ class DOGETradingAppTester:
             response = requests.get(f"{self.base_url}/doge/analysis?timeframe=15m", timeout=15)
             if response.status_code == 200:
                 data = response.json()
-                required_fields = ['symbol', 'timeframe', 'current_price', 'rsi', 'macd', 'signal_line', 'sma_short', 'sma_long', 'analysis']
+                required_fields = ['symbol', 'timeframe', 'current_price', 'indicators']
                 
                 if all(field in data for field in required_fields):
-                    # Validate technical indicators
-                    rsi = data['rsi']
-                    macd = data['macd']
-                    analysis = data['analysis']
+                    # Validate technical indicators structure
+                    indicators = data['indicators']
                     
-                    if (0 <= rsi <= 100 and 
-                        isinstance(macd, (int, float)) and
-                        'rsi_signal' in analysis and
-                        'macd_signal' in analysis and
-                        'ma_signal' in analysis):
+                    if ('rsi' in indicators and 'macd' in indicators and 
+                        'moving_averages' in indicators and 'bollinger_bands' in indicators):
                         
-                        self.log_success("Technical Analysis Engine (15m)", 
-                                       f"RSI: {rsi:.2f}, MACD: {macd:.6f}")
+                        rsi_value = indicators['rsi']['value']
+                        macd_value = indicators['macd']['macd']
                         
-                        # Test 4h analysis
-                        response_4h = requests.get(f"{self.base_url}/doge/analysis?timeframe=4h", timeout=15)
-                        if response_4h.status_code == 200:
-                            data_4h = response_4h.json()
-                            if all(field in data_4h for field in required_fields):
-                                self.log_success("Technical Analysis Engine (4h)", 
-                                               f"RSI: {data_4h['rsi']:.2f}, MACD: {data_4h['macd']:.6f}")
-                                self.test_results['technical_analysis_engine'] = True
-                                return True
-                                
+                        if (0 <= rsi_value <= 100 and 
+                            isinstance(macd_value, (int, float))):
+                            
+                            self.log_success("Technical Analysis Engine (15m)", 
+                                           f"RSI: {rsi_value:.2f}, MACD: {macd_value:.6f}")
+                            
+                            # Test 4h analysis
+                            response_4h = requests.get(f"{self.base_url}/doge/analysis?timeframe=4h", timeout=15)
+                            if response_4h.status_code == 200:
+                                data_4h = response_4h.json()
+                                if all(field in data_4h for field in required_fields):
+                                    indicators_4h = data_4h['indicators']
+                                    rsi_4h = indicators_4h['rsi']['value']
+                                    macd_4h = indicators_4h['macd']['macd']
+                                    
+                                    self.log_success("Technical Analysis Engine (4h)", 
+                                                   f"RSI: {rsi_4h:.2f}, MACD: {macd_4h:.6f}")
+                                    self.test_results['technical_analysis_engine'] = True
+                                    return True
+                                    
                 self.log_error("Technical Analysis Engine", f"Invalid response format: {data}")
                 return False
             else:
