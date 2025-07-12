@@ -468,12 +468,24 @@ async def send_email_notification(subject: str, message: str):
         sender_password = os.environ.get('SMTP_PASSWORD', 'your_app_password')
         recipient_email = os.environ.get('NOTIFICATION_EMAIL', 'eddiewojt1@gmail.com')
         
-        msg = MIMEMultipart()
+        if sender_email == 'your_email@gmail.com' or sender_password == 'your_app_password':
+            logging.info(f"Email would be sent to {recipient_email}: {subject}")
+            return
+        
+        msg = MIMEMultipart('alternative')
         msg['From'] = sender_email
         msg['To'] = recipient_email
         msg['Subject'] = subject
         
-        msg.attach(MIMEText(message, 'plain'))
+        # Detect if message contains HTML
+        if '<html>' in message.lower() or '<div>' in message.lower():
+            # HTML message
+            html_part = MIMEText(message, 'html')
+            msg.attach(html_part)
+        else:
+            # Plain text message
+            text_part = MIMEText(message, 'plain')
+            msg.attach(text_part)
         
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
@@ -486,6 +498,7 @@ async def send_email_notification(subject: str, message: str):
         
     except Exception as e:
         logging.error(f"Failed to send email: {e}")
+        raise e
 
 async def send_sms_notification(message: str):
     """Send SMS notification via Twilio"""
