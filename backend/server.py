@@ -2459,28 +2459,19 @@ async def execute_automated_signal(signal_data: dict):
         if quantity <= 0:
             return {"status": "error", "message": "Invalid quantity calculated"}
         
-        # Create automated trade
-        trade_request = TradeRequest(
-            symbol=symbol,
-            side=signal_type,
-            quantity=quantity,
-            price=price
-        )
-        
-        # Execute the trade (reuse existing paper trade logic)
-        trade_data = Trade(
-            symbol=trade_request.symbol,
-            side=trade_request.side,
-            quantity=trade_request.quantity,
-            price=trade_request.price,
-            timestamp=datetime.utcnow(),
-            is_paper_trade=True  # Keep as paper trading for safety
-        )
+        # Execute the trade (create trade data directly)
+        trade_data = {
+            "id": str(uuid.uuid4()),
+            "symbol": symbol,
+            "side": signal_type,
+            "quantity": quantity,
+            "price": price,
+            "timestamp": datetime.utcnow().isoformat(),
+            "is_paper_trade": True
+        }
         
         # Store in database
-        trade_dict = trade_data.dict()
-        trade_dict['timestamp'] = trade_dict['timestamp'].isoformat()
-        await db.trades.insert_one(trade_dict)
+        await db.trades.insert_one(trade_data)
         
         # Log automation execution
         automation_log_db = {
@@ -2501,7 +2492,7 @@ async def execute_automated_signal(signal_data: dict):
         
         return {
             "status": "executed",
-            "trade": trade_dict,
+            "trade": trade_data,
             "automation_log": automation_log_response,
             "message": f"Automated {signal_type} executed: {quantity:.6f} {symbol} at {formatPrice(price)}"
         }
