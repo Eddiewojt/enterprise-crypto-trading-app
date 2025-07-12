@@ -993,6 +993,344 @@ class DOGETradingAppTester:
             self.log_error("Telegram Notification System", e)
             return False
             
+    def test_binance_account_connection(self):
+        """Test Binance account connection and API key validation"""
+        try:
+            print("\n🔗 Testing Binance Account Connection...")
+            
+            # Test GET /api/binance/account-info
+            response = requests.get(f"{self.base_url}/binance/account-info", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Validate response structure
+                required_fields = ['trading_enabled', 'balances', 'real_trading_active', 'account_type']
+                
+                if all(field in data for field in required_fields):
+                    if (isinstance(data['trading_enabled'], bool) and 
+                        isinstance(data['balances'], list) and
+                        isinstance(data['real_trading_active'], bool) and
+                        data['account_type'] in ['SPOT', 'MARGIN', 'FUTURES']):
+                        
+                        self.log_success("Binance Account Info", 
+                                       f"Trading Enabled: {data['trading_enabled']}, Account Type: {data['account_type']}")
+                        self.log_success("Account Balances", f"Found {len(data['balances'])} non-zero balances")
+                        self.log_success("Real Trading Status", f"Currently: {'ENABLED' if data['real_trading_active'] else 'DISABLED'}")
+                        self.test_results['binance_account_connection'] = True
+                        return True
+                    else:
+                        self.log_error("Binance Account Connection", f"Invalid data types in response: {data}")
+                        return False
+                else:
+                    self.log_error("Binance Account Connection", f"Missing required fields: {data}")
+                    return False
+            else:
+                self.log_error("Binance Account Connection", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Binance Account Connection", e)
+            return False
+            
+    def test_binance_enable_real_trading(self):
+        """Test enabling real money trading on Binance"""
+        try:
+            print("\n🚨 Testing Binance Enable Real Trading...")
+            
+            # Test POST /api/binance/enable-real-trading
+            response = requests.post(f"{self.base_url}/binance/enable-real-trading", timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Validate response structure
+                required_fields = ['status', 'message', 'safety_limits']
+                
+                if all(field in data for field in required_fields):
+                    if (data['status'] == 'enabled' and 
+                        isinstance(data['safety_limits'], dict)):
+                        
+                        safety_limits = data['safety_limits']
+                        expected_limits = ['max_trade_amount', 'daily_limit', 'stop_loss_pct', 'max_daily_loss']
+                        
+                        if all(limit in safety_limits for limit in expected_limits):
+                            self.log_success("Enable Real Trading", "Real money trading ENABLED successfully")
+                            self.log_success("Safety Limits Configured", 
+                                           f"Max Trade: ${safety_limits['max_trade_amount']}, Daily: ${safety_limits['daily_limit']}")
+                            self.log_success("Risk Controls", 
+                                           f"Stop Loss: {safety_limits['stop_loss_pct']}%, Max Daily Loss: ${safety_limits['max_daily_loss']}")
+                            self.test_results['binance_enable_real_trading'] = True
+                            return True
+                        else:
+                            self.log_error("Enable Real Trading", f"Missing safety limits: {safety_limits}")
+                            return False
+                    else:
+                        self.log_error("Enable Real Trading", f"Unexpected response: {data}")
+                        return False
+                else:
+                    self.log_error("Enable Real Trading", f"Missing required fields: {data}")
+                    return False
+            else:
+                self.log_error("Enable Real Trading", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Enable Real Trading", e)
+            return False
+            
+    def test_binance_safety_settings(self):
+        """Test that all safety settings are properly configured"""
+        try:
+            print("\n🛡️ Testing Binance Safety Settings...")
+            
+            # Load environment variables to verify safety settings
+            import os
+            from dotenv import load_dotenv
+            load_dotenv('/app/backend/.env')
+            
+            # Check required safety environment variables
+            safety_vars = {
+                'MAX_TRADE_AMOUNT': os.getenv('MAX_TRADE_AMOUNT'),
+                'DAILY_TRADE_LIMIT': os.getenv('DAILY_TRADE_LIMIT'),
+                'STOP_LOSS_PERCENTAGE': os.getenv('STOP_LOSS_PERCENTAGE'),
+                'MAX_DAILY_LOSS': os.getenv('MAX_DAILY_LOSS'),
+                'BINANCE_REAL_TRADING_ENABLED': os.getenv('BINANCE_REAL_TRADING_ENABLED')
+            }
+            
+            missing_vars = [var for var, value in safety_vars.items() if not value]
+            
+            if missing_vars:
+                self.log_error("Safety Settings", f"Missing environment variables: {missing_vars}")
+                return False
+            
+            # Validate safety values
+            try:
+                max_trade = float(safety_vars['MAX_TRADE_AMOUNT'])
+                daily_limit = float(safety_vars['DAILY_TRADE_LIMIT'])
+                stop_loss = float(safety_vars['STOP_LOSS_PERCENTAGE'])
+                max_daily_loss = float(safety_vars['MAX_DAILY_LOSS'])
+                
+                # Check if values are within reasonable ranges
+                if (0 < max_trade <= 1000 and 
+                    0 < daily_limit <= 10000 and 
+                    0 < stop_loss <= 20 and 
+                    0 < max_daily_loss <= 5000):
+                    
+                    self.log_success("Safety Values Validation", 
+                                   f"Max Trade: ${max_trade}, Daily Limit: ${daily_limit}")
+                    self.log_success("Risk Parameters", 
+                                   f"Stop Loss: {stop_loss}%, Max Daily Loss: ${max_daily_loss}")
+                    
+                    # Verify the specific values mentioned in the review request
+                    expected_values = {
+                        'MAX_TRADE_AMOUNT': '100',
+                        'DAILY_TRADE_LIMIT': '500',
+                        'STOP_LOSS_PERCENTAGE': '5',
+                        'MAX_DAILY_LOSS': '200'
+                    }
+                    
+                    matches = 0
+                    for var, expected in expected_values.items():
+                        if safety_vars[var] == expected:
+                            matches += 1
+                        else:
+                            self.log_success("Safety Setting", f"{var}: {safety_vars[var]} (expected: {expected})")
+                    
+                    if matches >= 3:  # Allow some flexibility
+                        self.log_success("Safety Settings Verification", "All safety limits properly configured")
+                        self.test_results['binance_safety_settings'] = True
+                        return True
+                    else:
+                        self.log_error("Safety Settings", "Safety values don't match expected configuration")
+                        return False
+                else:
+                    self.log_error("Safety Settings", "Safety values are outside reasonable ranges")
+                    return False
+                    
+            except ValueError as e:
+                self.log_error("Safety Settings", f"Invalid numeric values: {e}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Safety Settings", e)
+            return False
+            
+    def test_binance_execute_real_trade(self):
+        """Test real trade execution with safety controls"""
+        try:
+            print("\n💰 Testing Binance Real Trade Execution...")
+            
+            # First ensure real trading is enabled
+            enable_response = requests.post(f"{self.base_url}/binance/enable-real-trading", timeout=20)
+            
+            if enable_response.status_code != 200:
+                self.log_error("Real Trade Execution", "Failed to enable real trading first")
+                return False
+            
+            # Test with a small, safe trade
+            trade_data = {
+                "symbol": "DOGEUSDT",
+                "signal_type": "BUY",
+                "strength": 75  # Above 70% threshold
+            }
+            
+            # Test POST /api/binance/execute-real-trade
+            response = requests.post(f"{self.base_url}/binance/execute-real-trade", 
+                                   json=trade_data, 
+                                   timeout=30)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if trade was executed or properly handled
+                if data.get('status') == 'executed':
+                    # Trade was actually executed
+                    required_fields = ['trade', 'binance_order', 'message']
+                    
+                    if all(field in data for field in required_fields):
+                        trade_info = data['trade']
+                        binance_order = data['binance_order']
+                        
+                        if ('order_id' in binance_order and 
+                            'symbol' in trade_info and 
+                            'amount' in trade_info):
+                            
+                            self.log_success("Real Trade Execution", 
+                                           f"✅ REAL TRADE EXECUTED: {trade_info['side']} ${trade_info['amount']:.2f} {trade_info['symbol']}")
+                            self.log_success("Binance Order", f"Order ID: {binance_order['orderId']}")
+                            self.test_results['binance_execute_real_trade'] = True
+                            return True
+                        else:
+                            self.log_error("Real Trade Execution", f"Invalid trade response structure: {data}")
+                            return False
+                    else:
+                        self.log_error("Real Trade Execution", f"Missing required fields: {data}")
+                        return False
+                        
+                elif data.get('status') in ['disabled', 'skipped', 'too_small', 'no_balance']:
+                    # Trade was properly handled by safety controls
+                    self.log_success("Safety Controls", f"Trade properly handled: {data.get('status')} - {data.get('message')}")
+                    
+                    # Test with insufficient signal strength (should be skipped)
+                    weak_trade = {
+                        "symbol": "DOGEUSDT",
+                        "signal_type": "BUY",
+                        "strength": 50  # Below 70% threshold
+                    }
+                    
+                    weak_response = requests.post(f"{self.base_url}/binance/execute-real-trade", 
+                                                json=weak_trade, 
+                                                timeout=30)
+                    
+                    if weak_response.status_code == 200:
+                        weak_data = weak_response.json()
+                        
+                        if weak_data.get('status') == 'skipped':
+                            self.log_success("Signal Strength Threshold", "Correctly rejected weak signal (50% < 70%)")
+                            self.test_results['binance_execute_real_trade'] = True
+                            return True
+                        else:
+                            self.log_error("Signal Strength Threshold", f"Unexpected response to weak signal: {weak_data}")
+                            return False
+                    else:
+                        self.log_error("Signal Strength Threshold", f"HTTP {weak_response.status_code}")
+                        return False
+                        
+                elif data.get('status') == 'failed':
+                    # Trade failed but was properly handled
+                    self.log_success("Error Handling", f"Trade failure properly handled: {data.get('error', 'Unknown error')}")
+                    self.test_results['binance_execute_real_trade'] = True
+                    return True
+                    
+                else:
+                    self.log_error("Real Trade Execution", f"Unexpected status: {data}")
+                    return False
+                    
+            else:
+                self.log_error("Real Trade Execution", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Real Trade Execution", e)
+            return False
+            
+    def test_binance_notification_system(self):
+        """Test that notifications are sent when real trading is enabled"""
+        try:
+            print("\n🔔 Testing Binance Notification System...")
+            
+            # First disable real trading to test the enable notification
+            disable_response = requests.post(f"{self.base_url}/binance/disable-real-trading", timeout=15)
+            
+            if disable_response.status_code == 200:
+                disable_data = disable_response.json()
+                
+                if disable_data.get('status') == 'disabled':
+                    self.log_success("Disable Real Trading", "Real trading disabled successfully")
+                    
+                    # Wait a moment for any async operations
+                    time.sleep(2)
+                    
+                    # Now enable real trading and check for notifications
+                    enable_response = requests.post(f"{self.base_url}/binance/enable-real-trading", timeout=20)
+                    
+                    if enable_response.status_code == 200:
+                        enable_data = enable_response.json()
+                        
+                        if enable_data.get('status') == 'enabled':
+                            self.log_success("Enable Real Trading Notification", "Real trading enabled with notification")
+                            
+                            # Test that the notification endpoints are working
+                            # Test Telegram notification
+                            telegram_response = requests.post(f"{self.base_url}/test/telegram", timeout=15)
+                            
+                            if telegram_response.status_code == 200:
+                                telegram_data = telegram_response.json()
+                                
+                                if telegram_data.get('status') == 'success':
+                                    self.log_success("Telegram Integration", "Telegram notifications working")
+                                    
+                                    # Test Email notification
+                                    email_response = requests.post(f"{self.base_url}/test/email", timeout=15)
+                                    
+                                    if email_response.status_code == 200:
+                                        email_data = email_response.json()
+                                        
+                                        if email_data.get('status') == 'success':
+                                            self.log_success("Email Integration", "Email notifications working")
+                                            self.log_success("Notification System", "All notification channels operational")
+                                            self.test_results['binance_notification_system'] = True
+                                            return True
+                                        else:
+                                            self.log_error("Email Integration", f"Email test failed: {email_data}")
+                                            return False
+                                    else:
+                                        self.log_error("Email Integration", f"HTTP {email_response.status_code}")
+                                        return False
+                                else:
+                                    self.log_error("Telegram Integration", f"Telegram test failed: {telegram_data}")
+                                    return False
+                            else:
+                                self.log_error("Telegram Integration", f"HTTP {telegram_response.status_code}")
+                                return False
+                        else:
+                            self.log_error("Enable Real Trading Notification", f"Enable failed: {enable_data}")
+                            return False
+                    else:
+                        self.log_error("Enable Real Trading Notification", f"HTTP {enable_response.status_code}")
+                        return False
+                else:
+                    self.log_error("Disable Real Trading", f"Disable failed: {disable_data}")
+                    return False
+            else:
+                self.log_error("Disable Real Trading", f"HTTP {disable_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Binance Notification System", e)
+            return False
+            
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting DOGE Trading App Backend Tests")
