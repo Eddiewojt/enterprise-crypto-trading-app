@@ -237,11 +237,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Binance API Integration"
-    - "Real-time Price Tracking"
-    - "Technical Analysis Engine"
-    - "Trading Signal Generation"
     - "Trading Dashboard UI"
+    - "Real-time Updates"
+    - "Alert System"
+    - "Timeframe Selection"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
