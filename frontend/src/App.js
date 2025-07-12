@@ -1740,10 +1740,30 @@ function App() {
           </div>
           
           <div className="control-card">
-            <h3>📊 Active Bots</h3>
-            <div className="active-bots">
-              <span className="bot-count">3</span>
-              <div className="bot-list">DCA • Grid • Momentum</div>
+            <h3>🤖 Trading Mode</h3>
+            <div className={`mode-indicator ${tradingMode}`}>
+              {tradingMode === 'auto' ? '🟢 AUTO TRADING' : '🔴 MANUAL MODE'}
+            </div>
+            <button 
+              className={`mode-toggle-btn ${tradingMode}`}
+              onClick={toggleTradingMode}
+            >
+              {tradingMode === 'auto' ? '🔴 Switch to Manual' : '🟢 Enable Auto Trading'}
+            </button>
+            <div className="mode-status">
+              {tradingMode === 'auto' ? 'Bots executing trades automatically' : 'Manual control - no auto trades'}
+            </div>
+          </div>
+
+          <div className="control-card">
+            <h3>⚡ Master Trading Switch</h3>
+            <div className={`master-switch ${masterSwitch}`}>
+              <div className="switch-indicator">
+                {masterSwitch === 'enabled' ? '🟢 ACTIVE' : '⚪ STANDBY'}
+              </div>
+              <div className="switch-status">
+                {masterSwitch === 'enabled' ? 'All systems operational' : 'Trading paused'}
+              </div>
             </div>
           </div>
         </div>
