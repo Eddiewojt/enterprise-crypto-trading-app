@@ -1148,131 +1148,27 @@ function App() {
   
   return (
     <div className="app">
-      <header className="trading-header">
-        <div className="header-brand">
-          <h1>🎯 Crypto Trading Signals</h1>
-          <p>5%+ Profit Targets Only</p>
-        </div>
-        <div className={`connection-status ${connectionStatus}`}>
-          <span className="status-dot"></span>
-          {connectionStatus === 'connected' ? 'Live Data' : 'Reconnecting...'}
-        </div>
-      </header>
-
-      <main className="signals-dashboard">
-        {/* High-Profit Signals Section */}
-        <section className="profit-signals">
-          <h2>🚀 High-Profit Opportunities (5%+ Targets)</h2>
-          
-          <div className="signals-grid">
-            {Object.entries(multiCoinData)
-              .filter(([symbol, data]) => {
-                if (!data?.analysis?.signal) return false;
-                
-                // Calculate profit potential
-                const currentPrice = data.price || 0;
-                const signalType = data.analysis.signal.type;
-                const strength = data.analysis.signal.strength || 0;
-                
-                if (signalType === 'BUY' && strength >= 70) {
-                  const targetPrice = currentPrice * 1.05; // 5% minimum target
-                  const profitPotential = ((targetPrice - currentPrice) / currentPrice) * 100;
-                  return profitPotential >= 5.0;
-                }
-                
-                if (signalType === 'SELL' && strength >= 70) {
-                  const protectPrice = currentPrice * 0.95; // 5% protection
-                  const protectPotential = ((currentPrice - protectPrice) / protectPrice) * 100;
-                  return protectPotential >= 5.0;
-                }
-                
-                return false;
-              })
-              .sort(([,a], [,b]) => (b?.analysis?.signal?.strength || 0) - (a?.analysis?.signal?.strength || 0))
-              .slice(0, 8)
-              .map(([symbol, data]) => {
-                const currentPrice = data.price || 0;
-                const signalType = data.analysis?.signal?.type;
-                const strength = data.analysis?.signal?.strength || 0;
-                const change24h = data.change24h || 0;
-                
-                // Calculate targets and profit potential
-                let targetPrice, stopPrice, profitPotential, riskAmount;
-                
-                if (signalType === 'BUY') {
-                  targetPrice = currentPrice * (1 + Math.max(0.05, strength / 1000)); // Minimum 5%
-                  stopPrice = currentPrice * 0.95; // 5% stop loss
-                  profitPotential = ((targetPrice - currentPrice) / currentPrice) * 100;
-                  riskAmount = ((currentPrice - stopPrice) / currentPrice) * 100;
-                } else if (signalType === 'SELL') {
-                  targetPrice = currentPrice * 0.95; // Sell target (protect profits)
-                  stopPrice = currentPrice * 1.05; // Stop if price goes up
-                  profitPotential = 5.0; // Protecting existing 5%+ profits
-                  riskAmount = 5.0;
-                }
-                
-                const signalColor = signalType === 'BUY' ? 'buy-signal' : 
-                                   signalType === 'SELL' ? 'sell-signal' : 'hold-signal';
-                
-                return (
-                  <div key={symbol} className={`signal-card ${signalColor}`}>
-                    <div className="signal-header">
-                      <div className="coin-info">
-                        <h3>{symbol.replace('USDT', '')}</h3>
-                        <span className="signal-badge">
-                          {signalType === 'BUY' ? '🟢 BUY' : '🔴 SELL'}
-                        </span>
-                      </div>
-                      <div className="signal-strength">
-                        <span className="strength-value">{strength}%</span>
-                        <small>Confidence</small>
-                      </div>
-                    </div>
-                    
-                    <div className="price-section">
-                      <div className="current-price">
-                        <span className="price">${currentPrice.toFixed(6)}</span>
-                        <span className={`change ${change24h >= 0 ? 'positive' : 'negative'}`}>
-                          {change24h >= 0 ? '+' : ''}{change24h.toFixed(2)}%
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="profit-targets">
-                      <div className="target-row">
-                        <span className="label">🎯 Target:</span>
-                        <span className="value profit-target">${targetPrice.toFixed(6)}</span>
-                      </div>
-                      <div className="target-row">
-                        <span className="label">🛡️ Stop:</span>
-                        <span className="value stop-loss">${stopPrice.toFixed(6)}</span>
-                      </div>
-                      <div className="profit-summary">
-                        <div className="profit-potential">
-                          <span className="profit-label">Expected Profit:</span>
-                          <span className="profit-value">+{profitPotential.toFixed(1)}%</span>
-                        </div>
-                        <div className="risk-reward">
-                          <small>Risk: {riskAmount.toFixed(1)}% | R/R: {(profitPotential/riskAmount).toFixed(1)}:1</small>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="action-buttons">
-                      <button 
-                        className={`action-btn ${signalType === 'BUY' ? 'buy-btn' : 'sell-btn'}`}
-                        onClick={() => {
-                          // Execute trade or show confirmation
-                          alert(`${signalType} ${symbol.replace('USDT', '')} at $${currentPrice.toFixed(6)}\nTarget: $${targetPrice.toFixed(6)} (+${profitPotential.toFixed(1)}%)`);
-                        }}
-                      >
-                        {signalType === 'BUY' ? '💰 Execute Buy' : '💸 Execute Sell'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
+      <main className="simple-signals">
+        <div className="signals-container">
+          {Object.entries(multiCoinData)
+            .filter(([symbol, data]) => {
+              if (!data?.analysis?.signal) return false;
+              const signalType = data.analysis.signal.type;
+              const strength = data.analysis.signal.strength || 0;
+              return (signalType === 'BUY' || signalType === 'SELL') && strength >= 70;
+            })
+            .sort(([,a], [,b]) => (b?.analysis?.signal?.strength || 0) - (a?.analysis?.signal?.strength || 0))
+            .slice(0, 5)
+            .map(([symbol, data]) => {
+              const signalType = data.analysis?.signal?.type;
+              
+              return (
+                <div key={symbol} className={`simple-signal ${signalType.toLowerCase()}`}>
+                  <div className="signal-action">{signalType}</div>
+                  <div className="signal-crypto">{symbol.replace('USDT', '')}</div>
+                </div>
+              );
+            })}
           
           {Object.entries(multiCoinData).filter(([symbol, data]) => {
             if (!data?.analysis?.signal) return false;
@@ -1280,52 +1176,13 @@ function App() {
             const strength = data.analysis.signal.strength || 0;
             return (signalType === 'BUY' || signalType === 'SELL') && strength >= 70;
           }).length === 0 && (
-            <div className="no-signals">
-              <h3>⏳ No 5%+ Profit Opportunities Right Now</h3>
-              <p>Waiting for high-confidence signals with 5% or higher profit potential...</p>
-              <div className="next-update">
-                <small>Next scan in: {Math.ceil(Math.random() * 60)} seconds</small>
-              </div>
+            <div className="no-signal">
+              <div className="waiting">WAITING</div>
+              <div className="for-signal">FOR SIGNAL</div>
             </div>
           )}
-        </section>
-
-        {/* Quick Stats */}
-        <section className="quick-stats">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h4>🎯 Active Signals</h4>
-              <span className="stat-value">
-                {Object.values(multiCoinData).filter(data => 
-                  data?.analysis?.signal && 
-                  (data.analysis.signal.type === 'BUY' || data.analysis.signal.type === 'SELL') &&
-                  data.analysis.signal.strength >= 70
-                ).length}
-              </span>
-            </div>
-            <div className="stat-card">
-              <h4>💰 Avg. Target</h4>
-              <span className="stat-value">+6.8%</span>
-            </div>
-            <div className="stat-card">
-              <h4>⚡ Best Signal</h4>
-              <span className="stat-value">
-                {Object.entries(multiCoinData)
-                  .filter(([,data]) => data?.analysis?.signal?.strength >= 70)
-                  .sort(([,a], [,b]) => (b?.analysis?.signal?.strength || 0) - (a?.analysis?.signal?.strength || 0))[0]?.[0]?.replace('USDT', '') || 'None'}
-              </span>
-            </div>
-            <div className="stat-card">
-              <h4>🔔 Last Update</h4>
-              <span className="stat-value">{new Date().toLocaleTimeString()}</span>
-            </div>
-          </div>
-        </section>
+        </div>
       </main>
-
-      <footer className="app-footer">
-        <p>🎯 Focus: 5%+ Profit Targets Only | 🔔 Notifications: Active</p>
-      </footer>
     </div>
   );
 }
