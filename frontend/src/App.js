@@ -1345,7 +1345,13 @@ function App() {
                     disableProxy();
                   }
                 } else {
-                  setShowProxyConfig(true);
+                  // Show options for single proxy or premium pool
+                  const choice = window.confirm('Choose proxy type:\n\nOK = Premium Proxy Pool (Recommended)\nCancel = Single Proxy Setup');
+                  if (choice) {
+                    setShowPremiumProxy(true);
+                  } else {
+                    setShowProxyConfig(true);
+                  }
                 }
               }}
             >
