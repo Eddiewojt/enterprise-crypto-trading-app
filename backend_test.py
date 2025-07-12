@@ -1055,65 +1055,92 @@ class DOGETradingAppTester:
         """Test enabling real money trading on Binance - FOCUS AREA FROM REVIEW"""
         try:
             print("\n🚨 Testing Binance Enable Real Trading (REVIEW FOCUS)...")
-            print("🎯 TESTING: POST /api/binance/enable-real-trading endpoint that's failing")
+            print("🎯 TESTING: POST /api/binance/enable-real-trading endpoint directly")
+            print("🔍 GOAL: Check exact error message user is getting when clicking 'Enable Real Trading'")
+            
+            # First check proxy status to understand current configuration
+            print("\n📡 Checking current proxy configuration...")
+            proxy_response = requests.get(f"{self.base_url}/proxy/status", timeout=10)
+            if proxy_response.status_code == 200:
+                proxy_data = proxy_response.json()
+                print(f"🌐 Proxy Status: {json.dumps(proxy_data, indent=2)}")
+            else:
+                print(f"⚠️ Could not get proxy status: {proxy_response.status_code}")
             
             # Test POST /api/binance/enable-real-trading
+            print("\n🎯 DIRECT TEST: POST /api/binance/enable-real-trading")
             response = requests.post(f"{self.base_url}/binance/enable-real-trading", timeout=20)
             
             print(f"📊 Response Status: {response.status_code}")
+            print(f"📄 Response Headers: {dict(response.headers)}")
             
-            if response.status_code == 200:
+            # Get the exact response that frontend will receive
+            try:
                 data = response.json()
-                print(f"📋 Response Data: {json.dumps(data, indent=2)}")
-                
-                # Validate response structure
-                required_fields = ['status', 'message', 'safety_limits']
-                
-                if all(field in data for field in required_fields):
-                    if (data['status'] == 'enabled' and 
-                        isinstance(data['safety_limits'], dict)):
+                print(f"📋 EXACT RESPONSE DATA (what user sees): {json.dumps(data, indent=2)}")
+            except:
+                print(f"📄 Raw Response Text: {response.text}")
+                data = {"error": "Could not parse JSON", "raw_text": response.text}
+            
+            # Analyze the specific error message
+            if response.status_code == 200:
+                if 'status' in data:
+                    if data['status'] == 'error':
+                        print(f"🚨 ERROR STATUS DETECTED: {data.get('message', 'No message')}")
+                        print("🔍 ANALYSIS: Backend returns 200 OK but with error status")
+                        print("💡 USER EXPERIENCE: User sees error message in successful HTTP response")
                         
-                        safety_limits = data['safety_limits']
-                        expected_limits = ['max_trade_amount', 'daily_limit', 'stop_loss_pct', 'max_daily_loss']
-                        
-                        if all(limit in safety_limits for limit in expected_limits):
-                            self.log_success("Enable Real Trading", "Real money trading ENABLED successfully")
-                            self.log_success("Safety Limits Configured", 
-                                           f"Max Trade: ${safety_limits['max_trade_amount']}, Daily: ${safety_limits['daily_limit']}")
-                            self.log_success("Risk Controls", 
-                                           f"Stop Loss: {safety_limits['stop_loss_pct']}%, Max Daily Loss: ${safety_limits['max_daily_loss']}")
-                            self.test_results['binance_enable_real_trading'] = True
-                            return True
+                        if 'Binance client not available' in data.get('message', ''):
+                            print("🌍 ROOT CAUSE: Geographical restrictions - Binance API blocked")
+                            print("🔧 ISSUE: Proxy configuration not successfully routing Binance requests")
+                            self.log_error("Enable Real Trading", f"Binance client not available - geographical restrictions: {data['message']}")
                         else:
-                            self.log_error("Enable Real Trading", f"Missing safety limits: {safety_limits}")
-                            return False
+                            self.log_error("Enable Real Trading", f"Unknown error: {data['message']}")
+                        return False
+                    elif data['status'] == 'enabled':
+                        print("✅ SUCCESS: Real trading enabled successfully")
+                        self.test_results['binance_enable_real_trading'] = True
+                        return True
                     else:
-                        self.log_error("Enable Real Trading", f"Unexpected response: {data}")
+                        print(f"❓ UNEXPECTED STATUS: {data['status']}")
+                        self.log_error("Enable Real Trading", f"Unexpected status: {data}")
                         return False
                 else:
-                    self.log_error("Enable Real Trading", f"Missing required fields: {data}")
+                    print("❌ MISSING STATUS FIELD in response")
+                    self.log_error("Enable Real Trading", f"Missing status field: {data}")
                     return False
+                    
             elif response.status_code == 502:
-                print("🚨 DETECTED: 502 Bad Gateway - This indicates geographical restrictions!")
-                print("🌍 ISSUE: Binance API calls being blocked due to location")
-                print("🔍 TROUBLESHOOTING: The VPN/proxy is NOT properly routing Binance requests")
-                self.log_error("Enable Real Trading", f"502 Bad Gateway - VPN/proxy not routing properly: {response.text}")
+                print("🚨 502 BAD GATEWAY DETECTED")
+                print("🌍 MEANING: Server cannot reach Binance API")
+                print("🔍 CAUSE: Geographical restrictions or proxy failure")
+                print("💡 USER EXPERIENCE: User gets 502 error when clicking 'Enable Real Trading'")
+                self.log_error("Enable Real Trading", f"502 Bad Gateway - geographical restrictions: {response.text}")
                 return False
+                
             elif response.status_code == 500:
-                print("🚨 DETECTED: 500 Internal Server Error")
-                print("🔍 ANALYSIS: Backend error - possibly due to Binance API connection failure")
-                print(f"📄 Response Text: {response.text}")
-                self.log_error("Enable Real Trading", f"500 Internal Server Error - Backend issue: {response.text}")
+                print("🚨 500 INTERNAL SERVER ERROR DETECTED")
+                print("🔍 MEANING: Backend code error or Binance API connection failure")
+                print("💡 USER EXPERIENCE: User gets 500 error when clicking 'Enable Real Trading'")
+                try:
+                    error_data = response.json()
+                    print(f"📋 Error Details: {json.dumps(error_data, indent=2)}")
+                except:
+                    print(f"📄 Raw Error: {response.text}")
+                self.log_error("Enable Real Trading", f"500 Internal Server Error: {response.text}")
                 return False
+                
             else:
-                print(f"❌ HTTP Error: {response.status_code}")
-                print(f"📄 Response Text: {response.text}")
+                print(f"❌ HTTP ERROR {response.status_code}")
+                print(f"💡 USER EXPERIENCE: User gets {response.status_code} error")
+                print(f"📄 Response: {response.text}")
                 self.log_error("Enable Real Trading", f"HTTP {response.status_code}: {response.text}")
                 return False
                 
         except Exception as e:
-            print(f"💥 Exception occurred: {str(e)}")
-            self.log_error("Enable Real Trading", e)
+            print(f"💥 EXCEPTION OCCURRED: {str(e)}")
+            print("💡 USER EXPERIENCE: User might see network error or timeout")
+            self.log_error("Enable Real Trading", f"Exception: {e}")
             return False
             
     def test_binance_safety_settings(self):
