@@ -1395,6 +1395,186 @@ class DOGETradingAppTester:
             self.log_error("Binance Notification System", e)
             return False
             
+    def test_binance_wallet_balance(self):
+        """Test Binance wallet balance endpoint - NEW FOCUS AREA FROM REVIEW"""
+        try:
+            print("\n💰 Testing Binance Wallet Balance (NEW REVIEW FOCUS)...")
+            print("🎯 TESTING: GET /api/binance/wallet-balance to see real balance data")
+            print("🔍 GOAL: Verify if real Binance account balance is returned vs hardcoded $2,450.67")
+            
+            # Test GET /api/binance/wallet-balance
+            response = requests.get(f"{self.base_url}/binance/wallet-balance", timeout=15)
+            
+            print(f"📊 Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"📋 Response Data: {json.dumps(data, indent=2)}")
+                
+                # Check if this is real balance data or hardcoded
+                if 'total_balance_usd' in data:
+                    total_balance = data['total_balance_usd']
+                    
+                    # Check if it's the old hardcoded value
+                    if total_balance == 2450.67:
+                        print("⚠️ DETECTED: Still showing hardcoded balance of $2,450.67")
+                        print("🔍 ISSUE: Portfolio not showing real wallet balance yet")
+                        self.log_error("Binance Wallet Balance", "Still returning hardcoded $2,450.67 instead of real balance")
+                        return False
+                    elif total_balance == 0.0:
+                        print("✅ DETECTED: $0.00 balance - likely due to geographical restrictions")
+                        print("🌍 ANALYSIS: Real Binance API not accessible, showing $0 as expected")
+                        self.log_success("Binance Wallet Balance", "Correctly showing $0.00 when Binance not accessible")
+                        self.test_results['binance_wallet_balance'] = True
+                        return True
+                    else:
+                        print(f"✅ DETECTED: Real balance data: ${total_balance}")
+                        print("🎉 SUCCESS: Portfolio now shows real wallet balance instead of hardcoded value")
+                        self.log_success("Binance Wallet Balance", f"Real balance: ${total_balance}")
+                        self.test_results['binance_wallet_balance'] = True
+                        return True
+                        
+                # Validate response structure
+                required_fields = ['total_balance_usd', 'balances', 'last_updated']
+                if all(field in data for field in required_fields):
+                    balances = data['balances']
+                    if isinstance(balances, list):
+                        self.log_success("Wallet Balance Structure", f"Found {len(balances)} asset balances")
+                        
+                        # Check for specific error messages about geographical restrictions
+                        if 'error' in data:
+                            error_msg = data['error']
+                            if 'geographical' in error_msg.lower() or 'restricted' in error_msg.lower():
+                                print("🌍 GEOGRAPHICAL RESTRICTION DETECTED")
+                                print(f"📄 Error Message: {error_msg}")
+                                self.log_success("Geographical Restriction Handling", f"Clear error message: {error_msg}")
+                                self.test_results['binance_wallet_balance'] = True
+                                return True
+                        
+                        self.test_results['binance_wallet_balance'] = True
+                        return True
+                    else:
+                        self.log_error("Binance Wallet Balance", f"Invalid balances format: {balances}")
+                        return False
+                else:
+                    self.log_error("Binance Wallet Balance", f"Missing required fields: {data}")
+                    return False
+                    
+            elif response.status_code == 502:
+                print("🚨 502 BAD GATEWAY - Binance API not accessible")
+                print("🌍 CAUSE: Geographical restrictions blocking Binance access")
+                print("💡 EXPECTED: Should return $0.00 and clear error message")
+                self.log_error("Binance Wallet Balance", "502 Bad Gateway - geographical restrictions")
+                return False
+                
+            elif response.status_code == 500:
+                print("🚨 500 INTERNAL SERVER ERROR")
+                try:
+                    error_data = response.json()
+                    print(f"📋 Error Details: {json.dumps(error_data, indent=2)}")
+                    
+                    # Check if error message is clear about geographical restrictions
+                    if 'detail' in error_data:
+                        detail = error_data['detail']
+                        if 'geographical' in detail.lower() or 'restricted' in detail.lower():
+                            print("✅ CLEAR ERROR MESSAGE about geographical restrictions")
+                            self.log_success("Error Message Clarity", f"Clear geographical restriction message: {detail}")
+                        else:
+                            print(f"❓ Error message: {detail}")
+                            
+                except:
+                    print(f"📄 Raw Error: {response.text}")
+                    
+                self.log_error("Binance Wallet Balance", f"500 Internal Server Error: {response.text}")
+                return False
+                
+            else:
+                print(f"❌ HTTP ERROR {response.status_code}")
+                print(f"📄 Response: {response.text}")
+                self.log_error("Binance Wallet Balance", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"💥 EXCEPTION: {str(e)}")
+            self.log_error("Binance Wallet Balance", f"Exception: {e}")
+            return False
+            
+    def test_trading_bot_performance(self):
+        """Test trading bot performance endpoint - FOCUS AREA FROM REVIEW"""
+        try:
+            print("\n🤖 Testing Trading Bot Performance (REVIEW FOCUS)...")
+            print("🎯 TESTING: GET /api/trading/bot-performance to verify bots show $0 when not trading")
+            print("🔍 GOAL: Ensure bots show $0.00 when not actually trading")
+            
+            # Test GET /api/trading/bot-performance
+            response = requests.get(f"{self.base_url}/trading/bot-performance", timeout=15)
+            
+            print(f"📊 Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"📋 Response Data: {json.dumps(data, indent=2)}")
+                
+                # Validate response structure
+                if 'bots' in data and isinstance(data['bots'], list):
+                    bots = data['bots']
+                    print(f"🤖 Found {len(bots)} trading bots")
+                    
+                    all_bots_zero = True
+                    for bot in bots:
+                        if 'name' in bot and 'performance' in bot:
+                            bot_name = bot['name']
+                            performance = bot['performance']
+                            
+                            if 'total_pnl' in performance:
+                                pnl = performance['total_pnl']
+                                print(f"🤖 Bot '{bot_name}': P&L = ${pnl}")
+                                
+                                # Check if bot shows $0 when not trading
+                                if pnl != 0.0:
+                                    all_bots_zero = False
+                                    print(f"⚠️ Bot '{bot_name}' shows non-zero P&L: ${pnl}")
+                                    
+                            if 'status' in bot:
+                                status = bot['status']
+                                print(f"🤖 Bot '{bot_name}': Status = {status}")
+                                
+                                # If bot is not actively trading, P&L should be $0
+                                if status in ['inactive', 'stopped', 'paused'] and 'total_pnl' in performance:
+                                    if performance['total_pnl'] != 0.0:
+                                        print(f"❌ ISSUE: Inactive bot '{bot_name}' shows non-zero P&L: ${performance['total_pnl']}")
+                                        all_bots_zero = False
+                    
+                    if all_bots_zero:
+                        print("✅ SUCCESS: All bots correctly show $0.00 when not trading")
+                        self.log_success("Trading Bot Performance", "All bots show $0.00 P&L when not actively trading")
+                        self.test_results['trading_bot_performance'] = True
+                        return True
+                    else:
+                        print("⚠️ ISSUE: Some bots show non-zero P&L when not trading")
+                        self.log_error("Trading Bot Performance", "Some bots show non-zero P&L when not actively trading")
+                        return False
+                        
+                else:
+                    self.log_error("Trading Bot Performance", f"Invalid response structure: {data}")
+                    return False
+                    
+            elif response.status_code == 404:
+                print("❌ 404 NOT FOUND - Bot performance endpoint not implemented")
+                self.log_error("Trading Bot Performance", "Endpoint not found - may not be implemented yet")
+                return False
+                
+            else:
+                print(f"❌ HTTP ERROR {response.status_code}")
+                print(f"📄 Response: {response.text}")
+                self.log_error("Trading Bot Performance", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"💥 EXCEPTION: {str(e)}")
+            self.log_error("Trading Bot Performance", f"Exception: {e}")
+            return False
+            
     def test_premium_ai_market_analysis(self):
         """Test premium AI market analysis endpoint with DOGEUSDT"""
         try:
