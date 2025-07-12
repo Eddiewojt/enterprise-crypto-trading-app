@@ -2483,22 +2483,26 @@ async def execute_automated_signal(signal_data: dict):
         await db.trades.insert_one(trade_dict)
         
         # Log automation execution
-        automation_log = {
+        automation_log_db = {
             "id": str(uuid.uuid4()),
             "symbol": symbol,
             "action": f"AUTO_{signal_type}",
             "quantity": quantity,
             "price": price,
             "signal_strength": strength,
-            "executed_at": datetime.utcnow().isoformat(),
+            "executed_at": datetime.utcnow(),
             "user_id": "default_user"
         }
-        await db.automation_logs.insert_one(automation_log)
+        await db.automation_logs.insert_one(automation_log_db)
+        
+        # Create response-safe automation log
+        automation_log_response = automation_log_db.copy()
+        automation_log_response['executed_at'] = automation_log_response['executed_at'].isoformat()
         
         return {
             "status": "executed",
             "trade": trade_dict,
-            "automation_log": automation_log,
+            "automation_log": automation_log_response,
             "message": f"Automated {signal_type} executed: {quantity:.6f} {symbol} at {formatPrice(price)}"
         }
         
