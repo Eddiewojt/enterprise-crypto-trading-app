@@ -1722,6 +1722,22 @@ class DOGETradingAppTester:
         binance_safety_ok = self.test_binance_safety_settings()
         binance_trade_ok = self.test_binance_execute_real_trade()
         binance_notifications_ok = self.test_binance_notification_system()
+        
+        # Test Premium AI Features (NEW PREMIUM FEATURES)
+        print("\n🤖 Testing Premium AI Market Analysis...")
+        premium_ai_ok = self.test_premium_ai_market_analysis()
+        
+        print("\n📰 Testing Premium Market Sentiment...")
+        premium_sentiment_ok = self.test_premium_market_sentiment()
+        
+        print("\n📊 Testing Premium Enhanced Technical Analysis...")
+        premium_technical_ok = self.test_premium_enhanced_technical_analysis()
+        
+        print("\n🌐 Testing Premium Proxy Status...")
+        premium_proxy_ok = self.test_premium_proxy_status()
+        
+        print("\n🛡️ Testing Premium Safety Limits...")
+        premium_safety_ok = self.test_premium_safety_limits()
             
         # Summary
         print("\n" + "=" * 60)
