@@ -1627,11 +1627,15 @@ function App() {
             </div>
             <button 
               className={`proxy-btn ${proxyStatus === 'connected' ? 'connected' : 'configure'}`}
-              onClick={() => {
+              onClick={async () => {
                 if (proxyStatus === 'connected') {
                   if (window.confirm('Disable proxy and use direct connection?')) {
                     setProxyStatus('blocked');
-                    alert('🔌 Proxy disabled. Using direct connection.');
+                    setNotification({
+                      type: 'success',
+                      message: '🔌 Proxy disabled. Using direct connection.'
+                    });
+                    setTimeout(() => setNotification(null), 4000);
                   }
                 } else {
                   // Persistent VPN activation - save to backend
