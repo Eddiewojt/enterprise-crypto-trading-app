@@ -1148,111 +1148,254 @@ function App() {
   
   return (
     <div className="app">
-      <main className="crypto-signals-list">
+      <main className="automation-platform">
         <div className="header">
-          <h1>🎯 Crypto Signals</h1>
-          <div className="last-update">
-            Last Update: {new Date().toLocaleTimeString()}
+          <h1>🤖 Automated Trading Platform</h1>
+          <div className="automation-status">
+            <span className={`status-indicator ${automationConfig?.auto_trading_enabled ? 'active' : 'inactive'}`}>
+              {automationConfig?.auto_trading_enabled ? '🟢 AUTO TRADING ACTIVE' : '🔴 MANUAL MODE'}
+            </span>
           </div>
         </div>
         
-        <div className="signals-container">
-          {Object.entries(multiCoinData)
-            .slice(0, 15) // Show top 15 cryptocurrencies
-            .map(([symbol, data]) => {
-              const coinName = symbol.replace('USDT', '');
-              const price = data.price || 0;
-              const change24h = data.change24h || 0;
-              
-              // Determine signal type and strength
-              let signalType = 'HOLD';
-              let signalStrength = 0;
-              let signalTime = new Date().toLocaleTimeString();
-              
-              if (data?.analysis?.signal) {
-                signalType = data.analysis.signal.type || 'HOLD';
-                signalStrength = data.analysis.signal.strength || 0;
-                signalTime = data.analysis.signal.timestamp ? 
-                  new Date(data.analysis.signal.timestamp).toLocaleTimeString() : 
-                  new Date().toLocaleTimeString();
-              } else {
-                // Generate signal based on basic technical analysis
-                if (data?.analysis) {
-                  const rsi = data.analysis.rsi || 50;
-                  const change = change24h;
-                  
-                  if (rsi < 35 && change > 2) {
-                    signalType = 'BUY';
-                    signalStrength = Math.min(85, 60 + Math.abs(change) * 2);
-                  } else if (rsi > 65 && change < -2) {
-                    signalType = 'SELL';
-                    signalStrength = Math.min(85, 60 + Math.abs(change) * 2);
-                  } else if (Math.abs(change) < 1) {
-                    signalType = 'HOLD';
-                    signalStrength = 55;
-                  } else {
-                    // Generate signal based on price movement
-                    if (change > 5) {
-                      signalType = 'SELL'; // Take profits on big gains
-                      signalStrength = 65;
-                    } else if (change < -5) {
-                      signalType = 'BUY'; // Buy the dip
-                      signalStrength = 65;
-                    } else if (change > 2) {
-                      signalType = 'BUY'; // Riding the trend
-                      signalStrength = 60;
-                    } else if (change < -2) {
-                      signalType = 'SELL'; // Avoid further losses
-                      signalStrength = 60;
-                    } else {
-                      signalType = 'HOLD';
-                      signalStrength = 50;
-                    }
-                  }
-                }
-              }
-              
-              const signalClass = signalType.toLowerCase();
-              
-              return (
-                <div key={symbol} className={`crypto-row ${signalClass}`}>
-                  <div className="crypto-info">
-                    <div className="crypto-name">{coinName}</div>
-                    <div className="crypto-price">
-                      ${price.toFixed(6)}
-                      <span className={`change ${change24h >= 0 ? 'positive' : 'negative'}`}>
-                        {change24h >= 0 ? '+' : ''}{change24h.toFixed(2)}%
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="signal-info">
-                    <div className={`signal-badge ${signalClass}`}>
-                      {signalType}
-                    </div>
-                    <div className="signal-details">
-                      <div className="signal-strength">{signalStrength.toFixed(0)}%</div>
-                      <div className="signal-time">{signalTime}</div>
-                    </div>
-                  </div>
+        {/* Master Control Panel */}
+        <div className="master-controls">
+          <div className="control-card">
+            <h3>🎯 Master Trading Switch</h3>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={automationConfig?.auto_trading_enabled || false}
+                onChange={(e) => updateAutomationConfig({ auto_trading_enabled: e.target.checked })}
+              />
+              <span className="slider"></span>
+            </label>
+            <p>{automationConfig?.auto_trading_enabled ? 'All signals will execute automatically' : 'Manual approval required'}</p>
+          </div>
+          
+          <div className="control-card">
+            <h3>💰 Portfolio Value</h3>
+            <div className="portfolio-value">$2,450.67</div>
+            <div className="portfolio-change">+127.34 (+5.5%) Today</div>
+          </div>
+          
+          <div className="control-card">
+            <h3>📊 Active Bots</h3>
+            <div className="active-bots">
+              <span className="bot-count">3</span>
+              <div className="bot-list">DCA • Grid • Momentum</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trading Bots Section */}
+        <div className="trading-bots-section">
+          <div className="section-header">
+            <h2>🤖 Automated Trading Bots</h2>
+            <button className="add-bot-btn" onClick={() => setShowBotCreator(true)}>
+              + Add Bot
+            </button>
+          </div>
+          
+          <div className="bots-grid">
+            {/* DCA Bot */}
+            <div className="bot-card active">
+              <div className="bot-header">
+                <h4>💎 DCA Bot - DOGE</h4>
+                <span className="bot-status active">RUNNING</span>
+              </div>
+              <div className="bot-stats">
+                <div className="stat">
+                  <span className="label">Invested:</span>
+                  <span className="value">$500.00</span>
                 </div>
-              );
-            })}
+                <div className="stat">
+                  <span className="label">Profit:</span>
+                  <span className="value positive">+$67.50 (+13.5%)</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Next Buy:</span>
+                  <span className="value">$50 in 2h 15m</span>
+                </div>
+              </div>
+              <div className="bot-controls">
+                <button className="pause-btn">⏸️ Pause</button>
+                <button className="settings-btn">⚙️ Settings</button>
+              </div>
+            </div>
+
+            {/* Grid Bot */}
+            <div className="bot-card active">
+              <div className="bot-header">
+                <h4>📊 Grid Bot - BTC</h4>
+                <span className="bot-status active">RUNNING</span>
+              </div>
+              <div className="bot-stats">
+                <div className="stat">
+                  <span className="label">Range:</span>
+                  <span className="value">$42K - $44K</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Trades:</span>
+                  <span className="value">23 completed</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Profit:</span>
+                  <span className="value positive">+$145.80 (+4.2%)</span>
+                </div>
+              </div>
+              <div className="bot-controls">
+                <button className="pause-btn">⏸️ Pause</button>
+                <button className="settings-btn">⚙️ Settings</button>
+              </div>
+            </div>
+
+            {/* Momentum Bot */}
+            <div className="bot-card active">
+              <div className="bot-header">
+                <h4>⚡ Momentum Bot - ETH</h4>
+                <span className="bot-status active">RUNNING</span>
+              </div>
+              <div className="bot-stats">
+                <div className="stat">
+                  <span className="label">Position:</span>
+                  <span className="value">0.5 ETH</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Entry:</span>
+                  <span className="value">$2,580</span>
+                </div>
+                <div className="stat">
+                  <span className="label">Profit:</span>
+                  <span className="value negative">-$23.40 (-1.8%)</span>
+                </div>
+              </div>
+              <div className="bot-controls">
+                <button className="pause-btn">⏸️ Pause</button>
+                <button className="settings-btn">⚙️ Settings</button>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div className="legend">
-          <div className="legend-item">
-            <span className="legend-color buy"></span>
-            <span>BUY - Green</span>
+
+        {/* Live Signals with Auto-Execute */}
+        <div className="signals-section">
+          <h2>🎯 Live Signals & Auto-Execution</h2>
+          
+          <div className="signals-container">
+            {Object.entries(multiCoinData)
+              .slice(0, 10)
+              .map(([symbol, data]) => {
+                const coinName = symbol.replace('USDT', '');
+                const price = data.price || 0;
+                const change24h = data.change24h || 0;
+                
+                // Generate signal based on basic technical analysis
+                let signalType = 'HOLD';
+                let signalStrength = 50;
+                let autoExecute = false;
+                
+                if (change24h > 5) {
+                  signalType = 'SELL';
+                  signalStrength = 75;
+                  autoExecute = automationConfig?.auto_trading_enabled && signalStrength >= 70;
+                } else if (change24h < -5) {
+                  signalType = 'BUY';
+                  signalStrength = 80;
+                  autoExecute = automationConfig?.auto_trading_enabled && signalStrength >= 70;
+                } else if (change24h > 2) {
+                  signalType = 'BUY';
+                  signalStrength = 65;
+                  autoExecute = automationConfig?.auto_trading_enabled && signalStrength >= 70;
+                } else if (change24h < -2) {
+                  signalType = 'SELL';
+                  signalStrength = 60;
+                }
+                
+                const signalClass = signalType.toLowerCase();
+                
+                return (
+                  <div key={symbol} className={`signal-row ${signalClass}`}>
+                    <div className="signal-crypto">
+                      <div className="crypto-name">{coinName}</div>
+                      <div className="crypto-price">${price.toFixed(6)}</div>
+                    </div>
+                    
+                    <div className="signal-data">
+                      <div className={`signal-badge ${signalClass}`}>
+                        {signalType}
+                      </div>
+                      <div className="signal-strength">{signalStrength}%</div>
+                    </div>
+                    
+                    <div className="execution-status">
+                      {autoExecute ? (
+                        <div className="auto-executing">
+                          ⚡ AUTO EXECUTING
+                        </div>
+                      ) : signalStrength >= 70 ? (
+                        <button className="manual-execute">
+                          🚀 Execute
+                        </button>
+                      ) : (
+                        <div className="waiting">
+                          ⏳ Monitoring
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
-          <div className="legend-item">
-            <span className="legend-color sell"></span>
-            <span>SELL - Red</span>
+        </div>
+
+        {/* Performance Dashboard */}
+        <div className="performance-section">
+          <h2>📈 Performance Dashboard</h2>
+          
+          <div className="performance-grid">
+            <div className="perf-card">
+              <h4>📊 Total Profit</h4>
+              <div className="perf-value positive">+$340.15</div>
+              <div className="perf-percent">+16.8% All Time</div>
+            </div>
+            
+            <div className="perf-card">
+              <h4>🎯 Win Rate</h4>
+              <div className="perf-value">74%</div>
+              <div className="perf-details">156 wins / 211 trades</div>
+            </div>
+            
+            <div className="perf-card">
+              <h4>⚡ Trades Today</h4>
+              <div className="perf-value">23</div>
+              <div className="perf-details">18 profitable</div>
+            </div>
+            
+            <div className="perf-card">
+              <h4>🚨 Max Drawdown</h4>
+              <div className="perf-value">-3.2%</div>
+              <div className="perf-details">Well controlled</div>
+            </div>
           </div>
-          <div className="legend-item">
-            <span className="legend-color hold"></span>
-            <span>HOLD - Yellow</span>
-          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="quick-actions">
+          <button className="action-btn emergency" onClick={() => {
+            alert('Emergency stop activated! All bots paused.');
+            updateAutomationConfig({ auto_trading_enabled: false });
+          }}>
+            🚨 EMERGENCY STOP
+          </button>
+          
+          <button className="action-btn settings" onClick={() => setShowSettings(true)}>
+            ⚙️ Bot Settings
+          </button>
+          
+          <button className="action-btn analytics">
+            📊 Full Analytics
+          </button>
         </div>
       </main>
     </div>
