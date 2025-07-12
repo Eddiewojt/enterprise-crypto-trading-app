@@ -1858,13 +1858,32 @@ class DOGETradingAppTester:
         except Exception as e:
             print(f"💥 Exception during focused test: {str(e)}")
             self.log_error("Binance Proxy Routing Focus", e)
-            return False
-        """Run all backend tests"""
+    def run_all_tests(self):
+        """Run all backend tests with focus on review request priorities"""
         print("🚀 Starting DOGE Trading App Backend Tests")
-        print("=" * 60)
+        print("🎯 PRIORITY FOCUS: Binance API connection and proxy configuration testing")
+        print("=" * 80)
+        
+        # PRIORITY TESTS FROM REVIEW REQUEST
+        print("\n🚨 PRIORITY TESTS (REVIEW REQUEST)")
+        print("=" * 50)
+        
+        # Run focused Binance proxy routing test first
+        print("\n🎯 Running focused Binance proxy routing test...")
+        self.test_binance_proxy_routing_focus()
+        
+        # Test specific endpoints mentioned in review
+        print("\n🔗 Testing Binance account connection...")
+        self.test_binance_account_connection()
+        
+        print("\n🚨 Testing Binance enable real trading...")
+        self.test_binance_enable_real_trading()
+        
+        print("\n🌐 Testing proxy configuration status...")
+        self.test_proxy_configuration_endpoints()
         
         # Test API endpoints
-        print("\n📡 Testing API Endpoints...")
+        print("\n📡 Testing Core API Endpoints...")
         root_ok = self.test_root_endpoint()
         binance_ok = self.test_binance_api_integration()
         klines_ok = self.test_klines_endpoint()
@@ -1940,9 +1959,6 @@ class DOGETradingAppTester:
         
         print("\n🛡️ Testing Premium Safety Limits...")
         premium_safety_ok = self.test_premium_safety_limits()
-        
-        print("\n🌐 Testing Proxy Configuration Endpoints...")
-        proxy_config_ok = self.test_proxy_configuration_endpoints()
             
         # Summary
         print("\n" + "=" * 60)
