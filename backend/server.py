@@ -3411,6 +3411,112 @@ async def get_proxy_pool_status():
     except Exception as e:
         return {'status': 'error', 'message': f'Error getting proxy status: {str(e)}'}
 
+from exchange_manager import exchange_manager
+
+# =================== LEGITIMATE EXCHANGE DETECTION ===================
+
+@api_router.get("/exchanges/available")
+async def get_available_exchanges():
+    """Detect available legitimate exchanges for user's region"""
+    try:
+        available_exchanges = await exchange_manager.detect_available_exchanges()
+        recommended = exchange_manager.get_recommended_exchange()
+        
+        return {
+            "status": "success",
+            "available_exchanges": available_exchanges,
+            "recommended_exchange": recommended,
+            "total_available": len([ex for ex in available_exchanges if ex['status'] == 'available']),
+            "message": f"Found {len([ex for ex in available_exchanges if ex['status'] == 'available'])} legitimate exchanges available in your region"
+        }
+    except Exception as e:
+        logging.error(f"Error detecting exchanges: {e}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.get("/exchanges/{exchange_id}/setup")
+async def get_exchange_setup(exchange_id: str):
+    """Get setup instructions for specific exchange"""
+    try:
+        instructions = exchange_manager.get_exchange_setup_instructions(exchange_id)
+        
+        if not instructions:
+            return {"status": "error", "message": "Exchange not supported"}
+        
+        return {
+            "status": "success",
+            "exchange_id": exchange_id,
+            "instructions": instructions
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@api_router.post("/exchanges/configure")
+async def configure_exchange(config: dict):
+    """Configure specific exchange for trading"""
+    try:
+        exchange_id = config.get('exchange_id')
+        api_key = config.get('api_key', '')
+        secret_key = config.get('secret_key', '')
+        passphrase = config.get('passphrase', '')  # For exchanges that need it
+        
+        # Update environment variables
+        if exchange_id == 'kucoin':
+            os.environ['KUCOIN_ENABLED'] = 'true'
+            os.environ['KUCOIN_API_KEY'] = api_key
+            os.environ['KUCOIN_SECRET_KEY'] = secret_key
+            os.environ['KUCOIN_PASSPHRASE'] = passphrase
+        elif exchange_id == 'kraken':
+            os.environ['KRAKEN_ENABLED'] = 'true'
+            os.environ['KRAKEN_API_KEY'] = api_key
+            os.environ['KRAKEN_SECRET_KEY'] = secret_key
+        elif exchange_id == 'okx':
+            os.environ['OKX_ENABLED'] = 'true'
+            os.environ['OKX_API_KEY'] = api_key
+            os.environ['OKX_SECRET_KEY'] = secret_key
+            os.environ['OKX_PASSPHRASE'] = passphrase
+        elif exchange_id == 'bybit':
+            os.environ['BYBIT_ENABLED'] = 'true'
+            os.environ['BYBIT_API_KEY'] = api_key
+            os.environ['BYBIT_SECRET_KEY'] = secret_key
+        
+        return {
+            "status": "configured",
+            "message": f"{exchange_id.upper()} configured successfully",
+            "exchange_id": exchange_id
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@api_router.get("/trading/compliance-status")
+async def get_compliance_status():
+    """Get current compliance and trading status"""
+    try:
+        # Check which exchanges are enabled and compliant
+        enabled_exchanges = []
+        
+        if os.environ.get('BINANCE_ENABLED', 'false').lower() == 'true':
+            enabled_exchanges.append('binance')
+        if os.environ.get('KUCOIN_ENABLED', 'false').lower() == 'true':
+            enabled_exchanges.append('kucoin')
+        if os.environ.get('KRAKEN_ENABLED', 'false').lower() == 'true':
+            enabled_exchanges.append('kraken')
+        if os.environ.get('OKX_ENABLED', 'false').lower() == 'true':
+            enabled_exchanges.append('okx')
+        if os.environ.get('BYBIT_ENABLED', 'false').lower() == 'true':
+            enabled_exchanges.append('bybit')
+        
+        return {
+            "status": "success",
+            "enabled_exchanges": enabled_exchanges,
+            "primary_exchange": os.environ.get('PRIMARY_EXCHANGE', 'auto_detect'),
+            "compliance_check": os.environ.get('COMPLIANCE_CHECK', 'true').lower() == 'true',
+            "legitimate_trading": True,
+            "multi_exchange_enabled": len(enabled_exchanges) > 1
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# =================== BINANCE WALLET BALANCE ===================
 @api_router.get("/binance/wallet-balance")
 async def get_binance_wallet_balance():
     """Get real Binance wallet balance"""
