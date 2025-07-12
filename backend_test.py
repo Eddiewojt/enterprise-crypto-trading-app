@@ -907,6 +907,45 @@ class DOGETradingAppTester:
             self.log_error("Automation Logs", e)
             return False
             
+    def test_telegram_notification_system(self):
+        """Test Telegram notification system"""
+        try:
+            print("\n📱 Testing Telegram Notification System...")
+            
+            # Test the new Telegram test endpoint
+            response = requests.post(f"{self.base_url}/test/telegram", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Validate response structure
+                required_fields = ['status', 'message', 'chat_id', 'timestamp']
+                
+                if all(field in data for field in required_fields):
+                    if (data['status'] == 'success' and 
+                        data['chat_id'] == '6086031887' and
+                        'Test Telegram notification sent successfully' in data['message']):
+                        
+                        self.log_success("Telegram Test Endpoint", 
+                                       f"Message sent to Chat ID: {data['chat_id']}")
+                        self.log_success("Telegram Configuration", 
+                                       f"Bot Token configured, timestamp: {data['timestamp']}")
+                        self.test_results['telegram_notification_system'] = True
+                        return True
+                    else:
+                        self.log_error("Telegram Test Endpoint", f"Unexpected response data: {data}")
+                        return False
+                else:
+                    self.log_error("Telegram Test Endpoint", f"Missing required fields: {data}")
+                    return False
+            else:
+                self.log_error("Telegram Test Endpoint", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Telegram Notification System", e)
+            return False
+            
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting DOGE Trading App Backend Tests")
