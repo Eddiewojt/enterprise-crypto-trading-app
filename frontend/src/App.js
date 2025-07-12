@@ -2310,9 +2310,24 @@ function App() {
               ⚠️ {portfolioData.message}
               <button 
                 className="setup-exchange-btn"
-                onClick={() => setShowExchangeSetup(true)}
+                onClick={() => setShow3CommasSetup(true)}
                 style={{
                   marginLeft: '1rem',
+                  padding: '0.5rem 1rem',
+                  background: 'linear-gradient(45deg, #8b5cf6, #a855f7)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                🚀 Setup 3commas (Recommended)
+              </button>
+              <button 
+                className="setup-exchange-btn"
+                onClick={() => setShowExchangeSetup(true)}
+                style={{
+                  marginLeft: '0.5rem',
                   padding: '0.5rem 1rem',
                   background: 'linear-gradient(45deg, #059669, #10b981)',
                   color: 'white',
@@ -2321,11 +2336,67 @@ function App() {
                   cursor: 'pointer'
                 }}
               >
-                🔧 Setup Legitimate Exchange
+                🔧 Direct Exchange Setup
               </button>
             </div>
           )}
         </div>
+
+        {/* 3commas Integration Section */}
+        {threeCommasStatus === 'connected' && (
+          <div className="threecommas-section">
+            <h2>🚀 3commas Trading Platform</h2>
+            
+            <div className="threecommas-status">
+              <div className="status-indicator connected">
+                🟢 Connected to 3commas - Legitimate Trading Active
+              </div>
+            </div>
+            
+            <div className="bots-grid">
+              {threeCommasBots.map((bot, index) => (
+                <div key={index} className="threecommas-bot-card">
+                  <div className="bot-header">
+                    <h3>{bot.name}</h3>
+                    <span className={`bot-status ${bot.status ? 'active' : 'inactive'}`}>
+                      {bot.status ? '🟢 ACTIVE' : '⚪ INACTIVE'}
+                    </span>
+                  </div>
+                  
+                  <div className="bot-details">
+                    <div className="detail-item">
+                      <span className="label">Strategy:</span>
+                      <span className="value">{bot.strategy}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Pair:</span>
+                      <span className="value">{bot.pair}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Profit:</span>
+                      <span className={`value ${bot.profit?.usd >= 0 ? 'positive' : 'negative'}`}>
+                        ${bot.profit?.usd?.toFixed(2) || '0.00'} ({bot.profit?.percent?.toFixed(1) || '0.0'}%)
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Active Deals:</span>
+                      <span className="value">{bot.active_deals}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {threeCommasBots.length === 0 && (
+              <div className="no-bots">
+                <p>No trading bots found. Create bots in your 3commas dashboard.</p>
+                <a href="https://3commas.io/bots" target="_blank" rel="noopener noreferrer">
+                  🔗 Go to 3commas Dashboard
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Available Exchanges Section */}
         {availableExchanges.length > 0 && (
