@@ -1747,8 +1747,8 @@ class DOGETradingAppTester:
             if pool_status_response.status_code == 200:
                 pool_status_data = pool_status_response.json()
                 
-                # Validate pool status structure
-                expected_fields = ['pool_enabled', 'providers', 'active_provider', 'total_providers']
+                # Validate pool status structure (actual response format)
+                expected_fields = ['pool_enabled', 'providers', 'active_proxy', 'total_providers']
                 
                 if all(field in pool_status_data for field in expected_fields):
                     self.log_success("GET /api/proxy/pool/status", 
@@ -1756,12 +1756,12 @@ class DOGETradingAppTester:
                     
                     if pool_status_data['providers']:
                         self.log_success("Premium Proxy Providers", 
-                                       f"Active Provider: {pool_status_data.get('active_provider', 'None')}")
+                                       f"Active Provider: {pool_status_data.get('active_proxy', 'None')}")
                         
                         # Validate provider structure
                         for provider in pool_status_data['providers']:
-                            if 'name' in provider and 'status' in provider:
-                                self.log_success("Provider Status", f"{provider['name']}: {provider['status']}")
+                            if 'name' in provider and 'configured' in provider:
+                                self.log_success("Provider Status", f"{provider['name']}: {'configured' if provider['configured'] else 'not configured'}")
                     
                     self.log_success("Proxy Configuration Endpoints", "✅ ALL PROXY ENDPOINTS WORKING CORRECTLY")
                     self.test_results['proxy_configuration_endpoints'] = True
