@@ -3056,6 +3056,123 @@ async def execute_rule_action(rule: AutomationRule, current_price: float):
     except Exception as e:
         logging.error(f"Error executing rule action: {e}")
 
+# =================== PROXY MANAGEMENT ===================
+
+@api_router.post("/proxy/configure")
+async def configure_proxy(proxy_config: dict):
+    """Configure proxy settings for global trading access"""
+    try:
+        proxy_type = proxy_config.get('type', 'http')
+        host = proxy_config.get('host', '')
+        port = proxy_config.get('port', '')
+        username = proxy_config.get('username', '')
+        password = proxy_config.get('password', '')
+        
+        if not host or not port:
+            return {"status": "error", "message": "Host and port are required"}
+        
+        # Update environment variables
+        os.environ['PROXY_ENABLED'] = 'true'
+        os.environ['PROXY_TYPE'] = proxy_type
+        os.environ['PROXY_HOST'] = host
+        os.environ['PROXY_PORT'] = str(port)
+        os.environ['PROXY_USERNAME'] = username
+        os.environ['PROXY_PASSWORD'] = password
+        
+        # Recreate Binance client with new proxy settings
+        global binance_client, BINANCE_AVAILABLE
+        binance_client, BINANCE_AVAILABLE = create_binance_client()
+        
+        return {
+            "status": "configured",
+            "message": f"Proxy configured: {proxy_type.upper()} {host}:{port}",
+            "binance_available": BINANCE_AVAILABLE
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Error configuring proxy: {str(e)}"}
+
+@api_router.post("/proxy/test")
+async def test_proxy_connection():
+    """Test proxy connection with Binance API"""
+    try:
+        if not os.environ.get('PROXY_ENABLED', 'false').lower() == 'true':
+            return {"status": "disabled", "message": "Proxy not enabled"}
+        
+        # Test connection
+        global binance_client, BINANCE_AVAILABLE
+        binance_client, BINANCE_AVAILABLE = create_binance_client()
+        
+        if BINANCE_AVAILABLE and binance_client:
+            # Test API call through proxy
+            server_time = binance_client.get_server_time()
+            account_info = binance_client.get_account()
+            
+            proxy_info = {
+                "type": os.environ.get('PROXY_TYPE', ''),
+                "host": os.environ.get('PROXY_HOST', ''),
+                "port": os.environ.get('PROXY_PORT', '')
+            }
+            
+            return {
+                "status": "success",
+                "message": "Proxy connection successful! Binance API accessible.",
+                "server_time": server_time,
+                "trading_enabled": account_info.get('canTrade', False),
+                "proxy_info": proxy_info
+            }
+        else:
+            return {
+                "status": "failed", 
+                "message": "Proxy configured but Binance API still not accessible"
+            }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Proxy test failed: {str(e)}"}
+
+@api_router.get("/proxy/status")
+async def get_proxy_status():
+    """Get current proxy configuration status"""
+    try:
+        proxy_enabled = os.environ.get('PROXY_ENABLED', 'false').lower() == 'true'
+        
+        if proxy_enabled:
+            return {
+                "enabled": True,
+                "type": os.environ.get('PROXY_TYPE', ''),
+                "host": os.environ.get('PROXY_HOST', ''),
+                "port": os.environ.get('PROXY_PORT', ''),
+                "has_auth": bool(os.environ.get('PROXY_USERNAME', '')),
+                "binance_available": BINANCE_AVAILABLE
+            }
+        else:
+            return {
+                "enabled": False,
+                "binance_available": BINANCE_AVAILABLE
+            }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Error getting proxy status: {str(e)}"}
+
+@api_router.post("/proxy/disable")
+async def disable_proxy():
+    """Disable proxy and use direct connection"""
+    try:
+        os.environ['PROXY_ENABLED'] = 'false'
+        
+        # Recreate Binance client without proxy
+        global binance_client, BINANCE_AVAILABLE
+        binance_client, BINANCE_AVAILABLE = create_binance_client()
+        
+        return {
+            "status": "disabled",
+            "message": "Proxy disabled, using direct connection",
+            "binance_available": BINANCE_AVAILABLE
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": f"Error disabling proxy: {str(e)}"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
