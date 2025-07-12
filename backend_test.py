@@ -39,7 +39,8 @@ class DOGETradingAppTester:
             'automation_rules': False,
             'automation_execution': False,
             'automation_logs': False,
-            'telegram_notification_system': False
+            'telegram_notification_system': False,
+            'email_notification_system': False
         }
         self.errors = []
         
