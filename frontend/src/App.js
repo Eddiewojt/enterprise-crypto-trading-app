@@ -1282,6 +1282,7 @@ function App() {
     fetchProxyStatus();
     fetchAiAnalysis(selectedSymbol);
     fetchMarketSentiment(selectedSymbol);
+    fetchPortfolioData();
   }, []);
 
   // Fetch AI analysis when symbol changes
