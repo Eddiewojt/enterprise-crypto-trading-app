@@ -337,7 +337,7 @@ async def get_doge_price():
     try:
         if BINANCE_AVAILABLE and binance_client:
             ticker = binance_client.get_symbol_ticker(symbol="DOGEUSDT")
-            price_24h = binance_client.get_24hr_ticker(symbol="DOGEUSDT")
+            price_24h = binance_client.get_ticker(symbol="DOGEUSDT")
             
             return {
                 "symbol": "DOGEUSDT",
