@@ -997,6 +997,10 @@ class DOGETradingAppTester:
         
         print("\n📊 Testing Automation Logs...")
         automation_logs_ok = self.test_automation_logs()
+        
+        # Test Telegram Notification System (NEW FEATURE)
+        print("\n📱 Testing Telegram Notification System...")
+        telegram_ok = self.test_telegram_notification_system()
             
         # Summary
         print("\n" + "=" * 60)
