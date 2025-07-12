@@ -909,6 +909,46 @@ class DOGETradingAppTester:
             self.log_error("Automation Logs", e)
             return False
             
+    def test_email_notification_system(self):
+        """Test Email notification system"""
+        try:
+            print("\n📧 Testing Email Notification System...")
+            
+            # Test the new Email test endpoint
+            response = requests.post(f"{self.base_url}/test/email", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Validate response structure
+                required_fields = ['status', 'message', 'recipient', 'sender', 'timestamp']
+                
+                if all(field in data for field in required_fields):
+                    if (data['status'] == 'success' and 
+                        data['recipient'] == 'eddiewojt1@gmail.com' and
+                        data['sender'] == 'eddiewojt1@gmail.com' and
+                        'Test email notification sent successfully' in data['message']):
+                        
+                        self.log_success("Email Test Endpoint", 
+                                       f"Email sent to: {data['recipient']}")
+                        self.log_success("Gmail Configuration", 
+                                       f"Sender: {data['sender']}, timestamp: {data['timestamp']}")
+                        self.test_results['email_notification_system'] = True
+                        return True
+                    else:
+                        self.log_error("Email Test Endpoint", f"Unexpected response data: {data}")
+                        return False
+                else:
+                    self.log_error("Email Test Endpoint", f"Missing required fields: {data}")
+                    return False
+            else:
+                self.log_error("Email Test Endpoint", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Email Notification System", e)
+            return False
+            
     def test_telegram_notification_system(self):
         """Test Telegram notification system"""
         try:
