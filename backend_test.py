@@ -30,7 +30,11 @@ class DOGETradingAppTester:
             'technical_analysis_engine': False,
             'trading_signal_generation': False,
             'api_endpoints': False,
-            'websocket_connection': False
+            'websocket_connection': False,
+            'backtesting_engine': False,
+            'backtest_results_storage': False,
+            'multi_coin_support': False,
+            'portfolio_management': False
         }
         self.errors = []
         
