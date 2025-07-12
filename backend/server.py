@@ -1205,6 +1205,12 @@ async def get_backtest_results():
     try:
         results_cursor = db.backtests.find().sort("timestamp", -1).limit(10)
         results_list = await results_cursor.to_list(length=None)
+        
+        # Convert ObjectId to string for JSON serialization
+        for result in results_list:
+            if '_id' in result:
+                result['_id'] = str(result['_id'])
+        
         return results_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching backtest results: {str(e)}")
