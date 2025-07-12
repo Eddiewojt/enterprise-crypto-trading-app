@@ -1453,6 +1453,8 @@ function App() {
   useEffect(() => {
     fetchMultiCoinData();
     fetchProxyStatus();
+    fetchAutomationStatus();
+    fetchTradingStatus();
     fetchAiAnalysis(selectedSymbol);
     fetchMarketSentiment(selectedSymbol);
     fetchPortfolioData();
