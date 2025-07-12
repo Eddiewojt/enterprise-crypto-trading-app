@@ -1669,8 +1669,8 @@ class DOGETradingAppTester:
             if status_response.status_code == 200:
                 status_data = status_response.json()
                 
-                # Validate response structure
-                required_fields = ['enabled', 'binance_available', 'type', 'host', 'port', 'authenticated']
+                # Validate response structure (actual response format)
+                required_fields = ['enabled', 'type', 'host', 'port', 'has_auth', 'binance_available']
                 
                 if all(field in status_data for field in required_fields):
                     self.log_success("GET /api/proxy/status", 
