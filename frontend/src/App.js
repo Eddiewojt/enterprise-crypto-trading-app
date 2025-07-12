@@ -770,6 +770,318 @@ const ArbitrageTracker = () => {
   );
 };
 
+// Automation Center Component
+const AutomationCenter = () => {
+  const [automationConfig, setAutomationConfig] = useState(null);
+  const [automationRules, setAutomationRules] = useState([]);
+  const [automationLogs, setAutomationLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showCreateRule, setShowCreateRule] = useState(false);
+  const [newRule, setNewRule] = useState({
+    symbol: 'DOGEUSDT',
+    rule_type: 'price_alert',
+    condition: {},
+    action: {}
+  });
+  
+  useEffect(() => {
+    fetchAutomationConfig();
+    fetchAutomationRules();
+    fetchAutomationLogs();
+  }, []);
+  
+  const fetchAutomationConfig = async () => {
+    try {
+      const response = await axios.get(`${API}/automation/config`);
+      setAutomationConfig(response.data);
+    } catch (error) {
+      console.error('Error fetching automation config:', error);
+    }
+  };
+  
+  const fetchAutomationRules = async () => {
+    try {
+      const response = await axios.get(`${API}/automation/rules`);
+      setAutomationRules(response.data.rules || []);
+    } catch (error) {
+      console.error('Error fetching automation rules:', error);
+    }
+  };
+  
+  const fetchAutomationLogs = async () => {
+    try {
+      const response = await axios.get(`${API}/automation/logs`);
+      setAutomationLogs(response.data.logs || []);
+    } catch (error) {
+      console.error('Error fetching automation logs:', error);
+    }
+  };
+  
+  const updateAutomationConfig = async (updates) => {
+    try {
+      setLoading(true);
+      const updatedConfig = { ...automationConfig, ...updates };
+      await axios.put(`${API}/automation/config`, updatedConfig);
+      setAutomationConfig(updatedConfig);
+    } catch (error) {
+      console.error('Error updating automation config:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createAutomationRule = async () => {
+    try {
+      setLoading(true);
+      await axios.post(`${API}/automation/rules`, newRule);
+      await fetchAutomationRules();
+      setShowCreateRule(false);
+      setNewRule({
+        symbol: 'DOGEUSDT',
+        rule_type: 'price_alert',
+        condition: {},
+        action: {}
+      });
+    } catch (error) {
+      console.error('Error creating automation rule:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const deleteRule = async (ruleId) => {
+    try {
+      await axios.delete(`${API}/automation/rules/${ruleId}`);
+      await fetchAutomationRules();
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+    }
+  };
+  
+  if (!automationConfig) {
+    return <div className="loading">Loading automation center...</div>;
+  }
+  
+  return (
+    <div className="automation-center">
+      <div className="automation-header">
+        <h3>🎯 Automated Trading Center</h3>
+        <div className="automation-status">
+          <span className={`status-indicator ${automationConfig.auto_trading_enabled ? 'active' : 'inactive'}`}>
+            {automationConfig.auto_trading_enabled ? '🟢 ACTIVE' : '🔴 INACTIVE'}
+          </span>
+        </div>
+      </div>
+      
+      {/* Configuration Panel */}
+      <div className="automation-config">
+        <h4>⚙️ Configuration</h4>
+        <div className="config-grid">
+          <div className="config-item">
+            <label>
+              <input
+                type="checkbox"
+                checked={automationConfig.auto_trading_enabled}
+                onChange={(e) => updateAutomationConfig({ auto_trading_enabled: e.target.checked })}
+              />
+              Enable Auto Trading
+            </label>
+          </div>
+          
+          <div className="config-item">
+            <label>Max Trade Amount ($)</label>
+            <input
+              type="number"
+              value={automationConfig.max_trade_amount}
+              onChange={(e) => updateAutomationConfig({ max_trade_amount: parseFloat(e.target.value) })}
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="config-item">
+            <label>Risk Level</label>
+            <select
+              value={automationConfig.risk_level}
+              onChange={(e) => updateAutomationConfig({ risk_level: e.target.value })}
+              disabled={loading}
+            >
+              <option value="low">Low Risk</option>
+              <option value="medium">Medium Risk</option>
+              <option value="high">High Risk</option>
+            </select>
+          </div>
+          
+          <div className="config-item">
+            <label>Preferred Timeframe</label>
+            <select
+              value={automationConfig.preferred_timeframe}
+              onChange={(e) => updateAutomationConfig({ preferred_timeframe: e.target.value })}
+              disabled={loading}
+            >
+              <option value="15m">15 minutes</option>
+              <option value="1h">1 hour</option>
+              <option value="4h">4 hours</option>
+              <option value="1d">1 day</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      {/* Rules Management */}
+      <div className="automation-rules">
+        <div className="rules-header">
+          <h4>📋 Automation Rules</h4>
+          <button 
+            className="create-rule-btn"
+            onClick={() => setShowCreateRule(true)}
+          >
+            + Create Rule
+          </button>
+        </div>
+        
+        {showCreateRule && (
+          <div className="create-rule-form">
+            <h5>Create New Rule</h5>
+            <div className="form-grid">
+              <div>
+                <label>Symbol</label>
+                <select
+                  value={newRule.symbol}
+                  onChange={(e) => setNewRule({...newRule, symbol: e.target.value})}
+                >
+                  <option value="DOGEUSDT">DOGE</option>
+                  <option value="BTCUSDT">BTC</option>
+                  <option value="ETHUSDT">ETH</option>
+                </select>
+              </div>
+              
+              <div>
+                <label>Rule Type</label>
+                <select
+                  value={newRule.rule_type}
+                  onChange={(e) => setNewRule({...newRule, rule_type: e.target.value})}
+                >
+                  <option value="price_alert">Price Alert</option>
+                  <option value="technical_signal">Technical Signal</option>
+                </select>
+              </div>
+              
+              {newRule.rule_type === 'price_alert' && (
+                <>
+                  <div>
+                    <label>Target Price ($)</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="0.085000"
+                      onChange={(e) => setNewRule({
+                        ...newRule, 
+                        condition: {...newRule.condition, target_price: parseFloat(e.target.value)}
+                      })}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label>Condition</label>
+                    <select
+                      onChange={(e) => setNewRule({
+                        ...newRule,
+                        condition: {...newRule.condition, operator: e.target.value}
+                      })}
+                    >
+                      <option value=">=">Price Above</option>
+                      <option value="<=">Price Below</option>
+                    </select>
+                  </div>
+                </>
+              )}
+              
+              <div>
+                <label>Action</label>
+                <select
+                  onChange={(e) => setNewRule({
+                    ...newRule,
+                    action: {type: e.target.value, side: e.target.value === 'trade' ? 'BUY' : undefined}
+                  })}
+                >
+                  <option value="notify">Send Notification</option>
+                  <option value="trade">Execute Trade</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="form-actions">
+              <button onClick={createAutomationRule} disabled={loading}>
+                {loading ? 'Creating...' : 'Create Rule'}
+              </button>
+              <button onClick={() => setShowCreateRule(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+        
+        <div className="rules-list">
+          {automationRules.length > 0 ? (
+            automationRules.map((rule, index) => (
+              <div key={index} className="rule-card">
+                <div className="rule-header">
+                  <span className="rule-symbol">{rule.symbol}</span>
+                  <span className={`rule-status ${rule.is_active ? 'active' : 'inactive'}`}>
+                    {rule.is_active ? '✅' : '❌'}
+                  </span>
+                  <button onClick={() => deleteRule(rule.id)}>🗑️</button>
+                </div>
+                
+                <div className="rule-details">
+                  <p><strong>Type:</strong> {rule.rule_type}</p>
+                  <p><strong>Condition:</strong> {JSON.stringify(rule.condition)}</p>
+                  <p><strong>Action:</strong> {JSON.stringify(rule.action)}</p>
+                  {rule.last_triggered && (
+                    <p><strong>Last Triggered:</strong> {new Date(rule.last_triggered).toLocaleString()}</p>
+                  )}
+                  <p><strong>Trigger Count:</strong> {rule.trigger_count}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="no-rules">
+              <p>No automation rules created yet</p>
+              <p>Create your first rule to start automated trading</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Execution Logs */}
+      <div className="automation-logs">
+        <h4>📊 Execution Logs</h4>
+        <div className="logs-list">
+          {automationLogs.length > 0 ? (
+            automationLogs.slice(0, 10).map((log, index) => (
+              <div key={index} className="log-entry">
+                <div className="log-time">
+                  {new Date(log.executed_at).toLocaleString()}
+                </div>
+                <div className="log-content">
+                  <span className="log-action">{log.action}</span>
+                  <span className="log-symbol">{log.symbol}</span>
+                  <span className="log-details">
+                    {log.quantity.toFixed(6)} @ {formatPrice(log.price)} 
+                    (Signal: {log.signal_strength}%)
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="no-logs">
+              <p>No automation executions yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main App Component with all enterprise features
 function App() {
   const [multiCoinData, setMultiCoinData] = useState({});
