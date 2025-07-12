@@ -46,6 +46,8 @@ class DOGETradingAppTester:
             'binance_safety_settings': False,
             'binance_execute_real_trade': False,
             'binance_notification_system': False,
+            'binance_wallet_balance': False,
+            'trading_bot_performance': False,
             'premium_ai_market_analysis': False,
             'premium_market_sentiment': False,
             'premium_enhanced_technical_analysis': False,
