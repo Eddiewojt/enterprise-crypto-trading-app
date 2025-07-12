@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Enterprise Crypto Trading",
+    "slug": "enterprise-crypto-trading",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e293b"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.enterprisecrypto.trading"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1e293b"
+      },
+      "package": "com.enterprisecrypto.trading",
+      "versionCode": 2,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "CAMERA",
+        "WRITE_EXTERNAL_STORAGE",
+        "USE_BIOMETRIC",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "API_BASE_URL": "https://36f48d60-486f-41c7-8472-952629162bae.preview.emergentagent.com/api"
+    },
+    "plugins": [
+      "expo-dev-client"
+    ]
+  }
+}
