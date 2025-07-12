@@ -1689,123 +1689,78 @@ class DOGETradingAppTester:
             return False
 
     def test_proxy_configuration_endpoints(self):
-        """Test proxy configuration endpoints to troubleshoot VPN setup issues"""
+        """Test proxy configuration endpoints - FOCUS AREA FROM REVIEW"""
         try:
-            print("\n🌐 Testing Proxy Configuration Endpoints...")
+            print("\n🌐 Testing Proxy Configuration Endpoints (REVIEW FOCUS)...")
+            print("🎯 TESTING: GET /api/proxy/status to check current proxy configuration")
             
-            # Test 1: GET /api/proxy/status endpoint to verify current proxy state
-            print("Testing GET /api/proxy/status...")
-            status_response = requests.get(f"{self.base_url}/proxy/status", timeout=15)
+            # Test GET /api/proxy/status
+            response = requests.get(f"{self.base_url}/proxy/status", timeout=15)
             
-            if status_response.status_code == 200:
-                status_data = status_response.json()
+            print(f"📊 Proxy Status Response: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"📋 Proxy Configuration: {json.dumps(data, indent=2)}")
                 
-                # Validate response structure (actual response format)
-                required_fields = ['enabled', 'type', 'host', 'port', 'has_auth', 'binance_available']
+                # Validate response structure
+                required_fields = ['enabled', 'binance_available', 'type', 'host', 'port']
                 
-                if all(field in status_data for field in required_fields):
-                    self.log_success("GET /api/proxy/status", 
-                                   f"Enabled: {status_data['enabled']}, Binance Available: {status_data['binance_available']}")
-                    self.log_success("Proxy Status Details", 
-                                   f"Type: {status_data['type']}, Host: {status_data['host']}, Port: {status_data['port']}")
-                else:
-                    self.log_error("GET /api/proxy/status", f"Missing required fields: {status_data}")
-                    return False
-            else:
-                self.log_error("GET /api/proxy/status", f"HTTP {status_response.status_code}: {status_response.text}")
-                return False
-            
-            # Test 2: POST /api/proxy/configure with sample data to verify single proxy configuration
-            print("Testing POST /api/proxy/configure...")
-            single_proxy_config = {
-                "type": "http",
-                "host": "test.proxy.com", 
-                "port": "8080",
-                "username": "testuser",
-                "password": "testpass"
-            }
-            
-            configure_response = requests.post(f"{self.base_url}/proxy/configure", 
-                                             json=single_proxy_config, 
-                                             timeout=15)
-            
-            if configure_response.status_code == 200:
-                configure_data = configure_response.json()
-                
-                if configure_data.get('status') == 'configured':
-                    self.log_success("POST /api/proxy/configure", 
-                                   f"Single proxy configured: {single_proxy_config['host']}:{single_proxy_config['port']}")
-                    self.log_success("Proxy Configuration", f"Type: {single_proxy_config['type']}, Auth: enabled")
-                else:
-                    self.log_error("POST /api/proxy/configure", f"Configuration failed: {configure_data}")
-                    return False
-            else:
-                self.log_error("POST /api/proxy/configure", f"HTTP {configure_response.status_code}: {configure_response.text}")
-                return False
-            
-            # Test 3: POST /api/proxy/pool/configure with sample premium proxy data
-            print("Testing POST /api/proxy/pool/configure...")
-            premium_proxy_config = {
-                "providers": {
-                    "smartproxy": {"username": "test", "password": "test"},
-                    "brightdata": {"username": "", "password": ""},
-                    "oxylabs": {"username": "", "password": ""}
-                }
-            }
-            
-            pool_configure_response = requests.post(f"{self.base_url}/proxy/pool/configure", 
-                                                  json=premium_proxy_config, 
-                                                  timeout=15)
-            
-            if pool_configure_response.status_code == 200:
-                pool_configure_data = pool_configure_response.json()
-                
-                if pool_configure_data.get('status') == 'configured':
-                    self.log_success("POST /api/proxy/pool/configure", 
-                                   f"Premium proxy pool configured with {len(premium_proxy_config['providers'])} providers")
-                    self.log_success("Premium Proxy Pool", "Smartproxy, Bright Data, and Oxylabs configured")
-                else:
-                    self.log_error("POST /api/proxy/pool/configure", f"Pool configuration failed: {pool_configure_data}")
-                    return False
-            else:
-                self.log_error("POST /api/proxy/pool/configure", f"HTTP {pool_configure_response.status_code}: {pool_configure_response.text}")
-                return False
-            
-            # Test 4: GET /api/proxy/pool/status to verify premium proxy pool status
-            print("Testing GET /api/proxy/pool/status...")
-            pool_status_response = requests.get(f"{self.base_url}/proxy/pool/status", timeout=15)
-            
-            if pool_status_response.status_code == 200:
-                pool_status_data = pool_status_response.json()
-                
-                # Validate pool status structure (actual response format)
-                expected_fields = ['pool_enabled', 'providers', 'active_proxy', 'total_providers']
-                
-                if all(field in pool_status_data for field in expected_fields):
-                    self.log_success("GET /api/proxy/pool/status", 
-                                   f"Pool Enabled: {pool_status_data['pool_enabled']}, Total Providers: {pool_status_data['total_providers']}")
+                if all(field in data for field in required_fields):
+                    proxy_enabled = data['enabled']
+                    binance_available = data['binance_available']
                     
-                    if pool_status_data['providers']:
-                        self.log_success("Premium Proxy Providers", 
-                                       f"Active Provider: {pool_status_data.get('active_proxy', 'None')}")
+                    self.log_success("Proxy Status Endpoint", f"Proxy Enabled: {proxy_enabled}")
+                    self.log_success("Binance Availability", f"Binance Available: {binance_available}")
+                    
+                    if proxy_enabled:
+                        self.log_success("Proxy Configuration", 
+                                       f"Type: {data['type']}, Host: {data['host']}, Port: {data['port']}")
                         
-                        # Validate provider structure
-                        for provider in pool_status_data['providers']:
-                            if 'name' in provider and 'configured' in provider:
-                                self.log_success("Provider Status", f"{provider['name']}: {'configured' if provider['configured'] else 'not configured'}")
+                        # Check if proxy is actually working for Binance
+                        if not binance_available:
+                            print("⚠️  WARNING: Proxy is enabled but Binance is still not available!")
+                            print("🔍 ISSUE: VPN/proxy may not be properly routing Binance API calls")
+                            print("💡 TROUBLESHOOTING: The demo VPN mode may not be actually routing API calls through proxy")
+                    else:
+                        print("🚨 DETECTED: Proxy is DISABLED")
+                        print("🔍 ISSUE: PROXY_ENABLED is set to false in backend configuration")
+                        print("💡 TROUBLESHOOTING: Real Binance API calls are going direct and getting blocked")
                     
-                    self.log_success("Proxy Configuration Endpoints", "✅ ALL PROXY ENDPOINTS WORKING CORRECTLY")
+                    # Test proxy pool status
+                    print("\n🎯 TESTING: GET /api/proxy/pool/status for premium proxy pool")
+                    pool_response = requests.get(f"{self.base_url}/proxy/pool/status", timeout=15)
+                    
+                    if pool_response.status_code == 200:
+                        pool_data = pool_response.json()
+                        print(f"📋 Proxy Pool Status: {json.dumps(pool_data, indent=2)}")
+                        
+                        pool_enabled = pool_data.get('pool_enabled', False)
+                        total_providers = pool_data.get('total_providers', 0)
+                        
+                        self.log_success("Proxy Pool Status", f"Pool Enabled: {pool_enabled}, Providers: {total_providers}")
+                        
+                        if pool_enabled and total_providers > 0:
+                            active_proxy = pool_data.get('active_proxy', 'None')
+                            self.log_success("Active Proxy Provider", f"Currently using: {active_proxy}")
+                        else:
+                            print("⚠️  WARNING: Premium proxy pool is not configured or enabled")
+                            print("🔍 ISSUE: No premium proxy providers available for global access")
+                    
                     self.test_results['proxy_configuration_endpoints'] = True
                     return True
                 else:
-                    self.log_error("GET /api/proxy/pool/status", f"Missing required fields: {pool_status_data}")
+                    self.log_error("Proxy Configuration", f"Missing required fields: {data}")
                     return False
             else:
-                self.log_error("GET /api/proxy/pool/status", f"HTTP {pool_status_response.status_code}: {pool_status_response.text}")
+                print(f"❌ Proxy Status Error: {response.status_code}")
+                print(f"📄 Response Text: {response.text}")
+                self.log_error("Proxy Configuration", f"HTTP {response.status_code}: {response.text}")
                 return False
                 
         except Exception as e:
-            self.log_error("Proxy Configuration Endpoints", e)
+            print(f"💥 Exception occurred: {str(e)}")
+            self.log_error("Proxy Configuration", e)
             return False
 
     def run_all_tests(self):
