@@ -340,24 +340,53 @@ async def get_doge_price():
 async def get_doge_klines(timeframe: str = "15m", limit: int = 100):
     """Get DOGE candlestick data"""
     try:
-        klines = binance_client.get_klines(
-            symbol="DOGEUSDT",
-            interval=timeframe,
-            limit=limit
-        )
-        
-        formatted_klines = []
-        for kline in klines:
-            formatted_klines.append({
-                "timestamp": kline[0],
-                "open": float(kline[1]),
-                "high": float(kline[2]),
-                "low": float(kline[3]),
-                "close": float(kline[4]),
-                "volume": float(kline[5])
-            })
-        
-        return formatted_klines
+        if BINANCE_AVAILABLE and binance_client:
+            klines = binance_client.get_klines(
+                symbol="DOGEUSDT",
+                interval=timeframe,
+                limit=limit
+            )
+            
+            formatted_klines = []
+            for kline in klines:
+                formatted_klines.append({
+                    "timestamp": kline[0],
+                    "open": float(kline[1]),
+                    "high": float(kline[2]),
+                    "low": float(kline[3]),
+                    "close": float(kline[4]),
+                    "volume": float(kline[5])
+                })
+            
+            return formatted_klines
+        else:
+            # Mock candlestick data
+            import random
+            from datetime import timedelta
+            
+            formatted_klines = []
+            base_price = 0.08234
+            current_time = datetime.utcnow()
+            
+            # Generate mock klines
+            for i in range(limit):
+                timestamp = int((current_time - timedelta(minutes=15*i)).timestamp() * 1000)
+                price_variation = random.uniform(-0.001, 0.001)
+                open_price = base_price + price_variation
+                close_price = open_price + random.uniform(-0.0005, 0.0005)
+                high_price = max(open_price, close_price) + random.uniform(0, 0.0002)
+                low_price = min(open_price, close_price) - random.uniform(0, 0.0002)
+                
+                formatted_klines.append({
+                    "timestamp": timestamp,
+                    "open": round(open_price, 6),
+                    "high": round(high_price, 6),
+                    "low": round(low_price, 6),
+                    "close": round(close_price, 6),
+                    "volume": round(random.uniform(10000, 50000), 2)
+                })
+            
+            return list(reversed(formatted_klines))  # Return in chronological order
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching klines: {str(e)}")
 
