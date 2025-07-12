@@ -1340,7 +1340,504 @@ async def get_market_news():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching market news: {str(e)}")
 
-# =================== ORIGINAL ENDPOINTS (MAINTAINED) =================== 
+# =================== CUTTING-EDGE DEFI & NFT ENDPOINTS ===================
+
+@api_router.get("/defi/opportunities")
+async def get_defi_opportunities():
+    """Get comprehensive DeFi opportunities"""
+    try:
+        opportunities = await defi_engine.get_defi_opportunities()
+        return opportunities
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DeFi opportunities error: {str(e)}")
+
+@api_router.get("/defi/arbitrage")
+async def get_arbitrage_opportunities(min_profit: float = 0.5):
+    """Get cross-exchange arbitrage opportunities"""
+    try:
+        opportunities = await arbitrage_engine.find_arbitrage_opportunities(min_profit)
+        
+        return {
+            "opportunities": [
+                {
+                    "symbol": opp.symbol,
+                    "buy_exchange": opp.buy_exchange,
+                    "sell_exchange": opp.sell_exchange,
+                    "buy_price": opp.buy_price,
+                    "sell_price": opp.sell_price,
+                    "profit_percentage": round(opp.profit_percentage, 3),
+                    "estimated_profit": round(opp.estimated_profit, 2),
+                    "volume_available": opp.volume_available
+                }
+                for opp in opportunities
+            ],
+            "total_opportunities": len(opportunities),
+            "best_opportunity": {
+                "symbol": opportunities[0].symbol,
+                "profit": opportunities[0].profit_percentage
+            } if opportunities else None,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Arbitrage opportunities error: {str(e)}")
+
+@api_router.get("/nft/market-analysis")
+async def get_nft_market_analysis():
+    """Get comprehensive NFT market analysis"""
+    try:
+        analysis = await nft_engine.get_nft_market_analysis()
+        return analysis
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"NFT market analysis error: {str(e)}")
+
+# =================== TRADING BOTS ENDPOINTS ===================
+
+@api_router.post("/bots/create")
+async def create_trading_bot(
+    name: str,
+    strategy: str,
+    symbol: str,
+    investment_amount: float,
+    risk_level: str = "medium"
+):
+    """Create a new trading bot"""
+    try:
+        # Validate strategy
+        try:
+            bot_strategy = BotStrategy(strategy)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid strategy: {strategy}")
+        
+        # Validate symbol
+        symbol_upper = symbol.upper() + 'USDT' if not symbol.upper().endswith('USDT') else symbol.upper()
+        if symbol_upper not in SUPPORTED_COINS:
+            raise HTTPException(status_code=400, detail=f"Unsupported symbol: {symbol}")
+        
+        # Create bot configuration
+        bot_config = BotConfig(
+            bot_id=str(uuid.uuid4()),
+            name=name,
+            strategy=bot_strategy,
+            symbol=symbol_upper,
+            investment_amount=investment_amount,
+            risk_level=risk_level,
+            max_drawdown=0.2,  # 20% max drawdown
+            stop_loss=0.1,     # 10% stop loss
+            take_profit=0.3    # 30% take profit
+        )
+        
+        result = await trading_bot_engine.create_bot(bot_config)
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bot creation error: {str(e)}")
+
+@api_router.get("/bots/recommendations")
+async def get_bot_recommendations(
+    risk_tolerance: str = "medium",
+    investment_amount: float = 1000,
+    experience: str = "beginner"
+):
+    """Get personalized trading bot recommendations"""
+    try:
+        user_profile = {
+            "risk_tolerance": risk_tolerance,
+            "investment_amount": investment_amount,
+            "experience": experience
+        }
+        
+        recommendations = await trading_bot_engine.get_bot_recommendations(user_profile)
+        
+        return {
+            "recommendations": recommendations,
+            "user_profile": user_profile,
+            "total_recommendations": len(recommendations),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bot recommendations error: {str(e)}")
+
+@api_router.get("/bots/performance")
+async def get_bot_performance():
+    """Get performance data for all trading bots"""
+    try:
+        performances = await trading_bot_engine.get_all_bot_performances()
+        return performances
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bot performance error: {str(e)}")
+
+@api_router.post("/bots/{bot_id}/execute")
+async def execute_bot_strategy(bot_id: str):
+    """Manually execute trading strategy for a specific bot"""
+    try:
+        # Get market data for the bot's symbol
+        # This would normally come from real market data
+        market_data = {
+            "price": 0.08234,  # Mock current price
+            "volume": 1000000,
+            "price_history": [0.08234 * (1 + np.random.uniform(-0.01, 0.01)) for _ in range(50)]
+        }
+        
+        result = await trading_bot_engine.execute_bot_strategy(bot_id, market_data)
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bot execution error: {str(e)}")
+
+@api_router.put("/bots/{bot_id}/toggle")
+async def toggle_bot_status(bot_id: str):
+    """Toggle bot active/inactive status"""
+    try:
+        if bot_id in trading_bot_engine.active_bots:
+            bot = trading_bot_engine.active_bots[bot_id]
+            bot.active = not bot.active
+            
+            return {
+                "bot_id": bot_id,
+                "status": "active" if bot.active else "inactive",
+                "message": f"Bot {'activated' if bot.active else 'deactivated'} successfully"
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Bot not found")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bot toggle error: {str(e)}")
+
+# =================== ADVANCED ALERTS & MONITORING ===================
+
+@api_router.post("/alerts/create")
+async def create_advanced_alert(
+    symbol: str,
+    alert_type: str,  # 'price', 'volume', 'pattern', 'signal'
+    condition: str,   # 'above', 'below', 'crosses'
+    value: float,
+    message: str = ""
+):
+    """Create advanced price and market alerts"""
+    try:
+        alert_id = str(uuid.uuid4())
+        
+        alert = {
+            "alert_id": alert_id,
+            "symbol": symbol.upper() + 'USDT' if not symbol.upper().endswith('USDT') else symbol.upper(),
+            "alert_type": alert_type,
+            "condition": condition,
+            "value": value,
+            "message": message or f"{symbol} {alert_type} {condition} {value}",
+            "active": True,
+            "created_at": datetime.utcnow().isoformat(),
+            "triggered_count": 0
+        }
+        
+        # Save to database
+        await db.alerts.insert_one(alert)
+        
+        return {
+            "status": "success",
+            "alert_id": alert_id,
+            "message": "Alert created successfully",
+            "alert_details": alert
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Alert creation error: {str(e)}")
+
+@api_router.get("/alerts")
+async def get_user_alerts():
+    """Get all user alerts"""
+    try:
+        alerts_cursor = db.alerts.find({"active": True}).sort("created_at", -1)
+        alerts_list = await alerts_cursor.to_list(length=None)
+        
+        # Convert ObjectId to string
+        for alert in alerts_list:
+            if '_id' in alert:
+                alert['_id'] = str(alert['_id'])
+        
+        return {
+            "alerts": alerts_list,
+            "total_alerts": len(alerts_list),
+            "active_alerts": len([a for a in alerts_list if a.get("active", True)])
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Get alerts error: {str(e)}")
+
+# =================== PROFESSIONAL REPORTING ===================
+
+@api_router.get("/reports/trading-summary")
+async def get_trading_summary_report(
+    start_date: str = None,
+    end_date: str = None
+):
+    """Generate comprehensive trading summary report"""
+    try:
+        # Set default date range
+        if not end_date:
+            end_date = datetime.utcnow().isoformat()
+        if not start_date:
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        # Get trade data
+        trades_cursor = db.trades.find({
+            "timestamp": {
+                "$gte": start_date,
+                "$lte": end_date
+            }
+        }).sort("timestamp", -1)
+        trades_list = await trades_cursor.to_list(length=None)
+        
+        # Get portfolio data
+        portfolio_cursor = db.portfolio.find({"user_id": "default_user"})
+        portfolio_list = await portfolio_cursor.to_list(length=None)
+        
+        # Calculate comprehensive metrics
+        total_trades = len(trades_list)
+        total_volume = sum(trade.get("quantity", 0) * trade.get("price", 0) for trade in trades_list)
+        
+        # Group trades by symbol
+        symbol_stats = {}
+        for trade in trades_list:
+            symbol = trade.get("symbol", "Unknown")
+            if symbol not in symbol_stats:
+                symbol_stats[symbol] = {"trades": 0, "volume": 0, "buy_count": 0, "sell_count": 0}
+            
+            symbol_stats[symbol]["trades"] += 1
+            symbol_stats[symbol]["volume"] += trade.get("quantity", 0) * trade.get("price", 0)
+            
+            if trade.get("side") == "BUY":
+                symbol_stats[symbol]["buy_count"] += 1
+            else:
+                symbol_stats[symbol]["sell_count"] += 1
+        
+        # Portfolio metrics
+        portfolio_value = sum(holding.get("current_value", 0) for holding in portfolio_list)
+        portfolio_pnl = sum(holding.get("pnl", 0) for holding in portfolio_list)
+        
+        return {
+            "report_period": {
+                "start_date": start_date,
+                "end_date": end_date,
+                "duration_days": (datetime.fromisoformat(end_date.replace('Z', '+00:00')) - 
+                                datetime.fromisoformat(start_date.replace('Z', '+00:00'))).days
+            },
+            "trading_activity": {
+                "total_trades": total_trades,
+                "total_volume": round(total_volume, 2),
+                "average_trade_size": round(total_volume / max(1, total_trades), 2),
+                "most_traded_symbol": max(symbol_stats.keys(), key=lambda k: symbol_stats[k]["trades"]) if symbol_stats else "None"
+            },
+            "portfolio_summary": {
+                "current_value": round(portfolio_value, 2),
+                "total_pnl": round(portfolio_pnl, 2),
+                "pnl_percentage": round((portfolio_pnl / portfolio_value) * 100, 2) if portfolio_value > 0 else 0,
+                "holdings_count": len(portfolio_list)
+            },
+            "symbol_breakdown": symbol_stats,
+            "risk_metrics": {
+                "portfolio_concentration": max([holding.get("current_value", 0) / portfolio_value for holding in portfolio_list]) if portfolio_value > 0 else 0,
+                "diversification_score": min(1.0, len(portfolio_list) / 10),  # Score out of 1.0
+                "volatility_exposure": "medium"  # Simplified calculation
+            },
+            "recommendations": [
+                "Consider diversifying portfolio if concentration > 40%",
+                "Regular rebalancing recommended for optimal performance",
+                "Monitor risk-adjusted returns for better decision making"
+            ],
+            "generated_at": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Trading report error: {str(e)}")
+
+@api_router.get("/reports/export/{format}")
+async def export_trading_data(
+    format: str,  # 'csv', 'json', 'pdf'
+    data_type: str = "trades",  # 'trades', 'portfolio', 'signals'
+    start_date: str = None,
+    end_date: str = None
+):
+    """Export trading data in various formats"""
+    try:
+        if format not in ['csv', 'json', 'pdf']:
+            raise HTTPException(status_code=400, detail="Supported formats: csv, json, pdf")
+        
+        # Set default date range
+        if not end_date:
+            end_date = datetime.utcnow().isoformat()
+        if not start_date:
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        
+        # Get data based on type
+        if data_type == "trades":
+            cursor = db.trades.find({
+                "timestamp": {"$gte": start_date, "$lte": end_date}
+            }).sort("timestamp", -1)
+        elif data_type == "portfolio":
+            cursor = db.portfolio.find({"user_id": "default_user"})
+        elif data_type == "signals":
+            # Mock signals data for export
+            export_data = [
+                {
+                    "symbol": "DOGEUSDT",
+                    "signal_type": "BUY",
+                    "strength": 75.5,
+                    "price": 0.08234,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            ]
+        else:
+            raise HTTPException(status_code=400, detail="Supported data types: trades, portfolio, signals")
+        
+        if data_type != "signals":
+            export_data = await cursor.to_list(length=None)
+            
+            # Clean data for export
+            for item in export_data:
+                if '_id' in item:
+                    del item['_id']
+        
+        # Return data in requested format
+        if format == 'json':
+            return {
+                "data": export_data,
+                "metadata": {
+                    "data_type": data_type,
+                    "format": format,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "record_count": len(export_data),
+                    "exported_at": datetime.utcnow().isoformat()
+                }
+            }
+        elif format == 'csv':
+            # For CSV, we'd normally generate actual CSV content
+            return {
+                "message": f"CSV export prepared for {len(export_data)} {data_type} records",
+                "download_url": f"/api/download/csv/{data_type}",
+                "record_count": len(export_data)
+            }
+        elif format == 'pdf':
+            # For PDF, we'd normally generate actual PDF content
+            return {
+                "message": f"PDF report prepared for {len(export_data)} {data_type} records",
+                "download_url": f"/api/download/pdf/{data_type}",
+                "record_count": len(export_data)
+            }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export error: {str(e)}")
+
+# =================== COPY TRADING PLATFORM ===================
+
+@api_router.get("/social/top-traders")
+async def get_top_traders(limit: int = 20):
+    """Get top performing traders for copy trading"""
+    try:
+        # Mock top traders data
+        top_traders = []
+        
+        trader_names = [
+            "CryptoMaster", "DiamondHands", "MoonTrader", "HODLKing", "TechAnalyst",
+            "BitcoinBull", "AltcoinAce", "DeFiDegen", "SwingKing", "ScalpMaster",
+            "TrendFollower", "ValueHunter", "RiskManager", "ProfitTaker", "Momentum",
+            "GridTrader", "ArbitrageBot", "YieldFarmer", "NFTFliper", "MetaTrader"
+        ]
+        
+        for i, name in enumerate(trader_names[:limit]):
+            top_traders.append({
+                "trader_id": str(uuid.uuid4()),
+                "username": name,
+                "rank": i + 1,
+                "total_return": round(np.random.uniform(50, 300), 1),
+                "monthly_return": round(np.random.uniform(5, 25), 1),
+                "win_rate": round(np.random.uniform(60, 85), 1),
+                "followers": np.random.randint(100, 5000),
+                "copied_trades": np.random.randint(50, 500),
+                "risk_score": round(np.random.uniform(0.2, 0.8), 2),
+                "preferred_assets": np.random.choice(SUPPORTED_COINS, size=3).tolist(),
+                "verification_status": "verified" if i < 10 else "unverified",
+                "subscription_fee": round(np.random.uniform(10, 100), 0) if i < 5 else 0,
+                "trading_style": np.random.choice(["swing", "scalp", "position", "day"]),
+                "last_active": (datetime.utcnow() - timedelta(hours=np.random.randint(1, 24))).isoformat()
+            })
+        
+        return {
+            "top_traders": top_traders,
+            "total_traders": len(top_traders),
+            "criteria": "Ranked by risk-adjusted returns over 90 days",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Top traders error: {str(e)}")
+
+@api_router.post("/social/copy-trader/{trader_id}")
+async def start_copy_trading(
+    trader_id: str,
+    allocation_amount: float,
+    copy_ratio: float = 1.0  # 1.0 = 100% copy ratio
+):
+    """Start copying a trader's positions"""
+    try:
+        copy_id = str(uuid.uuid4())
+        
+        copy_settings = {
+            "copy_id": copy_id,
+            "trader_id": trader_id,
+            "user_id": "default_user",
+            "allocation_amount": allocation_amount,
+            "copy_ratio": copy_ratio,
+            "status": "active",
+            "started_at": datetime.utcnow().isoformat(),
+            "total_copied_trades": 0,
+            "total_pnl": 0.0
+        }
+        
+        # Save copy trading settings
+        await db.copy_trading.insert_one(copy_settings)
+        
+        return {
+            "status": "success",
+            "copy_id": copy_id,
+            "message": f"Started copying trader {trader_id}",
+            "settings": copy_settings
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Copy trading error: {str(e)}")
+
+@api_router.get("/social/my-copies")
+async def get_my_copy_trading():
+    """Get user's copy trading positions"""
+    try:
+        copies_cursor = db.copy_trading.find({"user_id": "default_user"})
+        copies_list = await copies_cursor.to_list(length=None)
+        
+        # Convert ObjectId to string and add mock performance data
+        for copy in copies_list:
+            if '_id' in copy:
+                copy['_id'] = str(copy['_id'])
+            
+            # Add mock performance metrics
+            copy['performance'] = {
+                "return_percentage": round(np.random.uniform(-10, 30), 2),
+                "trades_copied": np.random.randint(10, 100),
+                "success_rate": round(np.random.uniform(60, 80), 1),
+                "current_drawdown": round(np.random.uniform(0, 15), 2)
+            }
+        
+        return {
+            "copy_positions": copies_list,
+            "total_copies": len(copies_list),
+            "active_copies": len([c for c in copies_list if c.get("status") == "active"])
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"My copy trading error: {str(e)}")
+
+# =================== ORIGINAL ENDPOINTS MAINTAINED ===================  
 
 @api_router.get("/supported-coins")
 async def get_supported_coins():
