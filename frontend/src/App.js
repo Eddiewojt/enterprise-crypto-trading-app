@@ -2308,144 +2308,95 @@ function App() {
           {portfolioData.message && (
             <div className="performance-message">
               ⚠️ {portfolioData.message}
-              <button 
-                className="setup-exchange-btn"
-                onClick={() => setShow3CommasSetup(true)}
-                style={{
-                  marginLeft: '1rem',
-                  padding: '0.5rem 1rem',
-                  background: 'linear-gradient(45deg, #8b5cf6, #a855f7)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                🚀 Setup 3commas (Recommended)
-              </button>
-              <button 
-                className="setup-exchange-btn"
-                onClick={() => setShowExchangeSetup(true)}
-                style={{
-                  marginLeft: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  background: 'linear-gradient(45deg, #059669, #10b981)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                🔧 Direct Exchange Setup
-              </button>
             </div>
           )}
         </div>
 
-        {/* 3commas Integration Section */}
-        {threeCommasStatus === 'connected' && (
-          <div className="threecommas-section">
-            <h2>🚀 3commas Trading Platform</h2>
-            
-            <div className="threecommas-status">
-              <div className="status-indicator connected">
-                🟢 Connected to 3commas - Legitimate Trading Active
-              </div>
-            </div>
-            
-            <div className="bots-grid">
-              {threeCommasBots.map((bot, index) => (
-                <div key={index} className="threecommas-bot-card">
-                  <div className="bot-header">
-                    <h3>{bot.name}</h3>
-                    <span className={`bot-status ${bot.status ? 'active' : 'inactive'}`}>
-                      {bot.status ? '🟢 ACTIVE' : '⚪ INACTIVE'}
-                    </span>
+        {/* Trading Signals Section - Main Focus */}
+        <div className="signals-section">
+          <h2>🎯 Live Trading Signals</h2>
+          
+          <div className="signals-grid">
+            {Object.entries(multiCoinData).map(([symbol, data]) => {
+              const coinName = symbol.replace('USDT', '');
+              const signals = data.signals || {};
+              const rsi = signals.rsi || 50;
+              const macd = signals.macd_signal || 'HOLD';
+              const overall = signals.overall_signal || 'HOLD';
+              const strength = signals.strength || 50;
+              
+              // Determine signal based on technical analysis
+              let signalType = 'HOLD';
+              let signalStrength = 'Medium';
+              
+              if (rsi < 30 && macd === 'BUY') {
+                signalType = 'STRONG BUY';
+                signalStrength = 'High';
+              } else if (rsi < 40 && macd === 'BUY') {
+                signalType = 'BUY';
+                signalStrength = 'Medium';
+              } else if (rsi > 70 && macd === 'SELL') {
+                signalType = 'STRONG SELL';
+                signalStrength = 'High';
+              } else if (rsi > 60 && macd === 'SELL') {
+                signalType = 'SELL';
+                signalStrength = 'Medium';
+              } else if (overall === 'BUY') {
+                signalType = 'BUY';
+              } else if (overall === 'SELL') {
+                signalType = 'SELL';
+              }
+
+              return (
+                <div key={symbol} className={`signal-card ${signalType.toLowerCase().replace(' ', '-')}`}>
+                  <div className="signal-header">
+                    <h3>{coinName}</h3>
+                    <div className="current-price">
+                      ${data.price?.toFixed(6) || '0.000000'}
+                    </div>
                   </div>
                   
-                  <div className="bot-details">
-                    <div className="detail-item">
-                      <span className="label">Strategy:</span>
-                      <span className="value">{bot.strategy}</span>
+                  <div className="signal-display">
+                    <div className={`signal-indicator ${signalType.toLowerCase().replace(' ', '-')}`}>
+                      {signalType === 'STRONG BUY' && '🚀 STRONG BUY'}
+                      {signalType === 'BUY' && '📈 BUY'}
+                      {signalType === 'HOLD' && '⏸️ HOLD'}
+                      {signalType === 'SELL' && '📉 SELL'}
+                      {signalType === 'STRONG SELL' && '🔻 STRONG SELL'}
                     </div>
-                    <div className="detail-item">
-                      <span className="label">Pair:</span>
-                      <span className="value">{bot.pair}</span>
+                    
+                    <div className="signal-strength">
+                      Strength: {signalStrength}
                     </div>
-                    <div className="detail-item">
-                      <span className="label">Profit:</span>
-                      <span className={`value ${bot.profit?.usd >= 0 ? 'positive' : 'negative'}`}>
-                        ${bot.profit?.usd?.toFixed(2) || '0.00'} ({bot.profit?.percent?.toFixed(1) || '0.0'}%)
+                  </div>
+                  
+                  <div className="technical-indicators">
+                    <div className="indicator">
+                      <span className="label">RSI:</span>
+                      <span className={`value ${rsi < 30 ? 'oversold' : rsi > 70 ? 'overbought' : 'neutral'}`}>
+                        {rsi.toFixed(1)}
                       </span>
                     </div>
-                    <div className="detail-item">
-                      <span className="label">Active Deals:</span>
-                      <span className="value">{bot.active_deals}</span>
+                    <div className="indicator">
+                      <span className="label">MACD:</span>
+                      <span className={`value ${macd.toLowerCase()}`}>
+                        {macd}
+                      </span>
                     </div>
+                    <div className="indicator">
+                      <span className="label">Signal:</span>
+                      <span className="value">{strength}%</span>
+                    </div>
+                  </div>
+                  
+                  <div className="signal-timestamp">
+                    Updated: {new Date().toLocaleTimeString()}
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            {threeCommasBots.length === 0 && (
-              <div className="no-bots">
-                <p>No trading bots found. Create bots in your 3commas dashboard.</p>
-                <a href="https://3commas.io/bots" target="_blank" rel="noopener noreferrer">
-                  🔗 Go to 3commas Dashboard
-                </a>
-              </div>
-            )}
+              );
+            })}
           </div>
-        )}
-
-        {/* Available Exchanges Section */}
-        {availableExchanges.length > 0 && (
-          <div className="exchanges-section">
-            <h2>🌍 Available Legitimate Exchanges</h2>
-            
-            <div className="exchanges-grid">
-              {availableExchanges.map((exchange, index) => (
-                <div key={index} className={`exchange-card ${exchange.status}`}>
-                  <div className="exchange-header">
-                    <h3>{exchange.name}</h3>
-                    <span className={`exchange-status ${exchange.status}`}>
-                      {exchange.status === 'available' ? '🟢 AVAILABLE' : '🔴 BLOCKED'}
-                    </span>
-                    {recommendedExchange && recommendedExchange.id === exchange.id && (
-                      <span className="recommended-badge">⭐ RECOMMENDED</span>
-                    )}
-                  </div>
-                  
-                  <div className="exchange-info">
-                    <div className="compliance-level">
-                      <span className="label">Compliance:</span>
-                      <span className="value">{exchange.compliance}</span>
-                    </div>
-                    <div className="regions">
-                      <span className="label">Regions:</span>
-                      <span className="value">{exchange.regions ? exchange.regions.join(', ') : 'Global'}</span>
-                    </div>
-                  </div>
-                  
-                  {exchange.status === 'available' && (
-                    <button 
-                      className="setup-btn"
-                      onClick={() => handleExchangeSetup(exchange.id)}
-                    >
-                      🚀 Setup {exchange.name}
-                    </button>
-                  )}
-                  
-                  {exchange.status === 'blocked' && exchange.error && (
-                    <div className="error-message">
-                      ⚠️ {exchange.error}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Quick Actions */}
         <div className="quick-actions">
