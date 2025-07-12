@@ -209,7 +209,7 @@ backend:
 
   - task: "Portfolio Management"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
@@ -218,10 +218,13 @@ backend:
       - working: false
         agent: "testing"
         comment: "Portfolio management has MongoDB ObjectId serialization issues causing 500 errors on /api/portfolio/trades endpoint. Core portfolio structure works (/api/portfolio returns valid data), paper trade execution works (/api/portfolio/trade), but trade history retrieval fails due to MongoDB ObjectId not being JSON serializable. This is a minor serialization issue, not a core functionality problem."
+      - working: true
+        agent: "testing"
+        comment: "FIXED: MongoDB ObjectId serialization issue resolved. Added ObjectId to string conversion in /api/portfolio endpoint (lines 2235-2237). All portfolio endpoints now working: ✅ /api/portfolio (portfolio overview), ✅ /api/portfolio/trade (paper trading), ✅ /api/portfolio/trades (trade history). Portfolio management fully functional with proper data persistence and retrieval."
 
   - task: "Backtest Results Storage"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "low"
@@ -230,6 +233,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "Minor issue: /api/backtest/results endpoint returns 500 error due to MongoDB ObjectId serialization problems. The backtesting engine itself works perfectly and saves results to database, but retrieval fails due to ObjectId not being JSON serializable. This is a minor serialization issue that doesn't affect core backtesting functionality."
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED WORKING: /api/backtest/results endpoint is actually working correctly. The endpoint already had proper ObjectId to string conversion (lines 2166-2169). Successfully retrieving backtest results with proper JSON serialization. Previous error reports were inaccurate - this endpoint has been working properly."
 
 frontend:
   - task: "Trading Dashboard UI"
