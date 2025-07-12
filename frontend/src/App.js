@@ -1505,6 +1505,59 @@ function App() {
     fetchPortfolioData();
   }, []);
 
+  // Auto Trading Execution
+  useEffect(() => {
+    let tradeInterval;
+    
+    if (tradingMode === 'auto' && masterSwitch === 'enabled') {
+      console.log('🤖 Auto trading enabled - starting trade execution');
+      
+      // Execute trades every 30 seconds when in auto mode
+      tradeInterval = setInterval(async () => {
+        try {
+          // Generate random trading signals for demo
+          const symbols = ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT'];
+          const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+          const randomAction = Math.random() > 0.5 ? 'BUY' : 'SELL';
+          const randomAmount = Math.floor(Math.random() * 500) + 100;
+          const currentPrice = Math.random() * 100 + 0.01;
+          
+          // Execute the trade
+          const response = await axios.post(`${API}/trading/execute-signal`, {
+            symbol: randomSymbol,
+            signal_type: randomAction,
+            amount: randomAmount,
+            price: currentPrice
+          });
+          
+          if (response.data.status === 'executed') {
+            console.log('✅ Auto trade executed:', response.data.trade);
+            
+            // Show notification for successful trade
+            setNotification({
+              type: 'success',
+              message: `🤖 AUTO ${randomAction}: ${randomSymbol} - $${randomAmount} at $${currentPrice.toFixed(6)}`
+            });
+            setTimeout(() => setNotification(null), 4000);
+          }
+          
+        } catch (error) {
+          console.error('Error executing auto trade:', error);
+        }
+      }, 30000); // Execute every 30 seconds
+      
+    } else {
+      console.log('🔴 Auto trading disabled');
+    }
+    
+    return () => {
+      if (tradeInterval) {
+        clearInterval(tradeInterval);
+        console.log('🛑 Auto trading interval cleared');
+      }
+    };
+  }, [tradingMode, masterSwitch]);
+
   // Fetch AI analysis when symbol changes
   useEffect(() => {
     fetchAiAnalysis(selectedSymbol);
