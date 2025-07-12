@@ -1116,6 +1116,11 @@ function App() {
   const [proxyStatus, setProxyStatus] = useState('unknown');
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [marketSentiment, setMarketSentiment] = useState(null);
+  const [portfolioData, setPortfolioData] = useState({
+    total_value: 0,
+    daily_change: 0,
+    daily_change_pct: 0
+  });
   const wsRef = useRef(null);
   
   // Automation functions
