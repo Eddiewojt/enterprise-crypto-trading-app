@@ -2478,7 +2478,9 @@ async def execute_automated_signal(signal_data: dict):
         )
         
         # Store in database
-        await db.trades.insert_one(trade_data.dict())
+        trade_dict = trade_data.dict()
+        trade_dict['timestamp'] = trade_dict['timestamp'].isoformat()
+        await db.trades.insert_one(trade_dict)
         
         # Log automation execution
         automation_log = {
@@ -2495,7 +2497,7 @@ async def execute_automated_signal(signal_data: dict):
         
         return {
             "status": "executed",
-            "trade": trade_data.dict(),
+            "trade": trade_dict,
             "automation_log": automation_log,
             "message": f"Automated {signal_type} executed: {quantity:.6f} {symbol} at {formatPrice(price)}"
         }
