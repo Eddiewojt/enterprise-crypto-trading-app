@@ -1148,39 +1148,111 @@ function App() {
   
   return (
     <div className="app">
-      <main className="simple-signals">
+      <main className="crypto-signals-list">
+        <div className="header">
+          <h1>🎯 Crypto Signals</h1>
+          <div className="last-update">
+            Last Update: {new Date().toLocaleTimeString()}
+          </div>
+        </div>
+        
         <div className="signals-container">
           {Object.entries(multiCoinData)
-            .filter(([symbol, data]) => {
-              if (!data?.analysis?.signal) return false;
-              const signalType = data.analysis.signal.type;
-              const strength = data.analysis.signal.strength || 0;
-              return (signalType === 'BUY' || signalType === 'SELL') && strength >= 70;
-            })
-            .sort(([,a], [,b]) => (b?.analysis?.signal?.strength || 0) - (a?.analysis?.signal?.strength || 0))
-            .slice(0, 5)
+            .slice(0, 15) // Show top 15 cryptocurrencies
             .map(([symbol, data]) => {
-              const signalType = data.analysis?.signal?.type;
+              const coinName = symbol.replace('USDT', '');
+              const price = data.price || 0;
+              const change24h = data.change24h || 0;
+              
+              // Determine signal type and strength
+              let signalType = 'HOLD';
+              let signalStrength = 0;
+              let signalTime = new Date().toLocaleTimeString();
+              
+              if (data?.analysis?.signal) {
+                signalType = data.analysis.signal.type || 'HOLD';
+                signalStrength = data.analysis.signal.strength || 0;
+                signalTime = data.analysis.signal.timestamp ? 
+                  new Date(data.analysis.signal.timestamp).toLocaleTimeString() : 
+                  new Date().toLocaleTimeString();
+              } else {
+                // Generate signal based on basic technical analysis
+                if (data?.analysis) {
+                  const rsi = data.analysis.rsi || 50;
+                  const change = change24h;
+                  
+                  if (rsi < 35 && change > 2) {
+                    signalType = 'BUY';
+                    signalStrength = Math.min(85, 60 + Math.abs(change) * 2);
+                  } else if (rsi > 65 && change < -2) {
+                    signalType = 'SELL';
+                    signalStrength = Math.min(85, 60 + Math.abs(change) * 2);
+                  } else if (Math.abs(change) < 1) {
+                    signalType = 'HOLD';
+                    signalStrength = 55;
+                  } else {
+                    // Generate signal based on price movement
+                    if (change > 5) {
+                      signalType = 'SELL'; // Take profits on big gains
+                      signalStrength = 65;
+                    } else if (change < -5) {
+                      signalType = 'BUY'; // Buy the dip
+                      signalStrength = 65;
+                    } else if (change > 2) {
+                      signalType = 'BUY'; // Riding the trend
+                      signalStrength = 60;
+                    } else if (change < -2) {
+                      signalType = 'SELL'; // Avoid further losses
+                      signalStrength = 60;
+                    } else {
+                      signalType = 'HOLD';
+                      signalStrength = 50;
+                    }
+                  }
+                }
+              }
+              
+              const signalClass = signalType.toLowerCase();
               
               return (
-                <div key={symbol} className={`simple-signal ${signalType.toLowerCase()}`}>
-                  <div className="signal-action">{signalType}</div>
-                  <div className="signal-crypto">{symbol.replace('USDT', '')}</div>
+                <div key={symbol} className={`crypto-row ${signalClass}`}>
+                  <div className="crypto-info">
+                    <div className="crypto-name">{coinName}</div>
+                    <div className="crypto-price">
+                      ${price.toFixed(6)}
+                      <span className={`change ${change24h >= 0 ? 'positive' : 'negative'}`}>
+                        {change24h >= 0 ? '+' : ''}{change24h.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="signal-info">
+                    <div className={`signal-badge ${signalClass}`}>
+                      {signalType}
+                    </div>
+                    <div className="signal-details">
+                      <div className="signal-strength">{signalStrength.toFixed(0)}%</div>
+                      <div className="signal-time">{signalTime}</div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
-          
-          {Object.entries(multiCoinData).filter(([symbol, data]) => {
-            if (!data?.analysis?.signal) return false;
-            const signalType = data.analysis.signal.type;
-            const strength = data.analysis.signal.strength || 0;
-            return (signalType === 'BUY' || signalType === 'SELL') && strength >= 70;
-          }).length === 0 && (
-            <div className="no-signal">
-              <div className="waiting">WAITING</div>
-              <div className="for-signal">FOR SIGNAL</div>
-            </div>
-          )}
+        </div>
+        
+        <div className="legend">
+          <div className="legend-item">
+            <span className="legend-color buy"></span>
+            <span>BUY - Green</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-color sell"></span>
+            <span>SELL - Red</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-color hold"></span>
+            <span>HOLD - Yellow</span>
+          </div>
         </div>
       </main>
     </div>
