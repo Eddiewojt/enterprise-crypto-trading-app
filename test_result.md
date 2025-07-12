@@ -300,6 +300,30 @@ backend:
         agent: "testing"
         comment: "🎯 FINAL REVIEW TESTING: POST /api/binance/enable-real-trading returns HTTP 200 with {'status': 'error', 'message': 'Binance client not available'}. ✅ USER EXPERIENCE CONFIRMED: When user clicks 'Enable Real Trading' button, they receive clear error message 'Binance client not available'. ✅ PROXY CONFIGURATION: Proxy enabled (gate.smartproxy.com:10000) but binance_available=false. ❌ GEOGRAPHICAL RESTRICTIONS: Demo proxy credentials are insufficient for bypassing geographical restrictions and routing Binance API calls successfully."
 
+  - task: "Binance Wallet Balance"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "🎯 NEW BINANCE WALLET BALANCE ENDPOINT TESTED: GET /api/binance/wallet-balance returns HTTP 200 with {'status': 'unavailable', 'message': 'Binance not available due to geographical restrictions', 'demo_balance': 0.0, 'balances': []}. ✅ PORTFOLIO IMPROVEMENT CONFIRMED: No longer shows hardcoded $2,450.67 balance. ✅ GEOGRAPHICAL RESTRICTION HANDLING: Correctly shows $0.00 balance when Binance API is not accessible. ✅ CLEAR ERROR MESSAGING: Provides clear message about geographical restrictions. ❌ RESPONSE STRUCTURE: Missing expected fields (total_balance_usd, last_updated) but provides appropriate fallback data when Binance is unavailable."
+
+  - task: "Trading Bot Performance"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TRADING BOT PERFORMANCE ENDPOINT WORKING: GET /api/trading/bot-performance returns proper data showing all 3 bots (DCA Bot - DOGE, Grid Bot - BTC, Momentum Bot - ETH) with status 'NOT_TRADING' and profit: 0.0. ✅ CORRECT $0.00 DISPLAY: All bots correctly show $0.00 P&L when not actively trading. ✅ CLEAR STATUS MESSAGING: Each bot shows 'Not trading - Binance unavailable' message explaining why they're not active. ✅ EXPECTED BEHAVIOR: Bots show $0.00 when not trading as requested in review."
+
   - task: "Binance Safety Settings"
     implemented: true
     working: true
