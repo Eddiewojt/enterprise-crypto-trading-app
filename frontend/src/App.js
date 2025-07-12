@@ -1237,7 +1237,15 @@ function App() {
   useEffect(() => {
     fetchMultiCoinData();
     fetchProxyStatus();
+    fetchAiAnalysis(selectedSymbol);
+    fetchMarketSentiment(selectedSymbol);
   }, []);
+
+  // Fetch AI analysis when symbol changes
+  useEffect(() => {
+    fetchAiAnalysis(selectedSymbol);
+    fetchMarketSentiment(selectedSymbol);
+  }, [selectedSymbol]);
   
   // Setup WebSocket connection
   useEffect(() => {
