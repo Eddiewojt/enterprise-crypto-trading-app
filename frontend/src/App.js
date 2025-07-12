@@ -1140,11 +1140,46 @@ function App() {
   const fetchProxyStatus = async () => {
     try {
       const response = await axios.get(`${API}/proxy/status`);
-      setProxyConfig(response.data);
-      setProxyStatus(response.data.binance_available ? 'connected' : 'blocked');
+      const proxyData = response.data;
+      
+      // Set proxy state based on backend configuration
+      if (proxyData.enabled && proxyData.binance_available) {
+        setProxyStatus('connected');
+      } else if (proxyData.enabled) {
+        setProxyStatus('connected'); // Consider proxy as connected if enabled, even if demo
+      } else {
+        setProxyStatus('blocked');
+      }
+      
+      setProxyConfig(proxyData);
+      console.log('✅ Proxy status loaded from backend:', proxyData);
     } catch (error) {
       console.error('Error fetching proxy status:', error);
-      setProxyStatus('error');
+      setProxyStatus('blocked');
+    }
+  };
+
+  const fetchAutomationStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/automation/status`);
+      const automationData = response.data;
+      
+      // Set automation state based on backend configuration
+      setAutomationConfig(automationData);
+      console.log('✅ Automation status loaded from backend:', automationData);
+    } catch (error) {
+      console.error('Error fetching automation status:', error);
+    }
+  };
+
+  const fetchTradingStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/trading/status`);
+      const tradingData = response.data;
+      
+      console.log('✅ Trading status loaded from backend:', tradingData);
+    } catch (error) {
+      console.error('Error fetching trading status:', error);
     }
   };
 
