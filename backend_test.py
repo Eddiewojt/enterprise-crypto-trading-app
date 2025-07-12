@@ -1764,6 +1764,7 @@ class DOGETradingAppTester:
                                 self.log_success("Provider Status", f"{provider['name']}: {provider['status']}")
                     
                     self.log_success("Proxy Configuration Endpoints", "✅ ALL PROXY ENDPOINTS WORKING CORRECTLY")
+                    self.test_results['proxy_configuration_endpoints'] = True
                     return True
                 else:
                     self.log_error("GET /api/proxy/pool/status", f"Missing required fields: {pool_status_data}")
