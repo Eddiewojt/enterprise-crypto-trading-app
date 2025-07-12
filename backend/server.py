@@ -156,6 +156,53 @@ class BacktestResult(BaseModel):
     trades: List[Dict]
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
+class AdvancedOrder(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str = "default_user"
+    symbol: str
+    order_type: str  # 'limit', 'stop_loss', 'trailing_stop', 'take_profit'
+    side: str  # 'BUY' or 'SELL'
+    quantity: float
+    price: Optional[float] = None
+    stop_price: Optional[float] = None
+    trailing_amount: Optional[float] = None
+    status: str = "pending"  # 'pending', 'filled', 'cancelled', 'expired'
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    executed_at: Optional[datetime] = None
+
+class RiskManagement(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str = "default_user"
+    max_position_size: float = 0.2  # 20% max per position
+    stop_loss_percentage: float = 0.05  # 5% stop loss
+    take_profit_percentage: float = 0.15  # 15% take profit
+    daily_loss_limit: float = 0.1  # 10% daily loss limit
+    total_risk_limit: float = 0.3  # 30% total portfolio at risk
+    risk_score: float = 0.0
+    last_updated: datetime = Field(default_factory=datetime.utcnow)
+
+class SocialTrading(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: str
+    performance_score: float = 0.0
+    total_return: float = 0.0
+    win_rate: float = 0.0
+    followers: int = 0
+    is_verified: bool = False
+    strategies_shared: int = 0
+    last_active: datetime = Field(default_factory=datetime.utcnow)
+
+class NewsAlert(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    content: str
+    source: str
+    sentiment: str
+    impact_score: float
+    related_symbols: List[str]
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
 # Advanced Technical Analysis Functions
 def calculate_rsi(prices, window=14):
     """Calculate RSI (Relative Strength Index)"""
