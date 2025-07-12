@@ -943,6 +943,12 @@ function App() {
             <ArbitrageTracker />
           </div>
         )}
+        
+        {activeTab === 'automation' && (
+          <div className="automation-dashboard">
+            <AutomationCenter />
+          </div>
+        )}
       </main>
       
       <footer className="enterprise-footer">
