@@ -479,6 +479,7 @@ test_plan:
     - "Premium Enhanced Technical Analysis"
   test_all: false
   test_priority: "high_first"
+  premium_features_tested: true
 
 agent_communication:
   - agent: "main"
