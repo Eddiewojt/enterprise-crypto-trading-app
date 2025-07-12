@@ -1403,19 +1403,74 @@ function App() {
 
         {/* Quick Actions */}
         <div className="quick-actions">
-          <button className="action-btn emergency" onClick={() => {
-            alert('Emergency stop activated! All bots paused.');
-            updateAutomationConfig({ auto_trading_enabled: false });
-          }}>
-            🚨 EMERGENCY STOP
+          <button 
+            className={`action-btn ${automationConfig?.auto_trading_enabled ? 'emergency' : 'enable-trading'}`}
+            onClick={async () => {
+              if (automationConfig?.auto_trading_enabled) {
+                // Emergency stop
+                const confirmed = window.confirm('🚨 EMERGENCY STOP\n\nThis will immediately disable all automated trading. Are you sure?');
+                if (confirmed) {
+                  try {
+                    await axios.post(`${API}/binance/disable-real-trading`);
+                    setAutomationConfig({...automationConfig, auto_trading_enabled: false});
+                    alert('✅ Emergency stop activated! All trading disabled.');
+                  } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                  }
+                }
+              } else {
+                // Enable real trading
+                const confirmed = window.confirm('🚨 ENABLE REAL MONEY TRADING\n\nThis will connect to your Binance account and execute real trades with real money.\n\nRisk limits:\n• Max per trade: $100\n• Daily limit: $500\n• Stop loss: 5%\n\nAre you absolutely sure?');
+                if (confirmed) {
+                  try {
+                    const response = await axios.post(`${API}/binance/enable-real-trading`);
+                    if (response.data.status === 'enabled') {
+                      setAutomationConfig({...automationConfig, auto_trading_enabled: true});
+                      alert('🚀 REAL TRADING ENABLED!\n\nYour automation is now live with Binance!\n\nYou will receive notifications for all trades.');
+                    } else {
+                      alert('❌ Error: ' + response.data.message);
+                    }
+                  } catch (error) {
+                    alert('❌ Error enabling real trading: ' + (error.response?.data?.message || error.message));
+                  }
+                }
+              }
+            }}
+          >
+            {automationConfig?.auto_trading_enabled ? '🚨 EMERGENCY STOP' : '🚀 ENABLE REAL TRADING'}
           </button>
           
           <button className="action-btn settings" onClick={() => setShowSettings(true)}>
             ⚙️ Bot Settings
           </button>
           
-          <button className="action-btn analytics">
-            📊 Full Analytics
+          <button 
+            className="action-btn analytics"
+            onClick={async () => {
+              try {
+                const response = await axios.get(`${API}/binance/account-info`);
+                const account = response.data;
+                
+                let balanceInfo = '';
+                if (account.balances && account.balances.length > 0) {
+                  balanceInfo = '\n\nAccount Balances:\n' + 
+                    account.balances.slice(0, 5).map(b => 
+                      `${b.asset}: ${b.total.toFixed(6)}`
+                    ).join('\n');
+                }
+                
+                alert(`📊 BINANCE ACCOUNT INFO\n\n` +
+                      `Trading Enabled: ${account.trading_enabled ? '✅' : '❌'}\n` +
+                      `Real Trading: ${account.real_trading_active ? '🟢 ACTIVE' : '🔴 DISABLED'}\n` +
+                      `Account Type: ${account.account_type}\n` +
+                      `Assets with Balance: ${account.balances?.length || 0}` +
+                      balanceInfo);
+              } catch (error) {
+                alert('❌ Error fetching account info: ' + (error.response?.data?.message || error.message));
+              }
+            }}
+          >
+            📊 Account Info
           </button>
         </div>
       </main>
