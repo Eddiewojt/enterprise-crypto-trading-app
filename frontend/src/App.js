@@ -1098,6 +1098,16 @@ function App() {
   });
   const [showBotCreator, setShowBotCreator] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showProxyConfig, setShowProxyConfig] = useState(false);
+  const [proxyConfig, setProxyConfig] = useState({
+    enabled: false,
+    type: 'http',
+    host: '',
+    port: '',
+    username: '',
+    password: ''
+  });
+  const [proxyStatus, setProxyStatus] = useState('unknown');
   const wsRef = useRef(null);
   
   // Automation functions
