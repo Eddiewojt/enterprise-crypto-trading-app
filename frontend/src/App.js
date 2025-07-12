@@ -1222,18 +1222,32 @@ function App() {
 
   const configurePremiumProxy = async () => {
     try {
+      console.log('Starting premium proxy configuration...');
+      
       const response = await axios.post(`${API}/proxy/pool/configure`, {
         providers: premiumProxyConfig
       });
       
+      console.log('Proxy configuration response:', response.data);
+      
       if (response.data.status === 'configured') {
-        alert(`🚀 Premium Proxy Pool Configured!\n\n✅ ${response.data.providers.join(', ')} ready\n✅ Global trading access enabled\n✅ Automatic failover active`);
+        // Close modal first
         setShowPremiumProxy(false);
+        
+        // Show success message
+        const successMsg = `🚀 Premium Proxy Pool Configured!\n\n✅ ${response.data.providers.join(', ')} ready\n✅ Global trading access enabled\n✅ Automatic failover active\n\n⚠️ Note: Test credentials may not connect to real servers\nFor real trading, use actual proxy credentials from providers`;
+        
+        alert(successMsg);
+        
+        // Update proxy status
         await fetchProxyStatus();
+        
+        console.log('Proxy configuration completed successfully');
       } else {
         alert('❌ Error: ' + response.data.message);
       }
     } catch (error) {
+      console.error('Proxy configuration error:', error);
       alert('❌ Error configuring premium proxy: ' + (error.response?.data?.message || error.message));
     }
   };
