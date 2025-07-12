@@ -2233,6 +2233,11 @@ async def get_portfolio():
         portfolio_cursor = db.portfolio.find({"user_id": "default_user"})
         portfolio_list = await portfolio_cursor.to_list(length=None)
         
+        # Convert ObjectId to string for JSON serialization
+        for item in portfolio_list:
+            if '_id' in item:
+                item['_id'] = str(item['_id'])
+        
         total_invested = 0
         total_current_value = 0
         total_pnl = 0
