@@ -1643,6 +1643,7 @@ function App() {
     fetchPortfolioData();
     fetchBotPerformance();
     detectAvailableExchanges();
+    fetch3CommasStatus();
   }, []);
 
   // Auto Trading Execution
