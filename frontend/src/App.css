@@ -2334,6 +2334,96 @@ input:checked + .slider:before {
   margin-bottom: 0.25rem;
 }
 
+/* =================== TRADING MODE CONTROLS =================== */
+
+.mode-indicator {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.mode-indicator.auto {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 2px solid rgba(34, 197, 94, 0.4);
+  animation: pulse 2s infinite;
+}
+
+.mode-indicator.manual {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 2px solid rgba(239, 68, 68, 0.4);
+}
+
+.mode-toggle-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 0.75rem;
+}
+
+.mode-toggle-btn.manual {
+  background: linear-gradient(45deg, #059669, #10b981);
+  color: white;
+}
+
+.mode-toggle-btn.auto {
+  background: linear-gradient(45deg, #dc2626, #ef4444);
+  color: white;
+}
+
+.mode-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.mode-status {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-align: center;
+  font-style: italic;
+}
+
+.master-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.switch-indicator {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.master-switch.enabled .switch-indicator {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 2px solid rgba(34, 197, 94, 0.4);
+}
+
+.master-switch.disabled .switch-indicator {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+  border: 2px solid rgba(107, 114, 128, 0.4);
+}
+
+.switch-status {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-align: center;
+  font-style: italic;
+}
+
 /* =================== ENTERPRISE FEATURES STYLES =================== */
 
 .enterprise-limits {
