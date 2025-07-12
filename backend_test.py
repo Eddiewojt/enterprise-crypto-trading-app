@@ -563,6 +563,350 @@ class DOGETradingAppTester:
             self.log_error("Portfolio Management", e)
             return False
             
+    def test_automation_configuration(self):
+        """Test automation configuration endpoints"""
+        try:
+            print("\n⚙️ Testing Automation Configuration...")
+            
+            # Test GET automation config
+            config_response = requests.get(f"{self.base_url}/automation/config", timeout=15)
+            
+            if config_response.status_code == 200:
+                config_data = config_response.json()
+                
+                # Validate config structure
+                required_fields = ['auto_trading_enabled', 'max_trade_amount', 'stop_loss_enabled', 
+                                 'take_profit_enabled', 'risk_level', 'preferred_timeframe', 'notification_enabled']
+                
+                if all(field in config_data for field in required_fields):
+                    self.log_success("GET Automation Config", f"Risk Level: {config_data['risk_level']}, Max Trade: ${config_data['max_trade_amount']}")
+                    
+                    # Test PUT automation config
+                    updated_config = {
+                        "auto_trading_enabled": True,
+                        "max_trade_amount": 2000.0,
+                        "stop_loss_enabled": True,
+                        "take_profit_enabled": True,
+                        "risk_level": "high",
+                        "preferred_timeframe": "4h",
+                        "notification_enabled": True
+                    }
+                    
+                    put_response = requests.put(f"{self.base_url}/automation/config", 
+                                              json=updated_config, 
+                                              timeout=15)
+                    
+                    if put_response.status_code == 200:
+                        put_data = put_response.json()
+                        
+                        if 'status' in put_data and put_data['status'] == 'updated':
+                            self.log_success("PUT Automation Config", "Configuration updated successfully")
+                            
+                            # Verify the update by getting config again
+                            verify_response = requests.get(f"{self.base_url}/automation/config", timeout=15)
+                            if verify_response.status_code == 200:
+                                verify_data = verify_response.json()
+                                if (verify_data['risk_level'] == 'high' and 
+                                    verify_data['max_trade_amount'] == 2000.0):
+                                    self.log_success("Config Update Verification", "Changes persisted correctly")
+                                    self.test_results['automation_configuration'] = True
+                                    return True
+                                    
+                        self.log_error("PUT Automation Config", f"Update failed: {put_data}")
+                        return False
+                    else:
+                        self.log_error("PUT Automation Config", f"HTTP {put_response.status_code}")
+                        return False
+                        
+                self.log_error("GET Automation Config", f"Invalid config format: {config_data}")
+                return False
+            else:
+                self.log_error("GET Automation Config", f"HTTP {config_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Automation Configuration", e)
+            return False
+            
+    def test_automation_rules(self):
+        """Test automation rules CRUD operations"""
+        try:
+            print("\n📋 Testing Automation Rules...")
+            
+            # Test POST - Create automation rule
+            price_alert_rule = {
+                "symbol": "DOGEUSDT",
+                "rule_type": "price_alert",
+                "condition": {
+                    "target_price": 0.1,
+                    "operator": ">="
+                },
+                "action": {
+                    "type": "notify",
+                    "message": "DOGE price reached $0.10!"
+                },
+                "is_active": True
+            }
+            
+            create_response = requests.post(f"{self.base_url}/automation/rules", 
+                                          json=price_alert_rule, 
+                                          timeout=15)
+            
+            if create_response.status_code == 200:
+                create_data = create_response.json()
+                
+                if 'status' in create_data and create_data['status'] == 'created':
+                    rule_id = create_data['rule_id']
+                    self.log_success("POST Automation Rule", f"Price alert rule created: {rule_id}")
+                    
+                    # Create a technical signal rule
+                    signal_rule = {
+                        "symbol": "BTCUSDT",
+                        "rule_type": "technical_signal",
+                        "condition": {
+                            "signal_type": "BUY",
+                            "min_strength": 75
+                        },
+                        "action": {
+                            "type": "trade",
+                            "side": "BUY",
+                            "strength": 80
+                        },
+                        "is_active": True
+                    }
+                    
+                    signal_response = requests.post(f"{self.base_url}/automation/rules", 
+                                                  json=signal_rule, 
+                                                  timeout=15)
+                    
+                    if signal_response.status_code == 200:
+                        signal_data = signal_response.json()
+                        signal_rule_id = signal_data['rule_id']
+                        self.log_success("POST Technical Signal Rule", f"Signal rule created: {signal_rule_id}")
+                        
+                        # Test GET - Retrieve all rules
+                        get_response = requests.get(f"{self.base_url}/automation/rules", timeout=15)
+                        
+                        if get_response.status_code == 200:
+                            get_data = get_response.json()
+                            
+                            if 'rules' in get_data and isinstance(get_data['rules'], list):
+                                rules_count = len(get_data['rules'])
+                                self.log_success("GET Automation Rules", f"Retrieved {rules_count} rules")
+                                
+                                # Test PUT - Update rule
+                                update_data = {
+                                    "is_active": False,
+                                    "condition": {
+                                        "target_price": 0.12,
+                                        "operator": ">="
+                                    }
+                                }
+                                
+                                put_response = requests.put(f"{self.base_url}/automation/rules/{rule_id}", 
+                                                          json=update_data, 
+                                                          timeout=15)
+                                
+                                if put_response.status_code == 200:
+                                    put_data = put_response.json()
+                                    
+                                    if 'status' in put_data and put_data['status'] == 'updated':
+                                        self.log_success("PUT Automation Rule", f"Rule updated: {rule_id}")
+                                        
+                                        # Test DELETE - Remove rule
+                                        delete_response = requests.delete(f"{self.base_url}/automation/rules/{rule_id}", 
+                                                                        timeout=15)
+                                        
+                                        if delete_response.status_code == 200:
+                                            delete_data = delete_response.json()
+                                            
+                                            if 'status' in delete_data and delete_data['status'] == 'deleted':
+                                                self.log_success("DELETE Automation Rule", f"Rule deleted: {rule_id}")
+                                                self.test_results['automation_rules'] = True
+                                                return True
+                                                
+                                        self.log_error("DELETE Automation Rule", f"Delete failed: {delete_response.status_code}")
+                                        return False
+                                        
+                                    self.log_error("PUT Automation Rule", f"Update failed: {put_data}")
+                                    return False
+                                else:
+                                    self.log_error("PUT Automation Rule", f"HTTP {put_response.status_code}")
+                                    return False
+                                    
+                            self.log_error("GET Automation Rules", f"Invalid rules format: {get_data}")
+                            return False
+                        else:
+                            self.log_error("GET Automation Rules", f"HTTP {get_response.status_code}")
+                            return False
+                            
+                    self.log_error("POST Technical Signal Rule", f"Signal rule creation failed: {signal_response.status_code}")
+                    return False
+                    
+                self.log_error("POST Automation Rule", f"Rule creation failed: {create_data}")
+                return False
+            else:
+                self.log_error("POST Automation Rule", f"HTTP {create_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Automation Rules", e)
+            return False
+            
+    def test_automation_execution(self):
+        """Test automation signal execution"""
+        try:
+            print("\n🤖 Testing Automation Execution...")
+            
+            # First, enable auto trading in config
+            config_update = {
+                "auto_trading_enabled": True,
+                "max_trade_amount": 1000.0,
+                "stop_loss_enabled": True,
+                "take_profit_enabled": True,
+                "risk_level": "medium",
+                "preferred_timeframe": "15m",
+                "notification_enabled": True
+            }
+            
+            config_response = requests.put(f"{self.base_url}/automation/config", 
+                                         json=config_update, 
+                                         timeout=15)
+            
+            if config_response.status_code == 200:
+                self.log_success("Enable Auto Trading", "Auto trading enabled for testing")
+                
+                # Test strong signal execution
+                strong_signal = {
+                    "symbol": "DOGEUSDT",
+                    "signal_type": "BUY",
+                    "strength": 85,
+                    "price": 0.08234
+                }
+                
+                execute_response = requests.post(f"{self.base_url}/automation/execute-signal", 
+                                               json=strong_signal, 
+                                               timeout=15)
+                
+                if execute_response.status_code == 200:
+                    execute_data = execute_response.json()
+                    
+                    if 'status' in execute_data and execute_data['status'] == 'executed':
+                        self.log_success("Strong Signal Execution", 
+                                       f"Executed {execute_data['trade']['side']} {execute_data['trade']['quantity']:.2f} {execute_data['trade']['symbol']}")
+                        
+                        # Test weak signal (should be skipped)
+                        weak_signal = {
+                            "symbol": "DOGEUSDT",
+                            "signal_type": "SELL",
+                            "strength": 50,  # Below threshold
+                            "price": 0.08234
+                        }
+                        
+                        weak_response = requests.post(f"{self.base_url}/automation/execute-signal", 
+                                                    json=weak_signal, 
+                                                    timeout=15)
+                        
+                        if weak_response.status_code == 200:
+                            weak_data = weak_response.json()
+                            
+                            if 'status' in weak_data and weak_data['status'] == 'skipped':
+                                self.log_success("Weak Signal Handling", "Correctly skipped weak signal")
+                                
+                                # Test with auto trading disabled
+                                disable_config = config_update.copy()
+                                disable_config['auto_trading_enabled'] = False
+                                
+                                disable_response = requests.put(f"{self.base_url}/automation/config", 
+                                                              json=disable_config, 
+                                                              timeout=15)
+                                
+                                if disable_response.status_code == 200:
+                                    disabled_signal = {
+                                        "symbol": "DOGEUSDT",
+                                        "signal_type": "BUY",
+                                        "strength": 90,
+                                        "price": 0.08234
+                                    }
+                                    
+                                    disabled_response = requests.post(f"{self.base_url}/automation/execute-signal", 
+                                                                     json=disabled_signal, 
+                                                                     timeout=15)
+                                    
+                                    if disabled_response.status_code == 200:
+                                        disabled_data = disabled_response.json()
+                                        
+                                        if 'status' in disabled_data and disabled_data['status'] == 'disabled':
+                                            self.log_success("Disabled Auto Trading", "Correctly rejected when disabled")
+                                            self.test_results['automation_execution'] = True
+                                            return True
+                                            
+                                    self.log_error("Disabled Auto Trading Test", f"Unexpected response: {disabled_response.status_code}")
+                                    return False
+                                    
+                            self.log_error("Weak Signal Handling", f"Unexpected response: {weak_data}")
+                            return False
+                        else:
+                            self.log_error("Weak Signal Handling", f"HTTP {weak_response.status_code}")
+                            return False
+                            
+                    self.log_error("Strong Signal Execution", f"Execution failed: {execute_data}")
+                    return False
+                else:
+                    self.log_error("Strong Signal Execution", f"HTTP {execute_response.status_code}")
+                    return False
+                    
+            self.log_error("Enable Auto Trading", f"Config update failed: {config_response.status_code}")
+            return False
+            
+        except Exception as e:
+            self.log_error("Automation Execution", e)
+            return False
+            
+    def test_automation_logs(self):
+        """Test automation logs retrieval"""
+        try:
+            print("\n📊 Testing Automation Logs...")
+            
+            # Test GET automation logs
+            logs_response = requests.get(f"{self.base_url}/automation/logs", timeout=15)
+            
+            if logs_response.status_code == 200:
+                logs_data = logs_response.json()
+                
+                if 'logs' in logs_data and isinstance(logs_data['logs'], list):
+                    logs_count = len(logs_data['logs'])
+                    self.log_success("GET Automation Logs", f"Retrieved {logs_count} log entries")
+                    
+                    # If we have logs, validate their structure
+                    if logs_count > 0:
+                        log_entry = logs_data['logs'][0]
+                        required_fields = ['symbol', 'action', 'quantity', 'price', 'signal_strength', 'executed_at']
+                        
+                        if all(field in log_entry for field in required_fields):
+                            self.log_success("Log Entry Validation", 
+                                           f"Action: {log_entry['action']}, Symbol: {log_entry['symbol']}")
+                            self.test_results['automation_logs'] = True
+                            return True
+                        else:
+                            self.log_error("Log Entry Validation", f"Missing required fields in log entry")
+                            return False
+                    else:
+                        # No logs is also valid (might not have executed any automation yet)
+                        self.log_success("Automation Logs", "Logs endpoint working (no automation executions yet)")
+                        self.test_results['automation_logs'] = True
+                        return True
+                        
+                self.log_error("GET Automation Logs", f"Invalid logs format: {logs_data}")
+                return False
+            else:
+                self.log_error("GET Automation Logs", f"HTTP {logs_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Automation Logs", e)
+            return False
+            
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting DOGE Trading App Backend Tests")
