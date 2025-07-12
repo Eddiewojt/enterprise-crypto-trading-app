@@ -2426,6 +2426,109 @@ function App() {
           </button>
         </div>
 
+        {/* Exchange Setup Modal */}
+        {showExchangeSetup && (
+          <div className="modal-overlay" onClick={() => setShowExchangeSetup(false)}>
+            <div className="modal exchange-setup-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🏛️ Legitimate Exchange Setup</h2>
+                <button className="close-btn" onClick={() => setShowExchangeSetup(false)}>×</button>
+              </div>
+              
+              <div className="modal-content">
+                {selectedExchange ? (
+                  <div className="exchange-setup-content">
+                    <div className="exchange-intro">
+                      <h3>Setup {selectedExchange.id?.toUpperCase()} Trading</h3>
+                      <p>Follow these steps to enable legitimate trading:</p>
+                    </div>
+
+                    <div className="setup-steps">
+                      <h4>📋 Setup Instructions:</h4>
+                      <ol>
+                        {selectedExchange.steps?.map((step, index) => (
+                          <li key={index}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    <div className="exchange-details">
+                      <div className="detail-item">
+                        <strong>🔗 Signup URL:</strong>
+                        <a href={selectedExchange.signup_url} target="_blank" rel="noopener noreferrer">
+                          {selectedExchange.signup_url}
+                        </a>
+                      </div>
+                      <div className="detail-item">
+                        <strong>💰 Cost:</strong>
+                        <span>{selectedExchange.cost}</span>
+                      </div>
+                      <div className="detail-item">
+                        <strong>🔧 Features:</strong>
+                        <span>{selectedExchange.features?.join(', ')}</span>
+                      </div>
+                    </div>
+
+                    <div className="api-form">
+                      <h4>🔑 API Configuration:</h4>
+                      <p>After creating your account and API key, enter the credentials here:</p>
+                      
+                      <div className="form-group">
+                        <label>API Key:</label>
+                        <input type="text" placeholder="Your API key" />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Secret Key:</label>
+                        <input type="password" placeholder="Your secret key" />
+                      </div>
+                      
+                      {(selectedExchange.id === 'kucoin' || selectedExchange.id === 'okx') && (
+                        <div className="form-group">
+                          <label>Passphrase:</label>
+                          <input type="password" placeholder="Your passphrase" />
+                        </div>
+                      )}
+                      
+                      <button className="configure-exchange-btn">
+                        🚀 Configure {selectedExchange.id?.toUpperCase()}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="exchange-selector">
+                    <h3>🌍 Choose Your Legitimate Exchange</h3>
+                    <p>Select from available exchanges in your region:</p>
+                    
+                    <div className="available-exchanges-list">
+                      {availableExchanges.filter(ex => ex.status === 'available').map((exchange, index) => (
+                        <div 
+                          key={index}
+                          className="exchange-option"
+                          onClick={() => handleExchangeSetup(exchange.id)}
+                        >
+                          <div className="exchange-name">{exchange.name}</div>
+                          <div className="exchange-compliance">Compliance: {exchange.compliance}</div>
+                          {recommendedExchange && recommendedExchange.id === exchange.id && (
+                            <span className="recommended-tag">⭐ RECOMMENDED</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {availableExchanges.filter(ex => ex.status === 'available').length === 0 && (
+                      <div className="no-exchanges">
+                        <p>No exchanges currently available in your region.</p>
+                        <p>This may be due to network restrictions or temporary issues.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Premium Proxy Pool Configuration Modal */}
         {showPremiumProxy && (
           <div className="modal-overlay" onClick={() => setShowPremiumProxy(false)}>
