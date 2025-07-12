@@ -578,6 +578,20 @@ class DOGETradingAppTester:
             self.log_error("WebSocket Test", e)
             websocket_ok = False
             
+        # Test Backtesting Engine (CRITICAL NEW FEATURE)
+        print("\n🔬 Testing Backtesting Functionality...")
+        backtest_ok = self.test_backtesting_engine()
+        edge_cases_ok = self.test_backtest_edge_cases()
+        results_storage_ok = self.test_backtest_results_storage()
+        
+        # Test Multi-Coin Support
+        print("\n🪙 Testing Multi-Coin Support...")
+        multi_coin_ok = self.test_multi_coin_support()
+        
+        # Test Portfolio Management
+        print("\n💼 Testing Portfolio Management...")
+        portfolio_ok = self.test_portfolio_management()
+            
         # Summary
         print("\n" + "=" * 60)
         print("📊 TEST RESULTS SUMMARY")
