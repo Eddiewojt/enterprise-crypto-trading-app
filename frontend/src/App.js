@@ -2554,6 +2554,96 @@ function App() {
           </button>
         </div>
 
+        {/* 3commas Setup Modal */}
+        {show3CommasSetup && (
+          <div className="modal-overlay" onClick={() => setShow3CommasSetup(false)}>
+            <div className="modal threecommas-setup-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🚀 3commas Setup - Legitimate Trading Platform</h2>
+                <button className="close-btn" onClick={() => setShow3CommasSetup(false)}>×</button>
+              </div>
+              
+              <div className="modal-content">
+                <div className="threecommas-intro">
+                  <h3>Why 3commas is the Best Solution</h3>
+                  <div className="benefits-grid">
+                    <div className="benefit">✅ 100% Legitimate & Regulated</div>
+                    <div className="benefit">✅ No Geographic Restrictions</div>
+                    <div className="benefit">✅ Connects to 25+ Exchanges</div>
+                    <div className="benefit">✅ Advanced Trading Bots</div>
+                    <div className="benefit">✅ Professional Portfolio Management</div>
+                    <div className="benefit">✅ Copy Trading Features</div>
+                  </div>
+                </div>
+
+                <div className="setup-steps">
+                  <h4>📋 Quick Setup Steps:</h4>
+                  <ol>
+                    <li><strong>Sign up</strong> at <a href="https://3commas.io/?c=tc252152" target="_blank" rel="noopener noreferrer">3commas.io</a> (Free account)</li>
+                    <li><strong>Connect your exchange</strong> (Binance, KuCoin, Kraken, etc.)</li>
+                    <li><strong>Create API key</strong> in 3commas → Settings → API Tokens</li>
+                    <li><strong>Enter credentials</strong> below to connect your app</li>
+                    <li><strong>Start trading</strong> with legitimate, compliant bots!</li>
+                  </ol>
+                </div>
+
+                <div className="api-credentials-form">
+                  <h4>🔑 API Credentials:</h4>
+                  <p>Get these from your 3commas account → Settings → API Access Tokens</p>
+                  
+                  <div className="form-group">
+                    <label>3commas API Key:</label>
+                    <input 
+                      id="threecommas-api-key"
+                      type="text" 
+                      placeholder="Your 3commas API key"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>3commas API Secret:</label>
+                    <input 
+                      id="threecommas-api-secret"
+                      type="password" 
+                      placeholder="Your 3commas API secret"
+                    />
+                  </div>
+                  
+                  <button 
+                    className="configure-3commas-btn"
+                    onClick={() => {
+                      const apiKey = document.getElementById('threecommas-api-key').value;
+                      const apiSecret = document.getElementById('threecommas-api-secret').value;
+                      configure3Commas(apiKey, apiSecret);
+                    }}
+                  >
+                    🚀 Connect 3commas
+                  </button>
+                </div>
+
+                <div className="features-showcase">
+                  <h4>🌟 What You Get:</h4>
+                  <ul>
+                    <li>🤖 <strong>Smart Trading Bots</strong> - DCA, Grid, Options bots</li>
+                    <li>📊 <strong>Portfolio Management</strong> - Track all exchanges in one place</li>
+                    <li>📈 <strong>Copy Trading</strong> - Follow successful traders</li>
+                    <li>🎯 <strong>Advanced Signals</strong> - Professional trading alerts</li>
+                    <li>📱 <strong>Mobile App</strong> - Trade on the go</li>
+                    <li>🛡️ <strong>Security</strong> - Bank-grade encryption</li>
+                  </ul>
+                </div>
+
+                <div className="pricing-info">
+                  <h4>💰 Pricing:</h4>
+                  <p><strong>Free Plan:</strong> 1 bot, basic features</p>
+                  <p><strong>Pro Plan:</strong> $14.50/month - Unlimited bots, advanced features</p>
+                  <p><strong>Advanced Plan:</strong> $24.50/month - Copy trading, premium signals</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Exchange Setup Modal */}
         {showExchangeSetup && (
           <div className="modal-overlay" onClick={() => setShowExchangeSetup(false)}>
