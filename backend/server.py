@@ -574,6 +574,59 @@ async def test_telegram_notification():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send test notification: {str(e)}")
 
+@api_router.post("/test/email")
+async def test_email_notification():
+    """Test Email notification system"""
+    try:
+        subject = "🎉 Enterprise Trading Platform - Email Notifications Active!"
+        
+        email_body = """
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 30px; border-radius: 10px;">
+                <h1 style="margin: 0; font-size: 24px;">🚀 Enterprise AI Trading Platform</h1>
+                <p style="font-size: 16px; margin: 20px 0;">Email notifications are now <strong>ACTIVE</strong>!</p>
+                
+                <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #3b82f6;">📧 You will receive email alerts for:</h3>
+                    <ul style="list-style-type: none; padding: 0;">
+                        <li style="margin: 10px 0;">📈 <strong>Strong Trading Signals</strong> - High-confidence buy/sell opportunities</li>
+                        <li style="margin: 10px 0;">🤖 <strong>Automation Executions</strong> - Automated trade confirmations</li>
+                        <li style="margin: 10px 0;">⚠️ <strong>Risk Management Alerts</strong> - Portfolio protection notifications</li>
+                        <li style="margin: 10px 0;">💰 <strong>Portfolio Updates</strong> - Performance and P&L reports</li>
+                        <li style="margin: 10px 0;">🔔 <strong>System Alerts</strong> - Important platform notifications</li>
+                    </ul>
+                </div>
+                
+                <div style="background: rgba(34, 197, 94, 0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>✅ Test Email Sent Successfully!</strong><br>
+                        Timestamp: """ + datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC') + """<br>
+                        Notification Email: eddiewojt1@gmail.com
+                    </p>
+                </div>
+                
+                <p style="font-size: 12px; color: #9ca3af; margin-top: 30px; text-align: center;">
+                    Enterprise AI Trading Platform v2.0 | Advanced Cryptocurrency Trading & Automation
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        await send_email_notification(subject, email_body)
+        
+        return {
+            "status": "success",
+            "message": "Test email notification sent successfully!",
+            "recipient": os.environ.get('NOTIFICATION_EMAIL'),
+            "sender": os.environ.get('SMTP_EMAIL'),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send test email: {str(e)}")
+
 # Backtesting Engine
 def run_backtest(symbol: str, timeframe: str, start_date: str, end_date: str, strategy: str, initial_capital: float = 10000.0):
     """Run backtesting on historical data"""
