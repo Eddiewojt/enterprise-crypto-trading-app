@@ -2334,6 +2334,74 @@ input:checked + .slider:before {
   margin-bottom: 0.25rem;
 }
 
+/* =================== ENTERPRISE FEATURES STYLES =================== */
+
+.enterprise-limits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.limit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.limit-label {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.limit-value {
+  color: #60a5fa;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.provider-count {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.status-badge.connected .provider-count {
+  color: #22c55e;
+}
+
+/* Enhanced Control Cards for Enterprise */
+.control-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Enterprise Ready Status */
+.status-badge.connected {
+  background: linear-gradient(45deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
 /* =================== NOTIFICATION ANIMATIONS =================== */
 
 @keyframes slideIn {
