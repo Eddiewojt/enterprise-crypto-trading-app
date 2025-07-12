@@ -263,15 +263,18 @@ backend:
 
   - task: "Binance Account Connection"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "testing"
         comment: "✅ BINANCE ACCOUNT CONNECTION IMPLEMENTED: GET /api/binance/account-info endpoint properly implemented with correct response structure (trading_enabled, balances, real_trading_active, account_type). API credentials (m0C1UK66WVu10iMiuOxCRBERK5y3aWGuzpxCOmjV7HhcQs5o9xlpy6KltBvTVcE5) correctly loaded from environment. ⚠️ Geographic Limitation: Binance API access blocked from current server location due to geo-restrictions, but implementation is correct and would work from allowed locations."
+      - working: false
+        agent: "testing"
+        comment: "❌ PROXY CONFIGURATION NOT RESOLVING BINANCE ACCESS: After enabling proxy configuration (PROXY_ENABLED=true, PROXY_POOL_ENABLED=true), GET /api/binance/account-info still returns error response {'status': 'error', 'message': 'Binance client not available'}. The proxy is configured (demo.proxy.com:8080) but Binance client creation is still failing. Root cause: Demo proxy credentials are not functional for actual Binance API routing. The geographical restrictions are NOT bypassed despite proxy being enabled."
 
   - task: "Binance Enable Real Trading"
     implemented: true
