@@ -3413,6 +3413,202 @@ async def get_proxy_pool_status():
 
 from exchange_manager import exchange_manager
 
+# 3commas Integration
+try:
+    from py3cw.request import Py3CW
+    
+    three_commas_enabled = os.environ.get('THREE_COMMAS_ENABLED', 'false').lower() == 'true'
+    if three_commas_enabled and os.environ.get('THREE_COMMAS_API_KEY'):
+        three_commas = Py3CW(
+            key=os.environ.get('THREE_COMMAS_API_KEY'),
+            secret=os.environ.get('THREE_COMMAS_API_SECRET')
+        )
+        THREE_COMMAS_AVAILABLE = True
+        logging.info("✅ 3commas API connected successfully")
+    else:
+        three_commas = None
+        THREE_COMMAS_AVAILABLE = False
+        logging.info("⚪ 3commas API not configured")
+except ImportError:
+    three_commas = None
+    THREE_COMMAS_AVAILABLE = False
+    logging.warning("❌ py3cw not installed - 3commas features disabled")
+except Exception as e:
+    three_commas = None
+    THREE_COMMAS_AVAILABLE = False
+    logging.warning(f"❌ 3commas API connection failed: {e}")
+
+# =================== 3COMMAS INTEGRATION ===================
+
+@api_router.get("/3commas/status")
+async def get_3commas_status():
+    """Get 3commas integration status"""
+    try:
+        if not THREE_COMMAS_AVAILABLE:
+            return {
+                "status": "disabled",
+                "message": "3commas not configured",
+                "setup_required": True,
+                "signup_url": "https://3commas.io/?c=tc252152"
+            }
+        
+        # Test API connection
+        error, account = three_commas.request(entity="accounts", action="")
+        
+        if error:
+            return {
+                "status": "error",
+                "message": f"3commas API error: {error.get('msg', 'Unknown error')}",
+                "setup_required": True
+            }
+        
+        return {
+            "status": "connected",
+            "message": "3commas API connected successfully",
+            "accounts": len(account) if account else 0,
+            "features": {
+                "bot_management": True,
+                "portfolio_sync": True,
+                "automated_signals": True,
+                "copy_trading": True
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"3commas connection error: {str(e)}",
+            "setup_required": True
+        }
+
+@api_router.get("/3commas/bots")
+async def get_3commas_bots():
+    """Get all trading bots from 3commas"""
+    try:
+        if not THREE_COMMAS_AVAILABLE:
+            return {"error": "3commas not available"}
+        
+        error, bots = three_commas.request(entity="bots", action="")
+        
+        if error:
+            return {"error": error.get('msg', 'Failed to fetch bots')}
+        
+        # Format bots for display
+        formatted_bots = []
+        for bot in bots:
+            formatted_bots.append({
+                "id": bot.get("id"),
+                "name": bot.get("name"),
+                "status": bot.get("is_enabled"),
+                "strategy": bot.get("strategy"),
+                "pair": bot.get("pairs", [])[0] if bot.get("pairs") else "N/A",
+                "profit": {
+                    "usd": bot.get("usd_profit"),
+                    "percent": bot.get("profit_percentage")
+                },
+                "active_deals": bot.get("active_deals_count", 0),
+                "created_at": bot.get("created_at")
+            })
+        
+        return {
+            "status": "success",
+            "bots": formatted_bots,
+            "total": len(formatted_bots)
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+@api_router.post("/3commas/configure")
+async def configure_3commas(config: dict):
+    """Configure 3commas API credentials"""
+    try:
+        api_key = config.get('api_key', '')
+        api_secret = config.get('api_secret', '')
+        
+        if not api_key or not api_secret:
+            return {"status": "error", "message": "API key and secret are required"}
+        
+        # Update environment variables
+        os.environ['THREE_COMMAS_ENABLED'] = 'true'
+        os.environ['THREE_COMMAS_API_KEY'] = api_key
+        os.environ['THREE_COMMAS_API_SECRET'] = api_secret
+        
+        # Test the connection
+        global three_commas, THREE_COMMAS_AVAILABLE
+        three_commas = Py3CW(key=api_key, secret=api_secret)
+        
+        # Verify connection works
+        error, account = three_commas.request(entity="accounts", action="")
+        
+        if error:
+            THREE_COMMAS_AVAILABLE = False
+            return {
+                "status": "error",
+                "message": f"Invalid credentials: {error.get('msg', 'Connection failed')}"
+            }
+        
+        THREE_COMMAS_AVAILABLE = True
+        
+        return {
+            "status": "configured",
+            "message": "3commas API configured successfully",
+            "accounts": len(account) if account else 0
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@api_router.post("/3commas/bot/{bot_id}/start")
+async def start_3commas_bot(bot_id: str):
+    """Start a 3commas trading bot"""
+    try:
+        if not THREE_COMMAS_AVAILABLE:
+            return {"error": "3commas not available"}
+        
+        error, result = three_commas.request(
+            entity="bots",
+            action="enable",
+            action_id=bot_id
+        )
+        
+        if error:
+            return {"error": error.get('msg', 'Failed to start bot')}
+        
+        return {
+            "status": "started",
+            "bot_id": bot_id,
+            "message": "Bot started successfully"
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+@api_router.post("/3commas/bot/{bot_id}/stop")
+async def stop_3commas_bot(bot_id: str):
+    """Stop a 3commas trading bot"""
+    try:
+        if not THREE_COMMAS_AVAILABLE:
+            return {"error": "3commas not available"}
+        
+        error, result = three_commas.request(
+            entity="bots",
+            action="disable",
+            action_id=bot_id
+        )
+        
+        if error:
+            return {"error": error.get('msg', 'Failed to stop bot')}
+        
+        return {
+            "status": "stopped",
+            "bot_id": bot_id,
+            "message": "Bot stopped successfully"
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
 # =================== LEGITIMATE EXCHANGE DETECTION ===================
 
 @api_router.get("/exchanges/available")
