@@ -249,6 +249,9 @@ frontend:
       - working: "unknown"
         agent: "main"
         comment: "Created responsive trading dashboard with price card, technical analysis, and signal display"
+      - working: "unknown"
+        agent: "main"
+        comment: "Phase 2: Frontend testing initiated. Backend fully functional, now testing frontend dashboard UI components and functionality."
         
   - task: "Real-time Updates"
     implemented: true
@@ -261,6 +264,9 @@ frontend:
       - working: "unknown"
         agent: "main"
         comment: "Implemented WebSocket connection for real-time price and signal updates"
+      - working: "unknown"
+        agent: "main"
+        comment: "Phase 2: Testing real-time WebSocket connections and price updates functionality."
         
   - task: "Alert System"
     implemented: true
@@ -273,6 +279,9 @@ frontend:
       - working: "unknown"
         agent: "main"
         comment: "Created in-app alert system that displays recent buy/sell signals"
+      - working: "unknown"
+        agent: "main"
+        comment: "Phase 2: Testing in-app alert notifications and signal display system."
         
   - task: "Timeframe Selection"
     implemented: true
@@ -285,6 +294,9 @@ frontend:
       - working: "unknown"
         agent: "main"
         comment: "Added timeframe selector for 15m and 4h analysis"
+      - working: "unknown"
+        agent: "main"
+        comment: "Phase 2: Testing timeframe selection and data filtering functionality."
 
 metadata:
   created_by: "main_agent"
