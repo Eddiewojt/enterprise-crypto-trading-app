@@ -36,11 +36,20 @@ signals = []
 is_websocket_running = False
 
 # Binance client setup
-binance_client = Client(
-    api_key=os.environ.get('BINANCE_API_KEY', ''),
-    api_secret=os.environ.get('BINANCE_API_SECRET', ''),
-    testnet=False
-)
+try:
+    binance_client = Client(
+        api_key=os.environ.get('BINANCE_API_KEY', ''),
+        api_secret=os.environ.get('BINANCE_API_SECRET', ''),
+        testnet=True  # Use testnet to avoid geo-restrictions
+    )
+    # Test connection
+    binance_client.ping()
+    BINANCE_AVAILABLE = True
+    logging.info("Binance API connection successful")
+except Exception as e:
+    logging.warning(f"Binance API not available: {e}")
+    binance_client = None
+    BINANCE_AVAILABLE = False
 
 # Create the main app
 app = FastAPI()
