@@ -1192,6 +1192,46 @@ function App() {
       alert('❌ Error disabling proxy: ' + error.message);
     }
   };
+
+  // Premium AI Functions
+  const fetchAiAnalysis = async (symbol) => {
+    try {
+      const response = await axios.post(`${API}/ai/market-analysis`, {
+        symbol: symbol,
+        timeframe: selectedTimeframe
+      });
+      setAiAnalysis(response.data);
+    } catch (error) {
+      console.error('Error fetching AI analysis:', error);
+    }
+  };
+
+  const fetchMarketSentiment = async (symbol) => {
+    try {
+      const response = await axios.get(`${API}/news/market-sentiment/${symbol.replace('USDT', '')}`);
+      setMarketSentiment(response.data);
+    } catch (error) {
+      console.error('Error fetching market sentiment:', error);
+    }
+  };
+
+  const configurePremiumProxy = async () => {
+    try {
+      const response = await axios.post(`${API}/proxy/pool/configure`, {
+        providers: premiumProxyConfig
+      });
+      
+      if (response.data.status === 'configured') {
+        alert(`🚀 Premium Proxy Pool Configured!\n\n✅ ${response.data.providers.join(', ')} ready\n✅ Global trading access enabled\n✅ Automatic failover active`);
+        setShowPremiumProxy(false);
+        await fetchProxyStatus();
+      } else {
+        alert('❌ Error: ' + response.data.message);
+      }
+    } catch (error) {
+      alert('❌ Error configuring premium proxy: ' + (error.response?.data?.message || error.message));
+    }
+  };
   
   // Fetch initial data
   useEffect(() => {
