@@ -534,9 +534,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Binance Account Connection"
-    - "Binance Enable Real Trading"
-    - "Proxy Configuration Endpoints"
+    - "Binance Wallet Balance"
+    - "Trading Bot Performance"
   stuck_tasks:
     - "Binance Account Connection"
     - "Binance Enable Real Trading"
