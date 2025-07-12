@@ -267,30 +267,61 @@ def start_binance_websocket():
     if not is_websocket_running:
         is_websocket_running = True
         
-        async def websocket_coroutine():
-            try:
-                bm = BinanceSocketManager(binance_client)
-                ts = bm.symbol_ticker_socket('DOGEUSDT')
+        if BINANCE_AVAILABLE and binance_client:
+            async def websocket_coroutine():
+                try:
+                    bm = BinanceSocketManager(binance_client)
+                    ts = bm.symbol_ticker_socket('DOGEUSDT')
+                    
+                    async with ts as tscm:
+                        while True:
+                            res = await tscm.recv()
+                            handle_socket_message(res)
+                            
+                except Exception as e:
+                    logging.error(f"WebSocket error: {e}")
+                    global is_websocket_running
+                    is_websocket_running = False
+            
+            def websocket_thread():
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(websocket_coroutine())
+                except Exception as e:
+                    logging.error(f"WebSocket thread error: {e}")
+                    global is_websocket_running
+                    is_websocket_running = False
+        else:
+            # Mock WebSocket data when Binance is not available
+            def mock_websocket_thread():
+                import random
+                import time
                 
-                async with ts as tscm:
+                try:
                     while True:
-                        res = await tscm.recv()
-                        handle_socket_message(res)
+                        # Generate mock ticker data
+                        base_price = 0.08234
+                        price_variation = random.uniform(-0.002, 0.002)
+                        current_price = base_price + price_variation
                         
-            except Exception as e:
-                logging.error(f"WebSocket error: {e}")
-                global is_websocket_running
-                is_websocket_running = False
-        
-        def websocket_thread():
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(websocket_coroutine())
-            except Exception as e:
-                logging.error(f"WebSocket thread error: {e}")
-                global is_websocket_running
-                is_websocket_running = False
+                        mock_message = {
+                            'e': '24hrTicker',
+                            's': 'DOGEUSDT',
+                            'c': str(current_price),
+                            'v': str(random.uniform(1000000, 5000000)),
+                            'P': str(random.uniform(-5.0, 5.0))
+                        }
+                        
+                        handle_socket_message(mock_message)
+                        time.sleep(2)  # Update every 2 seconds
+                        
+                except Exception as e:
+                    logging.error(f"Mock WebSocket error: {e}")
+                    global is_websocket_running
+                    is_websocket_running = False
+            
+            websocket_thread = mock_websocket_thread
         
         thread = threading.Thread(target=websocket_thread, daemon=True)
         thread.start()
