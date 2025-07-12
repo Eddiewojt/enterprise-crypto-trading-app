@@ -25,8 +25,10 @@ from email.mime.multipart import MIMEMultipart
 import httpx
 import requests
 
-# Import our AI/ML Engine
+# Import our AI/ML Engine and new engines
 from ml_engine import ml_engine
+from defi_engine import defi_engine, arbitrage_engine, nft_engine
+from trading_bots import trading_bot_engine, BotConfig, BotStrategy
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
