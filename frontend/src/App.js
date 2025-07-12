@@ -1224,6 +1224,14 @@ function App() {
     try {
       console.log('Starting premium proxy configuration...');
       
+      // Show loading state
+      const originalText = 'Configure Premium Pool';
+      const configureBtn = document.querySelector('.configure-premium-btn');
+      if (configureBtn) {
+        configureBtn.textContent = '⏳ Configuring...';
+        configureBtn.disabled = true;
+      }
+      
       const response = await axios.post(`${API}/proxy/pool/configure`, {
         providers: premiumProxyConfig
       });
@@ -1234,21 +1242,47 @@ function App() {
         // Close modal first
         setShowPremiumProxy(false);
         
-        // Show success message
-        const successMsg = `🚀 Premium Proxy Pool Configured!\n\n✅ ${response.data.providers.join(', ')} ready\n✅ Global trading access enabled\n✅ Automatic failover active\n\n⚠️ Note: Test credentials may not connect to real servers\nFor real trading, use actual proxy credentials from providers`;
-        
-        alert(successMsg);
-        
         // Update proxy status
+        setProxyStatus('connected');
+        
+        // Show success message with timeout to ensure it shows
+        setTimeout(() => {
+          const successMsg = `🚀 SUCCESS! Premium Proxy Pool Configured!\n\n✅ ${response.data.providers.join(', ')} ready\n✅ Global trading access enabled\n✅ Automatic failover active\n\n⚠️ Note: Demo credentials configured\nFor real trading, use actual proxy credentials`;
+          
+          alert(successMsg);
+          
+          // Also log to console as backup
+          console.log('✅ VPN CONFIGURED SUCCESSFULLY:', successMsg);
+        }, 500);
+        
+        // Update proxy status from backend
         await fetchProxyStatus();
         
         console.log('Proxy configuration completed successfully');
       } else {
-        alert('❌ Error: ' + response.data.message);
+        // Reset button state
+        if (configureBtn) {
+          configureBtn.textContent = originalText;
+          configureBtn.disabled = false;
+        }
+        
+        const errorMsg = '❌ Configuration Error: ' + (response.data.message || 'Unknown error');
+        alert(errorMsg);
+        console.error('Proxy configuration failed:', response.data);
       }
     } catch (error) {
       console.error('Proxy configuration error:', error);
-      alert('❌ Error configuring premium proxy: ' + (error.response?.data?.message || error.message));
+      
+      // Reset button state
+      const configureBtn = document.querySelector('.configure-premium-btn');
+      if (configureBtn) {
+        configureBtn.textContent = 'Configure Premium Pool';
+        configureBtn.disabled = false;
+      }
+      
+      const errorMsg = '❌ Error configuring premium proxy: ' + (error.response?.data?.message || error.message);
+      alert(errorMsg);
+      console.error('Full error details:', error);
     }
   };
 
