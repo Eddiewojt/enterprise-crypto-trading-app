@@ -495,6 +495,7 @@ test_plan:
   test_all: false
   test_priority: "high_first"
   premium_features_tested: true
+  proxy_endpoints_tested: true
 
 agent_communication:
   - agent: "main"
