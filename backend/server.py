@@ -60,7 +60,7 @@ try:
     binance_client = Client(
         api_key=os.environ.get('BINANCE_API_KEY', ''),
         api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
-        testnet=True  # Use testnet to avoid geo-restrictions
+        testnet=False  # Use real API for real trading
     )
     # Test connection
     binance_client.ping()
