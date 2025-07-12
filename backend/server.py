@@ -57,21 +57,84 @@ SUPPORTED_COINS = [
     'LINKUSDT', 'UNIUSDT', 'LTCUSDT', 'BCHUSDT', 'ATOMUSDT'
 ]
 
-# Binance client setup
-try:
-    binance_client = Client(
-        api_key=os.environ.get('BINANCE_API_KEY', ''),
-        api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
-        testnet=False  # Use real API for real trading
-    )
-    # Test connection
-    binance_client.ping()
-    BINANCE_AVAILABLE = True
-    logging.info("Binance API connection successful")
-except Exception as e:
-    logging.warning(f"Binance API not available: {e}")
-    binance_client = None
-    BINANCE_AVAILABLE = False
+# Binance client setup with proxy support
+def create_binance_client():
+    """Create Binance client with optional proxy configuration"""
+    try:
+        # Get proxy configuration
+        proxy_enabled = os.environ.get('PROXY_ENABLED', 'false').lower() == 'true'
+        
+        if proxy_enabled:
+            proxy_type = os.environ.get('PROXY_TYPE', 'http')
+            proxy_host = os.environ.get('PROXY_HOST', '')
+            proxy_port = os.environ.get('PROXY_PORT', '')
+            proxy_username = os.environ.get('PROXY_USERNAME', '')
+            proxy_password = os.environ.get('PROXY_PASSWORD', '')
+            
+            if proxy_host and proxy_port:
+                if proxy_type.lower() == 'socks5':
+                    # Configure SOCKS5 proxy
+                    if proxy_username and proxy_password:
+                        socks.set_default_proxy(socks.SOCKS5, proxy_host, int(proxy_port), 
+                                              username=proxy_username, password=proxy_password)
+                    else:
+                        socks.set_default_proxy(socks.SOCKS5, proxy_host, int(proxy_port))
+                    socket.socket = socks.socksocket
+                    logging.info(f"SOCKS5 proxy configured: {proxy_host}:{proxy_port}")
+                    
+                    # Create client without additional proxy config (using global socket)
+                    client = Client(
+                        api_key=os.environ.get('BINANCE_API_KEY', ''),
+                        api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
+                        testnet=False
+                    )
+                else:
+                    # Configure HTTP proxy
+                    if proxy_username and proxy_password:
+                        proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_host}:{proxy_port}"
+                    else:
+                        proxy_url = f"http://{proxy_host}:{proxy_port}"
+                    
+                    proxies = {
+                        'http': proxy_url,
+                        'https': proxy_url
+                    }
+                    
+                    logging.info(f"HTTP proxy configured: {proxy_host}:{proxy_port}")
+                    
+                    # Create client with proxy configuration
+                    client = Client(
+                        api_key=os.environ.get('BINANCE_API_KEY', ''),
+                        api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
+                        testnet=False,
+                        requests_params={'proxies': proxies, 'timeout': 30}
+                    )
+            else:
+                logging.warning("Proxy enabled but host/port not configured")
+                client = Client(
+                    api_key=os.environ.get('BINANCE_API_KEY', ''),
+                    api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
+                    testnet=False
+                )
+        else:
+            # No proxy configuration
+            client = Client(
+                api_key=os.environ.get('BINANCE_API_KEY', ''),
+                api_secret=os.environ.get('BINANCE_SECRET_KEY', ''),
+                testnet=False
+            )
+        
+        # Test connection
+        client.ping()
+        logging.info("Binance API connection successful")
+        return client, True
+        
+    except Exception as e:
+        logging.warning(f"Binance API not available: {e}")
+        return None, False
+
+# Initialize Binance client
+binance_client, BINANCE_AVAILABLE = create_binance_client()
 
 # Create the main app
 app = FastAPI()
