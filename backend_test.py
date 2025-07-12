@@ -1000,15 +1000,19 @@ class DOGETradingAppTester:
             return False
             
     def test_binance_account_connection(self):
-        """Test Binance account connection and API key validation"""
+        """Test Binance account connection and API key validation - FOCUS AREA FROM REVIEW"""
         try:
-            print("\n🔗 Testing Binance Account Connection...")
+            print("\n🔗 Testing Binance Account Connection (REVIEW FOCUS)...")
+            print("🎯 TESTING: GET /api/binance/account-info to check if Binance API is accessible")
             
             # Test GET /api/binance/account-info
             response = requests.get(f"{self.base_url}/binance/account-info", timeout=15)
             
+            print(f"📊 Response Status: {response.status_code}")
+            
             if response.status_code == 200:
                 data = response.json()
+                print(f"📋 Response Data: {json.dumps(data, indent=2)}")
                 
                 # Validate response structure
                 required_fields = ['trading_enabled', 'balances', 'real_trading_active', 'account_type']
@@ -1031,11 +1035,19 @@ class DOGETradingAppTester:
                 else:
                     self.log_error("Binance Account Connection", f"Missing required fields: {data}")
                     return False
+            elif response.status_code == 502:
+                print("🚨 DETECTED: 502 Bad Gateway - This indicates geographical restrictions!")
+                print("🌍 ISSUE: Binance API blocked from current server location")
+                self.log_error("Binance Account Connection", f"502 Bad Gateway - Geographical restrictions detected: {response.text}")
+                return False
             else:
+                print(f"❌ HTTP Error: {response.status_code}")
+                print(f"📄 Response Text: {response.text}")
                 self.log_error("Binance Account Connection", f"HTTP {response.status_code}: {response.text}")
                 return False
                 
         except Exception as e:
+            print(f"💥 Exception occurred: {str(e)}")
             self.log_error("Binance Account Connection", e)
             return False
             
