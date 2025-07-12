@@ -1487,25 +1487,35 @@ function App() {
           position: 'fixed',
           top: '20px',
           right: '20px',
-          background: notification.type === 'success' ? '#059669' : '#dc2626',
+          background: notification.type === 'success' ? 'linear-gradient(45deg, #059669, #10b981)' : 'linear-gradient(45deg, #dc2626, #ef4444)',
           color: 'white',
           padding: '1rem 1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          borderRadius: '12px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
           zIndex: 10000,
           fontWeight: '600',
-          maxWidth: '400px'
+          maxWidth: '400px',
+          fontSize: '0.9rem',
+          lineHeight: '1.4',
+          border: `2px solid ${notification.type === 'success' ? '#22c55e' : '#f87171'}`,
+          animation: 'slideIn 0.3s ease-out'
         }}>
           {notification.message}
           <button 
             onClick={() => setNotification(null)}
             style={{
               marginLeft: '10px',
-              background: 'transparent',
+              background: 'rgba(255,255,255,0.2)',
               border: 'none',
               color: 'white',
-              fontSize: '18px',
-              cursor: 'pointer'
+              fontSize: '16px',
+              cursor: 'pointer',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             ×
