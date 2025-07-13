@@ -38,7 +38,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "API_BASE_URL": "https://53a9362a-e701-4a26-879b-9318173e6694.preview.emergentagent.com/api"
+      "API_BASE_URL": "https://09e672a6-bb5a-400c-8105-643a48e73b61.preview.emergentagent.com/api"
     },
     "plugins": [
       "expo-dev-client"
