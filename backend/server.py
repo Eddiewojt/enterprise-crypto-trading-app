@@ -1078,14 +1078,10 @@ def handle_socket_message(msg):
                 # Send notifications for strong signals
                 if signal.strength >= 75:
                     coin_name = symbol.replace('USDT', '')
-                    notification_message = f"🚀 Strong {signal.signal_type} Signal - {coin_name}\n" \
-                                         f"Strength: {signal.strength:.1f}%\n" \
-                                         f"Price: ${signal.price:.6f}\n" \
-                                         f"RSI: {signal.indicators['rsi']:.1f}\n" \
-                                         f"MACD: {signal.indicators['macd']:.6f}"
+                    notification_message = f"{signal.signal_type} {coin_name} at ${signal.price:.6f}"
                     
                     asyncio.create_task(send_all_notifications(
-                        f"Strong {signal.signal_type} Signal - {coin_name}",
+                        f"{signal.signal_type} {coin_name}",
                         notification_message
                     ))
                 
