@@ -2303,17 +2303,22 @@ function App() {
             <button 
               className="alerts-btn"
               onClick={() => {
+                const dogeData = multiCoinData['DOGEUSDT'];
+                const currentPrice = dogeData?.price || 0.198;
+                const priceStr = currentPrice.toFixed(6);
+                
                 if ('Notification' in window) {
                   if (Notification.permission === 'granted') {
                     new Notification('🚀 Trading Signal Alert', {
-                      body: 'STRONG BUY signal detected for DOGE at $0.082340',
+                      body: `STRONG BUY signal detected for DOGE at $${priceStr}`,
                       icon: '/favicon.ico'
                     });
                   } else if (Notification.permission !== 'denied') {
                     Notification.requestPermission().then(permission => {
                       if (permission === 'granted') {
-                        new Notification('🔔 Notifications Enabled', {
-                          body: 'You will now receive trading signal alerts!'
+                        new Notification('🚀 Trading Signal Alert', {
+                          body: `STRONG BUY signal detected for DOGE at $${priceStr}`,
+                          icon: '/favicon.ico'
                         });
                       }
                     });
