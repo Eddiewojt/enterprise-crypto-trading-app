@@ -589,17 +589,17 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Live Data Stream Fix"
     - "Signal Generation Logic Fix"
-    - "Signal Display Logic Fix"
-    - "Real-time Data Integration"
   stuck_tasks:
     - "Binance Account Connection"
     - "Binance Enable Real Trading"
+    - "Signal Generation Logic Fix"
   test_all: false
   test_priority: "high_first"
   premium_features_tested: true
   proxy_endpoints_tested: true
+  enhanced_live_data_tested: true
+  enhanced_signal_generation_tested: true
 
 agent_communication:
   - agent: "main"
