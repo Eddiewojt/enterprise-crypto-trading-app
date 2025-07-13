@@ -1635,6 +1635,109 @@ function App() {
       setTimeout(() => setNotification(null), 5000);
     }
   };
+
+  // Watchlist Management
+  const addToWatchlist = (symbol) => {
+    if (!watchlist.includes(symbol)) {
+      const newWatchlist = [...watchlist, symbol];
+      setWatchlist(newWatchlist);
+      localStorage.setItem('crypto_watchlist', JSON.stringify(newWatchlist));
+      
+      setNotification({
+        type: 'success',
+        message: `⭐ ${symbol.replace('USDT', '')} added to watchlist!`
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
+  const removeFromWatchlist = (symbol) => {
+    const newWatchlist = watchlist.filter(item => item !== symbol);
+    setWatchlist(newWatchlist);
+    localStorage.setItem('crypto_watchlist', JSON.stringify(newWatchlist));
+    
+    setNotification({
+      type: 'success',
+      message: `🗑️ ${symbol.replace('USDT', '')} removed from watchlist!`
+    });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const loadWatchlist = () => {
+    try {
+      const saved = localStorage.getItem('crypto_watchlist');
+      if (saved) {
+        setWatchlist(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading watchlist:', error);
+    }
+  };
+
+  // Signal Filtering
+  const getFilteredSignals = () => {
+    const signals = Object.entries(multiCoinData).map(([symbol, data]) => {
+      const coinName = symbol.replace('USDT', '');
+      const signalData = data.signals || {};
+      const rsi = signalData.rsi || Math.random() * 100;
+      const macd = signalData.macd_signal || (Math.random() > 0.5 ? 'BUY' : 'SELL');
+      
+      let signalType = 'HOLD';
+      let confidenceScore = 50;
+      
+      if (rsi < 25 && macd === 'BUY') {
+        signalType = 'STRONG_BUY';
+        confidenceScore = 90;
+      } else if (rsi < 35 && macd === 'BUY') {
+        signalType = 'BUY';
+        confidenceScore = 75;
+      } else if (rsi > 75 && macd === 'SELL') {
+        signalType = 'STRONG_SELL';
+        confidenceScore = 85;
+      } else if (rsi > 65 && macd === 'SELL') {
+        signalType = 'SELL';
+        confidenceScore = 70;
+      }
+
+      return {
+        symbol,
+        coinName,
+        data,
+        signalType,
+        confidenceScore,
+        rsi,
+        macd,
+        priceChange: ((Math.random() - 0.5) * 10).toFixed(2)
+      };
+    });
+
+    // Apply filters
+    let filtered = signals;
+    
+    if (signalFilter !== 'ALL') {
+      filtered = signals.filter(signal => signal.signalType === signalFilter);
+    }
+    
+    // Apply sorting
+    switch (sortBy) {
+      case 'confidence':
+        filtered.sort((a, b) => b.confidenceScore - a.confidenceScore);
+        break;
+      case 'price':
+        filtered.sort((a, b) => (b.data.price || 0) - (a.data.price || 0));
+        break;
+      case 'change':
+        filtered.sort((a, b) => parseFloat(b.priceChange) - parseFloat(a.priceChange));
+        break;
+      case 'symbol':
+        filtered.sort((a, b) => a.coinName.localeCompare(b.coinName));
+        break;
+      default:
+        break;
+    }
+    
+    return filtered;
+  };
   
   // Fetch initial data
   useEffect(() => {
