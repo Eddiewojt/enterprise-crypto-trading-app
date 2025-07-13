@@ -2720,6 +2720,10 @@ class DOGETradingAppTester:
         print("\n📧 Testing Email Notification System...")
         email_ok = self.test_email_notification_system()
         
+        # Test Concise Notification System (REVIEW FOCUS)
+        print("\n🎯 Testing Concise Notification System (REVIEW FOCUS)...")
+        concise_notification_ok = self.test_concise_notification_system()
+        
         # Test Binance Real Trading Integration (CRITICAL NEW FEATURE)
         print("\n🚨 Testing Binance Real Trading Integration...")
         binance_account_ok = self.test_binance_account_connection()
