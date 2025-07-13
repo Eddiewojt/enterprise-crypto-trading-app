@@ -529,7 +529,7 @@ def generate_advanced_signal(prices, volumes, high_prices, low_prices, symbol='D
             strength = min(100, (sell_signals / total_signals) * 100)
         
         # Only return strong signals
-        if strength >= 65:  # Threshold for advanced signals
+        if strength >= 55:  # Lowered threshold from 65 to 55 for better signal generation
             return TradingSignal(
                 symbol=symbol,
                 signal_type=signal_type,
