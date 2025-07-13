@@ -1751,6 +1751,7 @@ function App() {
     fetchBotPerformance();
     detectAvailableExchanges();
     fetch3CommasStatus();
+    loadWatchlist();
   }, []);
 
   // Auto Trading Execution
