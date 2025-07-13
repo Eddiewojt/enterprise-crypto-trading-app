@@ -2334,6 +2334,147 @@ input:checked + .slider:before {
   margin-bottom: 0.25rem;
 }
 
+/* =================== ENHANCED TRADING SIGNALS STYLES =================== */
+
+.signals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.signals-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.refresh-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(45deg, #3b82f6, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.price-change {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.price-change.positive {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.price-change.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.signal-confidence {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.confidence-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(107, 114, 128, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.confidence-text {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.signal-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.action-btn.buy {
+  background: linear-gradient(45deg, #059669, #10b981);
+  color: white;
+}
+
+.action-btn.sell {
+  background: linear-gradient(45deg, #dc2626, #ef4444);
+  color: white;
+}
+
+.action-btn.hold {
+  background: linear-gradient(45deg, #d97706, #f59e0b);
+  color: white;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
 /* =================== TRADING SIGNALS STYLES =================== */
 
 .signals-section {
