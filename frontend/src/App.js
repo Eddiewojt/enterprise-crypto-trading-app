@@ -2716,13 +2716,15 @@ function App() {
                     </div>
                     <div className="indicator">
                       <span className="label">MACD:</span>
-                      <span className={`value ${macd.toLowerCase()}`}>
-                        {macd}
+                      <span className={`value ${macd > 0 ? 'positive' : 'negative'}`}>
+                        {macd.toFixed(6)}
                       </span>
                     </div>
                     <div className="indicator">
-                      <span className="label">Volume:</span>
-                      <span className="value">{Math.random() > 0.5 ? 'High' : 'Low'}</span>
+                      <span className="label">Trend:</span>
+                      <span className={`value ${trend}`}>
+                        {trend === 'bullish' ? '📈 Bullish' : trend === 'bearish' ? '📉 Bearish' : '➡️ Neutral'}
+                      </span>
                     </div>
                   </div>
                   
