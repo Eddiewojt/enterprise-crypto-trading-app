@@ -583,8 +583,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Binance Wallet Balance"
-    - "Trading Bot Performance"
+    - "Live Data Stream Fix"
+    - "Signal Generation Logic Fix"
+    - "Signal Display Logic Fix"
+    - "Real-time Data Integration"
   stuck_tasks:
     - "Binance Account Connection"
     - "Binance Enable Real Trading"
@@ -595,7 +597,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "Implemented complete DOGE trading app with Binance integration, real-time price tracking, technical analysis (RSI, MACD, MA), signal generation, and responsive UI. All core features implemented, ready for backend testing."
+    message: "🚨 CRITICAL ISSUES IDENTIFIED: 1) Backend using mock data due to Binance geographical restrictions - need better real-time data simulation 2) Frontend signal generation using Math.random() instead of backend signals 3) Signal display logic defaulting to HOLD 4) No real-time technical analysis data flow. Starting comprehensive fix for live data and signal accuracy."
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: All 5 backend tasks tested successfully. Fixed critical issues: 1) Updated Binance WebSocket import from 'binance.websockets' to 'binance.streams', 2) Fixed API method name from 'get_24hr_ticker' to 'get_ticker', 3) Added geo-restriction handling with mock data fallback. All API endpoints working, WebSocket connections established, technical analysis calculations accurate, signal generation functional. Backend is production-ready."
   - agent: "testing"
