@@ -2675,7 +2675,7 @@ function App() {
                     </div>
                     <div className="price-info">
                       <div className="current-price">
-                        ${data.price?.toFixed(6) || (Math.random() * 0.1 + 0.01).toFixed(6)}
+                        ${data.price?.toFixed(6) || '0.000000'}
                       </div>
                       <div className={`price-change ${changeColor}`}>
                         {priceChange >= 0 ? '+' : ''}{priceChange}%
