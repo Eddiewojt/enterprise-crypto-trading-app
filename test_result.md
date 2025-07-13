@@ -102,7 +102,32 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build a trading app to track Doge coin on Binance and give buy and sell signals with 15m and 4h timeframes, all technical indicators, and in-app notifications"
+user_problem_statement: "Build a trading app to track Doge coin on Binance and give buy and sell signals with 15m and 4h timeframes, all technical indicators, and in-app notifications. CRITICAL ISSUES: Data is not live, pricing is wrong, and signal display only shows HOLD despite indicators showing BUY/SELL."
+
+backend:
+  - task: "Live Data Stream Fix"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "IDENTIFIED ISSUE: Backend falling back to mock data due to BINANCE_AVAILABLE=False. Multi-coin prices endpoint returning static mock data instead of real-time prices. Need to implement better real-time data source or improve mock data with realistic fluctuations."
+  
+  - task: "Signal Generation Logic Fix"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "IDENTIFIED ISSUE: generate_advanced_signal function has high threshold (65%) and may not generate signals with mock data. Frontend using random Math.random() for RSI/MACD instead of backend signals. Need to fix signal generation and ensure frontend gets real signals from backend."
 
 backend:
   - task: "Binance API Integration"
