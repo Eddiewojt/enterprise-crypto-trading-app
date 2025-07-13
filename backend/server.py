@@ -1050,7 +1050,9 @@ def handle_socket_message(msg):
             'price': current_price,
             'volume': float(msg['v']),
             'change_24h': float(msg['P']),
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.utcnow().isoformat(),
+            # Include signal data if available from mock WebSocket
+            'signals': msg.get('signals', {})
         }
         
         # For DOGE, also update the main price history
