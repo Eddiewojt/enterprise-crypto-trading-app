@@ -29,6 +29,8 @@ class DOGETradingAppTester:
             'real_time_price_tracking': False,
             'technical_analysis_engine': False,
             'trading_signal_generation': False,
+            'enhanced_signal_generation_logic': False,
+            'enhanced_multi_coin_prices_with_signals': False,
             'api_endpoints': False,
             'websocket_connection': False,
             'backtesting_engine': False,
