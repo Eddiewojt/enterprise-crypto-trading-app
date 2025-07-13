@@ -2564,15 +2564,20 @@ async def execute_paper_trade(trade_request: TradeRequest):
                 ticker = binance_client.get_symbol_ticker(symbol=trade_request.symbol)
                 trade_request.price = float(ticker['price'])
             else:
-                # Use mock price
-                mock_prices = {
-                    'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
-                    'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
-                    'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
-                    'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
-                    'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
-                }
-                trade_request.price = mock_prices.get(trade_request.symbol, 1.0)
+                # Get live price from CoinGecko
+                live_prices = await get_live_crypto_prices()
+                if live_prices and trade_request.symbol in live_prices:
+                    trade_request.price = live_prices[trade_request.symbol]['price']
+                else:
+                    # Use mock price as last resort
+                    mock_prices = {
+                        'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                        'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                        'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                        'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                        'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
+                    }
+                    trade_request.price = mock_prices.get(trade_request.symbol, 1.0)
         
         # Create trade record
         trade = Trade(
