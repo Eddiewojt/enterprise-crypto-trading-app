@@ -2709,7 +2709,7 @@ function App() {
                     </div>
                     <div className="price-info">
                       <div className="current-price">
-                        ${data.price?.toFixed(6) || (Math.random() * 0.1 + 0.01).toFixed(6)}
+                        ${data.price?.toFixed(coinName === 'DOGE' || coinName === 'ADA' || coinName === 'XRP' || coinName === 'MATIC' ? 6 : 2) || '0.00'}
                       </div>
                       <div className={`price-change ${changeColor}`}>
                         {priceChange >= 0 ? '+' : ''}{priceChange}%
