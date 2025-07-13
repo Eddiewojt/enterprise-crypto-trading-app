@@ -2154,9 +2154,18 @@ async def get_supported_coins():
     return coin_info
 
 async def get_live_crypto_prices():
-    """Fetch real live crypto prices from CoinGecko API (free alternative to Binance)"""
+    """Fetch real live crypto prices from multiple free APIs with fallback and caching"""
+    global last_live_prices_cache, last_cache_time
+    
     try:
-        # Map our symbols to CoinGecko IDs
+        # Check cache first (cache for 30 seconds to avoid rate limits)
+        current_time = datetime.utcnow()
+        if hasattr(get_live_crypto_prices, 'last_cache_time') and hasattr(get_live_crypto_prices, 'last_prices_cache'):
+            if (current_time - get_live_crypto_prices.last_cache_time).seconds < 30:
+                logging.info("Using cached live price data")
+                return get_live_crypto_prices.last_prices_cache
+        
+        # Map our symbols to different API IDs
         symbol_to_id = {
             'DOGEUSDT': 'dogecoin',
             'BTCUSDT': 'bitcoin',
@@ -2175,44 +2184,129 @@ async def get_live_crypto_prices():
             'ATOMUSDT': 'cosmos'
         }
         
-        # Get all coin IDs
-        coin_ids = ','.join(symbol_to_id.values())
+        prices = {}
         
-        # Use CoinGecko API for real live prices (no API key required)
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true"
-        
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(url)
-        
-        if response.status_code == 200:
-            data = response.json()
-            prices = {}
+        # Try CoinGecko first (with lower rate limit)
+        try:
+            coin_ids = ','.join(list(symbol_to_id.values())[:10])  # Only fetch 10 coins to reduce load
+            url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true"
             
-            for symbol, coin_id in symbol_to_id.items():
-                if coin_id in data:
-                    coin_data = data[coin_id]
-                    current_price = coin_data['usd']
-                    change_24h = coin_data.get('usd_24h_change', 0)
-                    volume_24h = coin_data.get('usd_24h_vol', 0)
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                for symbol, coin_id in symbol_to_id.items():
+                    if coin_id in data:
+                        coin_data = data[coin_id]
+                        current_price = coin_data['usd']
+                        change_24h = coin_data.get('usd_24h_change', 0)
+                        volume_24h = coin_data.get('usd_24h_vol', 0)
+                        
+                        prices[symbol] = {
+                            "symbol": symbol,
+                            "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                            "change_24h": round(change_24h, 2),
+                            "volume": round(volume_24h, 2),
+                            "high_24h": round(current_price * (1 + abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                            "low_24h": round(current_price * (1 - abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "source": "CoinGecko_Live"
+                        }
+                
+                # Cache the successful result
+                get_live_crypto_prices.last_prices_cache = prices
+                get_live_crypto_prices.last_cache_time = current_time
+                logging.info(f"✅ CoinGecko: Successfully fetched live prices for {len(prices)} coins")
+                return prices
+                
+            elif response.status_code == 429:
+                logging.warning("CoinGecko rate limit hit, trying alternative API")
+                # Continue to alternative API
+            else:
+                logging.warning(f"CoinGecko API error: {response.status_code}")
+                
+        except Exception as e:
+            logging.warning(f"CoinGecko API error: {e}")
+        
+        # Alternative API: CoinCap (no rate limits on free tier)
+        try:
+            # Map symbols to CoinCap asset IDs
+            coincap_map = {
+                'DOGEUSDT': 'dogecoin',
+                'BTCUSDT': 'bitcoin',
+                'ETHUSDT': 'ethereum',
+                'ADAUSDT': 'cardano',
+                'BNBUSDT': 'binance-coin',
+                'SOLUSDT': 'solana',
+                'XRPUSDT': 'xrp',
+                'DOTUSDT': 'polkadot',
+                'AVAXUSDT': 'avalanche',
+                'MATICUSDT': 'polygon',
+                'LINKUSDT': 'chainlink',
+                'UNIUSDT': 'uniswap',
+                'LTCUSDT': 'litecoin',
+                'BCHUSDT': 'bitcoin-cash',
+                'ATOMUSDT': 'cosmos'
+            }
+            
+            # Get top coins data from CoinCap
+            url = "https://api.coincap.io/v2/assets?limit=50"
+            
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                assets = data.get('data', [])
+                
+                for symbol, asset_id in coincap_map.items():
+                    # Find the asset by ID
+                    asset = None
+                    for a in assets:
+                        if a.get('id') == asset_id:
+                            asset = a
+                            break
                     
-                    prices[symbol] = {
-                        "symbol": symbol,
-                        "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                        "change_24h": round(change_24h, 2),
-                        "volume": round(volume_24h, 2),
-                        "high_24h": round(current_price * (1 + abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                        "low_24h": round(current_price * (1 - abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "source": "CoinGecko_Live"
-                    }
+                    if asset:
+                        current_price = float(asset['priceUsd'])
+                        change_24h = float(asset.get('changePercent24Hr', 0))
+                        volume_24h = float(asset.get('volumeUsd24Hr', 0))
+                        
+                        prices[symbol] = {
+                            "symbol": symbol,
+                            "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                            "change_24h": round(change_24h, 2),
+                            "volume": round(volume_24h, 2),
+                            "high_24h": round(current_price * (1 + abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                            "low_24h": round(current_price * (1 - abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "source": "CoinCap_Live"
+                        }
+                
+                if prices:
+                    # Cache the successful result
+                    get_live_crypto_prices.last_prices_cache = prices
+                    get_live_crypto_prices.last_cache_time = current_time
+                    logging.info(f"✅ CoinCap: Successfully fetched live prices for {len(prices)} coins")
+                    return prices
+            else:
+                logging.warning(f"CoinCap API error: {response.status_code}")
+                
+        except Exception as e:
+            logging.warning(f"CoinCap API error: {e}")
+        
+        # If we have cached data (even if older), use it instead of demo data
+        if hasattr(get_live_crypto_prices, 'last_prices_cache') and get_live_crypto_prices.last_prices_cache:
+            logging.info("Using older cached live price data")
+            return get_live_crypto_prices.last_prices_cache
             
-            return prices
-        else:
-            logging.warning(f"CoinGecko API error: {response.status_code}")
-            return None
+        logging.warning("All live price APIs failed, falling back to demo data")
+        return None
             
     except Exception as e:
-        logging.error(f"Error fetching live prices from CoinGecko: {e}")
+        logging.error(f"Error fetching live prices: {e}")
         return None
 
 @api_router.get("/multi-coin/prices")
