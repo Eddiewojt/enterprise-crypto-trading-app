@@ -2101,6 +2101,68 @@ async def get_supported_coins():
         })
     return coin_info
 
+async def get_live_crypto_prices():
+    """Fetch real live crypto prices from CoinGecko API (free alternative to Binance)"""
+    try:
+        # Map our symbols to CoinGecko IDs
+        symbol_to_id = {
+            'DOGEUSDT': 'dogecoin',
+            'BTCUSDT': 'bitcoin',
+            'ETHUSDT': 'ethereum',
+            'ADAUSDT': 'cardano',
+            'BNBUSDT': 'binancecoin',
+            'SOLUSDT': 'solana',
+            'XRPUSDT': 'ripple',
+            'DOTUSDT': 'polkadot',
+            'AVAXUSDT': 'avalanche-2',
+            'MATICUSDT': 'matic-network',
+            'LINKUSDT': 'chainlink',
+            'UNIUSDT': 'uniswap',
+            'LTCUSDT': 'litecoin',
+            'BCHUSDT': 'bitcoin-cash',
+            'ATOMUSDT': 'cosmos'
+        }
+        
+        # Get all coin IDs
+        coin_ids = ','.join(symbol_to_id.values())
+        
+        # Use CoinGecko API for real live prices (no API key required)
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true"
+        
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(url)
+        
+        if response.status_code == 200:
+            data = response.json()
+            prices = {}
+            
+            for symbol, coin_id in symbol_to_id.items():
+                if coin_id in data:
+                    coin_data = data[coin_id]
+                    current_price = coin_data['usd']
+                    change_24h = coin_data.get('usd_24h_change', 0)
+                    volume_24h = coin_data.get('usd_24h_vol', 0)
+                    
+                    prices[symbol] = {
+                        "symbol": symbol,
+                        "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                        "change_24h": round(change_24h, 2),
+                        "volume": round(volume_24h, 2),
+                        "high_24h": round(current_price * (1 + abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                        "low_24h": round(current_price * (1 - abs(change_24h)/100), 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "source": "CoinGecko_Live"
+                    }
+            
+            return prices
+        else:
+            logging.warning(f"CoinGecko API error: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        logging.error(f"Error fetching live prices from CoinGecko: {e}")
+        return None
+
 @api_router.get("/multi-coin/prices")
 async def get_multi_coin_prices():
     """Get current prices for all supported coins"""
@@ -2108,6 +2170,7 @@ async def get_multi_coin_prices():
         prices = {}
         
         if BINANCE_AVAILABLE and binance_client:
+            # Try Binance first if available
             for symbol in SUPPORTED_COINS:
                 try:
                     ticker = binance_client.get_symbol_ticker(symbol=symbol)
@@ -2120,34 +2183,45 @@ async def get_multi_coin_prices():
                         "volume": float(price_24h['volume']),
                         "high_24h": float(price_24h['highPrice']),
                         "low_24h": float(price_24h['lowPrice']),
-                        "timestamp": datetime.utcnow().isoformat()
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "source": "Binance_Live"
                     }
                 except:
                     continue
-        else:
-            # Mock data for all supported coins
-            import random
-            mock_prices = {
-                'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
-                'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
-                'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
-                'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
-                'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
-            }
+        
+        # If Binance isn't available or we didn't get all prices, use live CoinGecko data
+        if not prices or len(prices) < len(SUPPORTED_COINS):
+            logging.info("Using CoinGecko API for real live cryptocurrency prices")
+            live_prices = await get_live_crypto_prices()
             
-            for symbol, base_price in mock_prices.items():
-                price_variation = random.uniform(-0.02, 0.02)
-                current_price = base_price * (1 + price_variation)
-                
-                prices[symbol] = {
-                    "symbol": symbol,
-                    "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                    "change_24h": round(random.uniform(-5.0, 5.0), 2),
-                    "volume": round(random.uniform(100000, 1000000), 2),
-                    "high_24h": round(current_price * 1.02, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                    "low_24h": round(current_price * 0.98, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                    "timestamp": datetime.utcnow().isoformat()
+            if live_prices:
+                prices.update(live_prices)
+            else:
+                # Only fall back to demo data if both Binance AND CoinGecko fail
+                logging.warning("Both Binance and CoinGecko unavailable, using demo data as last resort")
+                import random
+                mock_prices = {
+                    'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                    'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                    'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                    'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                    'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
                 }
+                
+                for symbol, base_price in mock_prices.items():
+                    price_variation = random.uniform(-0.02, 0.02)
+                    current_price = base_price * (1 + price_variation)
+                    
+                    prices[symbol] = {
+                        "symbol": symbol,
+                        "price": round(current_price, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                        "change_24h": round(random.uniform(-5.0, 5.0), 2),
+                        "volume": round(random.uniform(100000, 1000000), 2),
+                        "high_24h": round(current_price * 1.02, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                        "low_24h": round(current_price * 0.98, 6 if symbol in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "source": "Demo_Data"
+                    }
         
         return prices
         
