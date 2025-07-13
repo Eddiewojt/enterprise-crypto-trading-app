@@ -2332,30 +2332,51 @@ function App() {
           </div>
           
           <div className="history-timeline">
-            {[
-              { time: '14:23', symbol: 'DOGE', signal: 'STRONG BUY', price: '0.082340', profit: '+12.8%', status: 'completed' },
-              { time: '14:15', symbol: 'BTC', signal: 'BUY', price: '43,250.00', profit: '+3.2%', status: 'active' },
-              { time: '14:08', symbol: 'ETH', signal: 'SELL', price: '2,680.50', profit: '+5.1%', status: 'completed' },
-              { time: '13:57', symbol: 'ADA', signal: 'HOLD', price: '0.485000', profit: '0.0%', status: 'waiting' },
-              { time: '13:45', symbol: 'SOL', signal: 'BUY', price: '98.75', profit: '+8.4%', status: 'completed' }
-            ].map((item, index) => (
-              <div key={index} className={`history-item ${item.status}`}>
-                <div className="history-time">{item.time}</div>
-                <div className="history-symbol">{item.symbol}</div>
-                <div className={`history-signal ${item.signal.toLowerCase().replace(' ', '-')}`}>
-                  {item.signal}
+            {Object.entries(multiCoinData).slice(0, 5).map(([symbol, data], index) => {
+              const coinName = symbol.replace('USDT', '');
+              const currentPrice = data.price || 0;
+              const change = data.change_24h || 0;
+              const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+              
+              // Generate signal based on real price movement
+              let signal = 'HOLD';
+              let status = 'waiting';
+              if (change > 5) {
+                signal = 'STRONG BUY';
+                status = 'completed';
+              } else if (change > 0) {
+                signal = 'BUY';
+                status = 'active';
+              } else if (change < -5) {
+                signal = 'STRONG SELL';
+                status = 'completed';
+              } else if (change < 0) {
+                signal = 'SELL';
+                status = 'active';
+              }
+              
+              return (
+                <div key={symbol} className={`history-item ${status}`}>
+                  <div className="history-time">{time}</div>
+                  <div className="history-symbol">{coinName}</div>
+                  <div className={`history-signal ${signal.toLowerCase().replace(' ', '-')}`}>
+                    {signal}
+                  </div>
+                  <div className="history-price">
+                    ${currentPrice.toLocaleString('en-US', { 
+                      minimumFractionDigits: coinName === 'DOGE' || coinName === 'ADA' || coinName === 'XRP' ? 6 : 2,
+                      maximumFractionDigits: coinName === 'DOGE' || coinName === 'ADA' || coinName === 'XRP' ? 6 : 2
+                    })}
+                  </div>
+                  <div className={`history-profit ${change >= 0 ? 'positive' : 'negative'}`}>
+                    {change >= 0 ? '+' : ''}{change.toFixed(1)}%
+                  </div>
+                  <div className={`history-status ${status}`}>
+                    {status === 'completed' ? '✅' : status === 'active' ? '🔄' : '⏳'}
+                  </div>
                 </div>
-                <div className="history-price">${item.price}</div>
-                <div className={`history-profit ${item.profit.startsWith('+') ? 'positive' : 'neutral'}`}>
-                  {item.profit}
-                </div>
-                <div className={`history-status ${item.status}`}>
-                  {item.status === 'completed' && '✅'}
-                  {item.status === 'active' && '🔄'}
-                  {item.status === 'waiting' && '⏳'}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <div className="bots-section">
