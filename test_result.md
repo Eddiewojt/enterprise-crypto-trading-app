@@ -467,6 +467,30 @@ backend:
         comment: "✅ PREMIUM SAFETY LIMITS VERIFIED: Premium safety limits properly configured as requested - MAX_TRADE_AMOUNT: $1000, DAILY_TRADE_LIMIT: $10000. Environment variables correctly set and validated. Safety limits are integrated with trading system and enforced via API endpoints. Premium tier configuration successfully implemented."
 
 frontend:
+  - task: "Signal Display Logic Fix"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "IDENTIFIED ISSUE: getFilteredSignals function using Math.random() for RSI/MACD values instead of real backend data. Signal display logic defaults to HOLD. fetchMultiCoinData only gets price data, not signals. Need to fetch actual signals from backend and fix display logic."
+      
+  - task: "Real-time Data Integration"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "IDENTIFIED ISSUE: Frontend not getting real-time technical analysis data. WebSocket and API calls need to include signal data and technical indicators, not just prices."
+
   - task: "Trading Dashboard UI"
     implemented: true
     working: true
