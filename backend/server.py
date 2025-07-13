@@ -4086,24 +4086,11 @@ async def execute_trading_signal(signal_data: dict):
             logging.info(f"✅ DEMO TRADE EXECUTED: {signal_type} {amount} {symbol} at ${trade_result['price']}")
             
             # Send notifications
+            coin_name = symbol.replace('USDT', '')
             if signal_type == 'BUY':
-                await send_telegram_notification(
-                    f"🤖 AUTO BUY EXECUTED\n\n"
-                    f"💰 Symbol: {symbol}\n"
-                    f"📊 Amount: ${amount}\n"
-                    f"💎 Price: ${trade_result['price']}\n"
-                    f"⏰ Time: {datetime.utcnow().strftime('%H:%M:%S')}\n"
-                    f"🎯 Mode: Demo Trading"
-                )
+                await send_telegram_notification(f"BUY {coin_name} at ${trade_result['price']:.6f}")
             else:
-                await send_telegram_notification(
-                    f"🤖 AUTO SELL EXECUTED\n\n"
-                    f"💰 Symbol: {symbol}\n"
-                    f"📊 Amount: ${amount}\n"
-                    f"💎 Price: ${trade_result['price']}\n"
-                    f"⏰ Time: {datetime.utcnow().strftime('%H:%M:%S')}\n"
-                    f"🎯 Mode: Demo Trading"
-                )
+                await send_telegram_notification(f"SELL {coin_name} at ${trade_result['price']:.6f}")
             
             return {
                 "status": "executed",
