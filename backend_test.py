@@ -521,6 +521,146 @@ class DOGETradingAppTester:
             self.log_error("Multi-Coin Support", e)
             return False
             
+    def test_enhanced_multi_coin_prices_with_signals(self):
+        """Test enhanced multi-coin prices endpoint with signals - REVIEW FOCUS"""
+        try:
+            print("\n🎯 Testing Enhanced Multi-Coin Prices with Signals (REVIEW FOCUS)...")
+            print("🔍 GOAL: Verify GET /api/multi-coin/prices returns enhanced mock data with realistic technical indicators and signals")
+            
+            # Test multiple calls to verify data changes over time
+            test_calls = []
+            for i in range(3):
+                print(f"\n📊 Test Call #{i+1}/3...")
+                response = requests.get(f"{self.base_url}/multi-coin/prices", timeout=15)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    test_calls.append(data)
+                    print(f"✅ Call #{i+1} successful - Retrieved data for {len(data)} coins")
+                    
+                    # Wait between calls to see if data changes
+                    if i < 2:
+                        time.sleep(3)
+                else:
+                    self.log_error("Enhanced Multi-Coin Prices", f"Call #{i+1} failed: HTTP {response.status_code}")
+                    return False
+            
+            if len(test_calls) == 3:
+                # Analyze the first call in detail
+                first_call_data = test_calls[0]
+                
+                print(f"\n🔬 DETAILED ANALYSIS of first call:")
+                print(f"📈 Total coins returned: {len(first_call_data)}")
+                
+                # Check if we have enhanced data with signals
+                enhanced_coins = 0
+                signal_variety = set()
+                rsi_values = []
+                macd_values = []
+                trend_values = []
+                
+                for symbol, coin_data in first_call_data.items():
+                    print(f"\n🪙 Analyzing {symbol}:")
+                    
+                    # Check basic price data
+                    required_price_fields = ['symbol', 'price', 'change_24h', 'volume', 'high_24h', 'low_24h', 'timestamp']
+                    has_price_data = all(field in coin_data for field in required_price_fields)
+                    
+                    if has_price_data:
+                        print(f"  💰 Price: ${coin_data['price']:.6f}, Change: {coin_data['change_24h']:.2f}%")
+                    
+                    # Check for enhanced signal data
+                    if 'signals' in coin_data:
+                        signals = coin_data['signals']
+                        enhanced_coins += 1
+                        
+                        # Check signal fields
+                        signal_fields = ['signal_type', 'signal_strength', 'rsi', 'macd', 'trend']
+                        has_signal_data = all(field in signals for field in signal_fields)
+                        
+                        if has_signal_data:
+                            signal_type = signals['signal_type']
+                            signal_strength = signals['signal_strength']
+                            rsi = signals['rsi']
+                            macd = signals['macd']
+                            trend = signals['trend']
+                            
+                            print(f"  📊 Signal: {signal_type} ({signal_strength:.1f}%)")
+                            print(f"  📈 RSI: {rsi:.1f}, MACD: {macd:.8f}, Trend: {trend}")
+                            
+                            # Collect data for analysis
+                            signal_variety.add(signal_type)
+                            rsi_values.append(rsi)
+                            macd_values.append(macd)
+                            trend_values.append(trend)
+                            
+                            # Validate technical indicators
+                            if not (20 <= rsi <= 80):
+                                print(f"  ⚠️ RSI out of expected range: {rsi}")
+                            if not isinstance(macd, (int, float)):
+                                print(f"  ⚠️ MACD not numeric: {macd}")
+                            if trend not in ['bullish', 'bearish', 'neutral']:
+                                print(f"  ⚠️ Invalid trend value: {trend}")
+                        else:
+                            print(f"  ❌ Missing signal fields: {[f for f in signal_fields if f not in signals]}")
+                    else:
+                        print(f"  ❌ No signals data found")
+                
+                print(f"\n📊 SUMMARY ANALYSIS:")
+                print(f"🎯 Enhanced coins with signals: {enhanced_coins}/{len(first_call_data)}")
+                print(f"🔄 Signal variety: {list(signal_variety)}")
+                print(f"📈 RSI range: {min(rsi_values):.1f} - {max(rsi_values):.1f}" if rsi_values else "No RSI data")
+                print(f"📊 MACD range: {min(macd_values):.8f} - {max(macd_values):.8f}" if macd_values else "No MACD data")
+                print(f"📈 Trend distribution: {set(trend_values)}" if trend_values else "No trend data")
+                
+                # Check for signal variety (not all HOLD)
+                non_hold_signals = [s for s in signal_variety if s != 'HOLD']
+                print(f"🎯 Non-HOLD signals: {non_hold_signals}")
+                
+                # Test time-based changes
+                print(f"\n⏰ TESTING TIME-BASED CHANGES:")
+                changes_detected = 0
+                
+                for symbol in first_call_data.keys():
+                    if symbol in test_calls[1] and symbol in test_calls[2]:
+                        call1_price = first_call_data[symbol].get('price', 0)
+                        call2_price = test_calls[1][symbol].get('price', 0)
+                        call3_price = test_calls[2][symbol].get('price', 0)
+                        
+                        if call1_price != call2_price or call2_price != call3_price:
+                            changes_detected += 1
+                            print(f"  🔄 {symbol}: ${call1_price:.6f} → ${call2_price:.6f} → ${call3_price:.6f}")
+                
+                print(f"📊 Price changes detected: {changes_detected}/{len(first_call_data)} coins")
+                
+                # Validation criteria
+                success_criteria = [
+                    enhanced_coins >= len(first_call_data) * 0.8,  # 80% of coins have signals
+                    len(signal_variety) >= 3,  # At least 3 different signal types
+                    len(non_hold_signals) >= 2,  # At least 2 non-HOLD signal types
+                    len(rsi_values) > 0 and all(20 <= rsi <= 80 for rsi in rsi_values),  # Valid RSI range
+                    changes_detected >= len(first_call_data) * 0.5  # 50% of coins show price changes
+                ]
+                
+                passed_criteria = sum(success_criteria)
+                print(f"\n✅ VALIDATION RESULTS: {passed_criteria}/5 criteria passed")
+                
+                if passed_criteria >= 4:
+                    self.log_success("Enhanced Multi-Coin Prices with Signals", 
+                                   f"✅ Enhanced data validated: {enhanced_coins} coins with signals, {len(signal_variety)} signal types, {changes_detected} price changes")
+                    return True
+                else:
+                    self.log_error("Enhanced Multi-Coin Prices with Signals", 
+                                 f"❌ Validation failed: {passed_criteria}/5 criteria passed")
+                    return False
+            else:
+                self.log_error("Enhanced Multi-Coin Prices with Signals", "Failed to complete multiple test calls")
+                return False
+                
+        except Exception as e:
+            self.log_error("Enhanced Multi-Coin Prices with Signals", e)
+            return False
+            
     def test_portfolio_management(self):
         """Test portfolio management functionality"""
         try:
