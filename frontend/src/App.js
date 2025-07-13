@@ -2583,34 +2583,19 @@ function App() {
             <div className="signals-stats">
               <div className="stat-item">
                 <span className="stat-value">
-                  {Object.entries(multiCoinData).filter(([symbol, data]) => {
-                    const signals = data.signals || {};
-                    const rsi = signals.rsi || 50;
-                    const macd = signals.macd_signal || 'HOLD';
-                    return (rsi < 30 && macd === 'BUY') || (rsi < 40 && macd === 'BUY');
-                  }).length}
+                  {getFilteredSignals().filter(signal => signal.signalType.includes('BUY')).length}
                 </span>
                 <span className="stat-label">🚀 BUY Signals</span>
               </div>
               <div className="stat-item">
                 <span className="stat-value">
-                  {Object.entries(multiCoinData).filter(([symbol, data]) => {
-                    const signals = data.signals || {};
-                    const rsi = signals.rsi || 50;
-                    const macd = signals.macd_signal || 'HOLD';
-                    return (rsi > 70 && macd === 'SELL') || (rsi > 60 && macd === 'SELL');
-                  }).length}
+                  {getFilteredSignals().filter(signal => signal.signalType.includes('SELL')).length}
                 </span>
                 <span className="stat-label">📉 SELL Signals</span>
               </div>
               <div className="stat-item">
                 <span className="stat-value">
-                  {Object.entries(multiCoinData).filter(([symbol, data]) => {
-                    const signals = data.signals || {};
-                    const rsi = signals.rsi || 50;
-                    const macd = signals.macd_signal || 'HOLD';
-                    return !((rsi < 40 && macd === 'BUY') || (rsi > 60 && macd === 'SELL'));
-                  }).length}
+                  {getFilteredSignals().filter(signal => signal.signalType === 'HOLD').length}
                 </span>
                 <span className="stat-label">⏸️ HOLD Signals</span>
               </div>
@@ -2631,53 +2616,71 @@ function App() {
               </button>
             </div>
           </div>
+
+          {/* Signal Controls */}
+          <div className="signal-controls">
+            <div className="filter-section">
+              <h4>🔍 Filter Signals:</h4>
+              <div className="filter-buttons">
+                {['ALL', 'STRONG_BUY', 'BUY', 'HOLD', 'SELL', 'STRONG_SELL'].map(filter => (
+                  <button
+                    key={filter}
+                    className={`filter-btn ${signalFilter === filter ? 'active' : ''}`}
+                    onClick={() => setSignalFilter(filter)}
+                  >
+                    {filter === 'ALL' && '🌐 All'}
+                    {filter === 'STRONG_BUY' && '🚀 Strong Buy'}
+                    {filter === 'BUY' && '📈 Buy'}
+                    {filter === 'HOLD' && '⏸️ Hold'}
+                    {filter === 'SELL' && '📉 Sell'}
+                    {filter === 'STRONG_SELL' && '🔻 Strong Sell'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="sort-section">
+              <h4>📊 Sort By:</h4>
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="sort-select"
+              >
+                <option value="confidence">🎯 Confidence</option>
+                <option value="price">💰 Price</option>
+                <option value="change">📈 Price Change</option>
+                <option value="symbol">🔤 Symbol</option>
+              </select>
+            </div>
+
+            <div className="watchlist-section">
+              <button 
+                className="watchlist-btn"
+                onClick={() => setShowWatchlistModal(true)}
+              >
+                ⭐ Watchlist ({watchlist.length})
+              </button>
+            </div>
+          </div>
           
           <div className="signals-grid">
-            {Object.entries(multiCoinData).map(([symbol, data]) => {
-              const coinName = symbol.replace('USDT', '');
-              const signals = data.signals || {};
-              const rsi = signals.rsi || Math.random() * 100; // Add some variation
-              const macd = signals.macd_signal || (Math.random() > 0.5 ? 'BUY' : 'SELL');
-              const overall = signals.overall_signal || 'HOLD';
-              const strength = signals.strength || Math.floor(Math.random() * 40) + 30;
-              
-              // Enhanced signal calculation
-              let signalType = 'HOLD';
-              let signalStrength = 'Medium';
-              let confidenceScore = 50;
-              
-              if (rsi < 25 && macd === 'BUY') {
-                signalType = 'STRONG BUY';
-                signalStrength = 'Very High';
-                confidenceScore = 90;
-              } else if (rsi < 35 && macd === 'BUY') {
-                signalType = 'BUY';
-                signalStrength = 'High';
-                confidenceScore = 75;
-              } else if (rsi > 75 && macd === 'SELL') {
-                signalType = 'STRONG SELL';
-                signalStrength = 'Very High';
-                confidenceScore = 85;
-              } else if (rsi > 65 && macd === 'SELL') {
-                signalType = 'SELL';
-                signalStrength = 'High';
-                confidenceScore = 70;
-              } else if (overall === 'BUY') {
-                signalType = 'BUY';
-                confidenceScore = 60;
-              } else if (overall === 'SELL') {
-                signalType = 'SELL';
-                confidenceScore = 60;
-              }
-
-              // Calculate price change
-              const priceChange = ((Math.random() - 0.5) * 10).toFixed(2);
+            {getFilteredSignals().map((signal) => {
+              const { symbol, coinName, data, signalType, confidenceScore, rsi, macd, priceChange } = signal;
               const changeColor = priceChange >= 0 ? 'positive' : 'negative';
+              const isInWatchlist = watchlist.includes(symbol);
 
               return (
-                <div key={symbol} className={`signal-card ${signalType.toLowerCase().replace(' ', '-')}`}>
+                <div key={symbol} className={`signal-card ${signalType.toLowerCase().replace('_', '-')}`}>
                   <div className="signal-header">
-                    <h3>{coinName}</h3>
+                    <div className="coin-info">
+                      <h3>{coinName}</h3>
+                      <button 
+                        className={`watchlist-toggle ${isInWatchlist ? 'active' : ''}`}
+                        onClick={() => isInWatchlist ? removeFromWatchlist(symbol) : addToWatchlist(symbol)}
+                      >
+                        {isInWatchlist ? '⭐' : '☆'}
+                      </button>
+                    </div>
                     <div className="price-info">
                       <div className="current-price">
                         ${data.price?.toFixed(6) || (Math.random() * 0.1 + 0.01).toFixed(6)}
@@ -2689,12 +2692,12 @@ function App() {
                   </div>
                   
                   <div className="signal-display">
-                    <div className={`signal-indicator ${signalType.toLowerCase().replace(' ', '-')}`}>
-                      {signalType === 'STRONG BUY' && '🚀 STRONG BUY'}
+                    <div className={`signal-indicator ${signalType.toLowerCase().replace('_', '-')}`}>
+                      {signalType === 'STRONG_BUY' && '🚀 STRONG BUY'}
                       {signalType === 'BUY' && '📈 BUY'}
                       {signalType === 'HOLD' && '⏸️ HOLD'}
                       {signalType === 'SELL' && '📉 SELL'}
-                      {signalType === 'STRONG SELL' && '🔻 STRONG SELL'}
+                      {signalType === 'STRONG_SELL' && '🔻 STRONG SELL'}
                     </div>
                     
                     <div className="signal-confidence">
@@ -2735,6 +2738,7 @@ function App() {
                     <button 
                       className={`action-btn ${signalType.includes('BUY') ? 'buy' : signalType.includes('SELL') ? 'sell' : 'hold'}`}
                       onClick={() => {
+                        navigator.clipboard?.writeText(`${signalType} ${coinName} at $${data.price?.toFixed(6) || '0.000000'} - ${confidenceScore}% confidence`);
                         setNotification({
                           type: 'success',
                           message: `📋 Signal copied: ${signalType} ${coinName} at $${data.price?.toFixed(6) || '0.000000'}`
@@ -2753,6 +2757,22 @@ function App() {
               );
             })}
           </div>
+
+          {getFilteredSignals().length === 0 && (
+            <div className="no-signals">
+              <h3>🔍 No signals match your current filter</h3>
+              <p>Try adjusting your filter settings or refresh the data</p>
+              <button 
+                className="reset-filters-btn"
+                onClick={() => {
+                  setSignalFilter('ALL');
+                  setSortBy('confidence');
+                }}
+              >
+                🔄 Reset Filters
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
