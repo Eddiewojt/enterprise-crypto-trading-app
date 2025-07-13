@@ -122,9 +122,9 @@ backend:
         
   - task: "Real-time Price Tracking"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -137,6 +137,9 @@ backend:
       - working: true
         agent: "main"
         comment: "FIXED: Updated to use REAL LIVE cryptocurrency prices from CoinGecko API instead of mock data. System now properly tries Binance first, then CoinGecko for live prices, and only falls back to demo data if both APIs are unavailable."
+      - working: false
+        agent: "testing"
+        comment: "🚨 CRITICAL ISSUE CONFIRMED: Frontend is still displaying OLD MOCK PRICES instead of real live cryptocurrency prices. Found DOGE at $0.08234 (should be ~$0.19-0.20) and BTC at $43,250 (should be ~$117,000-118,000) in multiple UI sections including AI Intelligence section and Recent Signal History. While the test found some realistic current prices ($0.198482 for DOGE, $118020 for BTC), the prominent displays still show old mock data. The backend live price integration is NOT reaching the frontend properly. This contradicts the user's request for live pricing and needs immediate attention to fix the data flow between backend and frontend."
         
   - task: "Technical Analysis Engine"
     implemented: true
