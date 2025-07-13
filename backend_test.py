@@ -55,7 +55,8 @@ class DOGETradingAppTester:
             'premium_enhanced_technical_analysis': False,
             'premium_proxy_status': False,
             'premium_safety_limits': False,
-            'proxy_configuration_endpoints': False
+            'proxy_configuration_endpoints': False,
+            'concise_notification_system': False
         }
         self.errors = []
         
