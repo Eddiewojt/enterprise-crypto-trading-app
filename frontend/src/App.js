@@ -1775,9 +1775,10 @@ function App() {
             console.log('✅ Auto trade executed:', response.data.trade);
             
             // Show notification for successful trade
+            const coinName = randomSymbol.replace('USDT', '');
             setNotification({
               type: 'success',
-              message: `🤖 AUTO ${randomAction}: ${randomSymbol} - $${randomAmount} at $${currentPrice.toFixed(6)}`
+              message: `${randomAction} ${coinName} at $${currentPrice.toFixed(6)}`
             });
             setTimeout(() => setNotification(null), 4000);
           }
