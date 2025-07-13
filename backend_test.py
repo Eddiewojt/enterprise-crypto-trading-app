@@ -224,6 +224,138 @@ class DOGETradingAppTester:
             self.log_error("Trading Signal Generation", e)
             return False
             
+    def test_enhanced_signal_generation_logic(self):
+        """Test enhanced signal generation logic - REVIEW FOCUS"""
+        try:
+            print("\n🎯 Testing Enhanced Signal Generation Logic (REVIEW FOCUS)...")
+            print("🔍 GOAL: Verify signals are generated based on technical indicators with proper signal types")
+            print("❌ ISSUE: Signals should NOT all default to HOLD")
+            
+            # Test signal generation across multiple coins and timeframes
+            test_symbols = ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT']
+            test_timeframes = ['15m', '4h']
+            
+            all_signals = []
+            signal_types_found = set()
+            
+            for symbol in test_symbols:
+                for timeframe in test_timeframes:
+                    print(f"\n📊 Testing {symbol} - {timeframe}...")
+                    
+                    # Get signals for this symbol/timeframe
+                    symbol_short = symbol.replace('USDT', '').lower()
+                    response = requests.get(f"{self.base_url}/{symbol_short}/signals?timeframe={timeframe}", timeout=15)
+                    
+                    if response.status_code == 200:
+                        signals_data = response.json()
+                        
+                        if isinstance(signals_data, list):
+                            print(f"  📈 Retrieved {len(signals_data)} signals")
+                            
+                            for signal in signals_data:
+                                if 'signal_type' in signal and 'strength' in signal:
+                                    signal_type = signal['signal_type']
+                                    strength = signal['strength']
+                                    
+                                    all_signals.append({
+                                        'symbol': symbol,
+                                        'timeframe': timeframe,
+                                        'signal_type': signal_type,
+                                        'strength': strength,
+                                        'indicators': signal.get('indicators', {})
+                                    })
+                                    
+                                    signal_types_found.add(signal_type)
+                                    print(f"    🎯 Signal: {signal_type} ({strength:.1f}%)")
+                                    
+                                    # Validate technical indicators correlation
+                                    indicators = signal.get('indicators', {})
+                                    if 'rsi' in indicators:
+                                        rsi = indicators['rsi']
+                                        print(f"      📊 RSI: {rsi:.1f}")
+                                        
+                                        # Check RSI correlation with signal
+                                        if signal_type in ['BUY', 'STRONG_BUY'] and rsi > 70:
+                                            print(f"      ⚠️ Warning: BUY signal with high RSI ({rsi:.1f})")
+                                        elif signal_type in ['SELL', 'STRONG_SELL'] and rsi < 30:
+                                            print(f"      ⚠️ Warning: SELL signal with low RSI ({rsi:.1f})")
+                                    
+                                    if 'macd' in indicators:
+                                        macd = indicators['macd']
+                                        print(f"      📈 MACD: {macd:.8f}")
+                        else:
+                            print(f"  ❌ Invalid signals format for {symbol} {timeframe}")
+                    else:
+                        print(f"  ❌ Failed to get signals for {symbol} {timeframe}: HTTP {response.status_code}")
+            
+            print(f"\n📊 SIGNAL GENERATION ANALYSIS:")
+            print(f"🎯 Total signals generated: {len(all_signals)}")
+            print(f"🔄 Signal types found: {list(signal_types_found)}")
+            
+            # Count signal type distribution
+            signal_distribution = {}
+            for signal in all_signals:
+                signal_type = signal['signal_type']
+                signal_distribution[signal_type] = signal_distribution.get(signal_type, 0) + 1
+            
+            print(f"📈 Signal distribution:")
+            for signal_type, count in signal_distribution.items():
+                percentage = (count / len(all_signals)) * 100 if all_signals else 0
+                print(f"  {signal_type}: {count} ({percentage:.1f}%)")
+            
+            # Check for variety in signal types (not all HOLD)
+            non_hold_signals = [s for s in signal_types_found if s != 'HOLD']
+            hold_percentage = (signal_distribution.get('HOLD', 0) / len(all_signals)) * 100 if all_signals else 0
+            
+            print(f"\n🎯 SIGNAL VARIETY ANALYSIS:")
+            print(f"📊 Non-HOLD signal types: {non_hold_signals}")
+            print(f"📈 HOLD percentage: {hold_percentage:.1f}%")
+            
+            # Test signal strength distribution
+            if all_signals:
+                strengths = [s['strength'] for s in all_signals]
+                avg_strength = sum(strengths) / len(strengths)
+                min_strength = min(strengths)
+                max_strength = max(strengths)
+                
+                print(f"💪 Signal strength analysis:")
+                print(f"  Average: {avg_strength:.1f}%")
+                print(f"  Range: {min_strength:.1f}% - {max_strength:.1f}%")
+                
+                # Check for realistic strength distribution
+                strong_signals = [s for s in strengths if s >= 75]
+                medium_signals = [s for s in strengths if 60 <= s < 75]
+                weak_signals = [s for s in strengths if s < 60]
+                
+                print(f"  Strong (≥75%): {len(strong_signals)}")
+                print(f"  Medium (60-74%): {len(medium_signals)}")
+                print(f"  Weak (<60%): {len(weak_signals)}")
+            
+            # Validation criteria for enhanced signal generation
+            success_criteria = [
+                len(all_signals) > 0,  # At least some signals generated
+                len(signal_types_found) >= 3,  # At least 3 different signal types
+                len(non_hold_signals) >= 2,  # At least 2 non-HOLD signal types
+                hold_percentage < 80,  # Less than 80% HOLD signals
+                len(all_signals) >= len(test_symbols) * 0.5  # Signals for at least half the test cases
+            ]
+            
+            passed_criteria = sum(success_criteria)
+            print(f"\n✅ VALIDATION RESULTS: {passed_criteria}/5 criteria passed")
+            
+            if passed_criteria >= 4:
+                self.log_success("Enhanced Signal Generation Logic", 
+                               f"✅ Signal generation validated: {len(signal_types_found)} types, {hold_percentage:.1f}% HOLD, {len(non_hold_signals)} non-HOLD types")
+                return True
+            else:
+                self.log_error("Enhanced Signal Generation Logic", 
+                             f"❌ Signal generation issues: {passed_criteria}/5 criteria passed, {hold_percentage:.1f}% HOLD signals")
+                return False
+                
+        except Exception as e:
+            self.log_error("Enhanced Signal Generation Logic", e)
+            return False
+            
     async def test_websocket_connection(self):
         """Test WebSocket real-time connection"""
         try:
