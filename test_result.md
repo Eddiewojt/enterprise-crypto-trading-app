@@ -134,6 +134,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "WebSocket connections established successfully with proper fallback to mock data"
+      - working: true
+        agent: "main"
+        comment: "FIXED: Updated to use REAL LIVE cryptocurrency prices from CoinGecko API instead of mock data. System now properly tries Binance first, then CoinGecko for live prices, and only falls back to demo data if both APIs are unavailable."
         
   - task: "Technical Analysis Engine"
     implemented: true
