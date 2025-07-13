@@ -1679,25 +1679,16 @@ function App() {
     const signals = Object.entries(multiCoinData).map(([symbol, data]) => {
       const coinName = symbol.replace('USDT', '');
       const signalData = data.signals || {};
-      const rsi = signalData.rsi || Math.random() * 100;
-      const macd = signalData.macd_signal || (Math.random() > 0.5 ? 'BUY' : 'SELL');
       
-      let signalType = 'HOLD';
-      let confidenceScore = 50;
+      // Use actual backend signal data instead of generating random values
+      const signalType = signalData.signal_type || 'HOLD';
+      const confidenceScore = signalData.signal_strength || 50;
+      const rsi = signalData.rsi || 50;
+      const macd = signalData.macd || 0;
+      const trend = signalData.trend || 'neutral';
       
-      if (rsi < 25 && macd === 'BUY') {
-        signalType = 'STRONG_BUY';
-        confidenceScore = 90;
-      } else if (rsi < 35 && macd === 'BUY') {
-        signalType = 'BUY';
-        confidenceScore = 75;
-      } else if (rsi > 75 && macd === 'SELL') {
-        signalType = 'STRONG_SELL';
-        confidenceScore = 85;
-      } else if (rsi > 65 && macd === 'SELL') {
-        signalType = 'SELL';
-        confidenceScore = 70;
-      }
+      // Use actual price change from backend
+      const priceChange = data.change_24h || 0;
 
       return {
         symbol,
@@ -1707,7 +1698,8 @@ function App() {
         confidenceScore,
         rsi,
         macd,
-        priceChange: ((Math.random() - 0.5) * 10).toFixed(2)
+        trend,
+        priceChange: priceChange.toFixed(2)
       };
     });
 
