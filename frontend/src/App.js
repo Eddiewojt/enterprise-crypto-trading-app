@@ -1128,6 +1128,10 @@ function App() {
   const [show3CommasSetup, setShow3CommasSetup] = useState(false);
   const [threeCommasStatus, setThreeCommasStatus] = useState('disabled');
   const [threeCommasBots, setThreeCommasBots] = useState([]);
+  const [watchlist, setWatchlist] = useState(['DOGEUSDT', 'BTCUSDT', 'ETHUSDT']);
+  const [signalFilter, setSignalFilter] = useState('ALL'); // ALL, BUY, SELL, STRONG_BUY, STRONG_SELL
+  const [sortBy, setSortBy] = useState('confidence'); // confidence, price, change, symbol
+  const [showWatchlistModal, setShowWatchlistModal] = useState(false);
   const [portfolioData, setPortfolioData] = useState({
     total_value: 0,
     daily_change: 0,
