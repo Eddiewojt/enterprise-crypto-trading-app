@@ -2732,10 +2732,10 @@ function App() {
                     <button 
                       className={`action-btn ${signalType.includes('BUY') ? 'buy' : signalType.includes('SELL') ? 'sell' : 'hold'}`}
                       onClick={() => {
-                        navigator.clipboard?.writeText(`${signalType} ${coinName} at $${data.price?.toFixed(6) || '0.000000'} - ${confidenceScore}% confidence`);
+                        navigator.clipboard?.writeText(`${signalType} ${coinName} at $${data.price?.toFixed(6) || '0.000000'}`);
                         setNotification({
                           type: 'success',
-                          message: `📋 Signal copied: ${signalType} ${coinName} at $${data.price?.toFixed(6) || '0.000000'}`
+                          message: `${signalType} ${coinName} at $${data.price?.toFixed(6) || '0.000000'}`
                         });
                         setTimeout(() => setNotification(null), 4000);
                       }}
