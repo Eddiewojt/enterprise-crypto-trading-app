@@ -2747,6 +2747,10 @@ class DOGETradingAppTester:
         
         print("\n🛡️ Testing Premium Safety Limits...")
         premium_safety_ok = self.test_premium_safety_limits()
+        
+        # Update test results for notification system
+        if concise_notification_ok:
+            self.test_results['concise_notification_system'] = True
             
         # Summary
         print("\n" + "=" * 60)
