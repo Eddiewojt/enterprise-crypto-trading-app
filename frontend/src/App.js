@@ -2657,7 +2657,7 @@ function App() {
           
           <div className="signals-grid">
             {getFilteredSignals().map((signal) => {
-              const { symbol, coinName, data, signalType, confidenceScore, rsi, macd, priceChange } = signal;
+              const { symbol, coinName, data, signalType, confidenceScore, rsi, macd, trend, priceChange } = signal;
               const changeColor = priceChange >= 0 ? 'positive' : 'negative';
               const isInWatchlist = watchlist.includes(symbol);
 
