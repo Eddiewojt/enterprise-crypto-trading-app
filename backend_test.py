@@ -2379,8 +2379,21 @@ class DOGETradingAppTester:
         analysis_ok = self.test_technical_analysis_engine()
         signals_ok = self.test_trading_signal_generation()
         
+        # ENHANCED TESTS FOR REVIEW REQUEST
+        print("\n🎯 Testing Enhanced Signal Generation Logic (REVIEW FOCUS)...")
+        enhanced_signals_ok = self.test_enhanced_signal_generation_logic()
+        
+        print("\n🎯 Testing Enhanced Multi-Coin Prices with Signals (REVIEW FOCUS)...")
+        enhanced_multi_coin_ok = self.test_enhanced_multi_coin_prices_with_signals()
+        
         if root_ok and binance_ok and klines_ok:
             self.test_results['api_endpoints'] = True
+            
+        # Update test results for enhanced features
+        if enhanced_signals_ok:
+            self.test_results['enhanced_signal_generation_logic'] = True
+        if enhanced_multi_coin_ok:
+            self.test_results['enhanced_multi_coin_prices_with_signals'] = True
             
         # Test WebSocket
         print("\n🔌 Testing WebSocket Connection...")
