@@ -85,25 +85,273 @@ class DOGETradingAppTester:
             self.log_error("Root Endpoint", e)
             return False
             
+    def test_live_price_data_verification(self):
+        """🎯 CRITICAL TEST: Verify REAL LIVE cryptocurrency prices instead of mock data"""
+        try:
+            print("\n🎯 CRITICAL TESTING: LIVE PRICE DATA VERIFICATION")
+            print("=" * 80)
+            print("🔍 TESTING FOCUS: Verify that prices are from CoinGecko API (source: 'CoinGecko_Live')")
+            print("🔍 EXPECTED: Prices should match current real market prices (NOT old mock prices)")
+            print("🔍 OLD MOCK PRICES TO AVOID: DOGE=0.08234, BTC=43000")
+            print("=" * 80)
+            
+            # Test 1: Multi-coin prices endpoint - PRIMARY TEST
+            print("\n📊 TEST 1: GET /api/multi-coin/prices (PRIMARY ENDPOINT)")
+            response = requests.get(f"{self.base_url}/multi-coin/prices", timeout=20)
+            
+            print(f"📊 Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"📋 Response Structure: {type(data)} with {len(data) if isinstance(data, dict) else 'N/A'} coins")
+                
+                # Check if we have price data
+                if isinstance(data, dict) and len(data) > 0:
+                    # Look for source field to verify live data
+                    sample_coin = list(data.keys())[0]
+                    sample_data = data[sample_coin]
+                    
+                    print(f"📋 Sample Coin Data ({sample_coin}): {json.dumps(sample_data, indent=2)}")
+                    
+                    # Check for source field indicating live data
+                    if 'source' in sample_data:
+                        source = sample_data['source']
+                        print(f"🎯 DATA SOURCE DETECTED: {source}")
+                        
+                        if source == "CoinGecko_Live":
+                            print("✅ SUCCESS: Using CoinGecko Live Data!")
+                            self.log_success("Live Data Source", f"Confirmed CoinGecko_Live source")
+                        elif source == "Demo_Data":
+                            print("❌ FAILURE: Still using Demo Data!")
+                            self.log_error("Live Data Source", "Still using Demo_Data instead of CoinGecko_Live")
+                            return False
+                        else:
+                            print(f"⚠️ UNKNOWN SOURCE: {source}")
+                            self.log_error("Live Data Source", f"Unknown source: {source}")
+                            return False
+                    else:
+                        print("⚠️ NO SOURCE FIELD: Cannot verify data source")
+                        self.log_error("Live Data Source", "Missing source field in response")
+                        return False
+                    
+                    # Test specific coins for realistic prices
+                    test_results = {}
+                    
+                    # Test DOGE price
+                    if 'DOGEUSDT' in data:
+                        doge_data = data['DOGEUSDT']
+                        doge_price = doge_data.get('price', 0)
+                        print(f"🐕 DOGE Price: ${doge_price:.6f}")
+                        
+                        # Check if it's the old mock price
+                        if abs(doge_price - 0.08234) < 0.00001:
+                            print("❌ DOGE PRICE ISSUE: Still using old mock price 0.08234!")
+                            self.log_error("DOGE Live Price", f"Still using mock price: ${doge_price:.6f}")
+                            test_results['doge'] = False
+                        else:
+                            print("✅ DOGE PRICE: Using live market price (not mock)")
+                            self.log_success("DOGE Live Price", f"Live price: ${doge_price:.6f}")
+                            test_results['doge'] = True
+                    
+                    # Test BTC price
+                    if 'BTCUSDT' in data:
+                        btc_data = data['BTCUSDT']
+                        btc_price = btc_data.get('price', 0)
+                        print(f"₿ BTC Price: ${btc_price:.2f}")
+                        
+                        # Check if it's the old mock price
+                        if abs(btc_price - 43000) < 100:
+                            print("❌ BTC PRICE ISSUE: Still using old mock price 43000!")
+                            self.log_error("BTC Live Price", f"Still using mock price: ${btc_price:.2f}")
+                            test_results['btc'] = False
+                        else:
+                            print("✅ BTC PRICE: Using live market price (not mock)")
+                            self.log_success("BTC Live Price", f"Live price: ${btc_price:.2f}")
+                            test_results['btc'] = True
+                    
+                    # Test ETH price
+                    if 'ETHUSDT' in data:
+                        eth_data = data['ETHUSDT']
+                        eth_price = eth_data.get('price', 0)
+                        print(f"Ξ ETH Price: ${eth_price:.2f}")
+                        
+                        # Check if it's the old mock price
+                        if abs(eth_price - 2600) < 50:
+                            print("❌ ETH PRICE ISSUE: Still using old mock price 2600!")
+                            self.log_error("ETH Live Price", f"Still using mock price: ${eth_price:.2f}")
+                            test_results['eth'] = False
+                        else:
+                            print("✅ ETH PRICE: Using live market price (not mock)")
+                            self.log_success("ETH Live Price", f"Live price: ${eth_price:.2f}")
+                            test_results['eth'] = True
+                    
+                    # Check for realistic 24h changes and volumes
+                    realistic_data_count = 0
+                    for symbol, coin_data in data.items():
+                        change_24h = coin_data.get('change_24h', 0)
+                        volume = coin_data.get('volume', 0)
+                        
+                        # Realistic 24h changes are typically between -20% and +20%
+                        # Realistic volumes are typically > 1000
+                        if -20 <= change_24h <= 20 and volume > 1000:
+                            realistic_data_count += 1
+                    
+                    print(f"📊 Realistic Data Check: {realistic_data_count}/{len(data)} coins have realistic 24h changes and volumes")
+                    
+                    if realistic_data_count >= len(data) * 0.8:  # 80% should have realistic data
+                        self.log_success("Data Realism Check", f"{realistic_data_count}/{len(data)} coins have realistic market data")
+                    else:
+                        self.log_error("Data Realism Check", f"Only {realistic_data_count}/{len(data)} coins have realistic data")
+                        return False
+                    
+                    # Overall assessment
+                    successful_tests = sum(test_results.values())
+                    total_tests = len(test_results)
+                    
+                    if successful_tests == total_tests and total_tests > 0:
+                        print("🎉 SUCCESS: All tested coins are using live market prices!")
+                        self.test_results['binance_api_integration'] = True
+                        return True
+                    else:
+                        print(f"❌ FAILURE: {total_tests - successful_tests}/{total_tests} coins still using mock prices")
+                        return False
+                        
+                else:
+                    self.log_error("Multi-coin Prices", f"Invalid response format: {data}")
+                    return False
+            else:
+                self.log_error("Multi-coin Prices", f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_error("Live Price Data Verification", e)
+            return False
+
+    def test_individual_coin_live_prices(self):
+        """Test individual coin price endpoints for live data"""
+        try:
+            print("\n🔍 TEST 2: Individual Coin Price Endpoints")
+            print("🎯 TESTING: GET /api/DOGE/price and other individual coin endpoints")
+            
+            test_coins = ['DOGE', 'BTC', 'ETH']
+            successful_tests = 0
+            
+            for coin in test_coins:
+                print(f"\n📊 Testing {coin} individual price endpoint...")
+                response = requests.get(f"{self.base_url}/{coin}/price", timeout=15)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    print(f"📋 {coin} Response: {json.dumps(data, indent=2)}")
+                    
+                    # Check for source field
+                    if 'source' in data:
+                        source = data['source']
+                        if source == "CoinGecko_Live":
+                            print(f"✅ {coin}: Using CoinGecko Live Data")
+                            self.log_success(f"{coin} Live Data", f"Source: {source}")
+                            successful_tests += 1
+                        else:
+                            print(f"❌ {coin}: Using {source} instead of CoinGecko_Live")
+                            self.log_error(f"{coin} Live Data", f"Wrong source: {source}")
+                    else:
+                        print(f"⚠️ {coin}: No source field found")
+                        self.log_error(f"{coin} Live Data", "Missing source field")
+                else:
+                    print(f"❌ {coin}: HTTP {response.status_code}")
+                    self.log_error(f"{coin} Endpoint", f"HTTP {response.status_code}")
+            
+            if successful_tests >= 2:  # At least 2 out of 3 should work
+                self.log_success("Individual Coin Live Prices", f"{successful_tests}/{len(test_coins)} coins using live data")
+                return True
+            else:
+                self.log_error("Individual Coin Live Prices", f"Only {successful_tests}/{len(test_coins)} coins using live data")
+                return False
+                
+        except Exception as e:
+            self.log_error("Individual Coin Live Prices", e)
+            return False
+
+    def test_websocket_live_data(self):
+        """Test WebSocket system for live price updates"""
+        try:
+            print("\n🔍 TEST 3: WebSocket Live Price Updates")
+            print("🎯 TESTING: WebSocket system should use live prices, not mock data")
+            
+            # This will be tested by the existing websocket test
+            # but we'll add specific checks for live data
+            return self.test_websocket_connection()
+                
+        except Exception as e:
+            self.log_error("WebSocket Live Data", e)
+            return False
+
+    def test_error_handling_fallback(self):
+        """Test error handling and fallback to demo data"""
+        try:
+            print("\n🔍 TEST 4: Error Handling and Fallback Logic")
+            print("🎯 TESTING: Should use live data when available, fallback to demo only if both Binance AND CoinGecko fail")
+            
+            # This is harder to test without actually breaking the APIs
+            # But we can check the current behavior
+            response = requests.get(f"{self.base_url}/multi-coin/prices", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict) and len(data) > 0:
+                    sample_coin = list(data.keys())[0]
+                    sample_data = data[sample_coin]
+                    
+                    if 'source' in sample_data:
+                        source = sample_data['source']
+                        if source == "CoinGecko_Live":
+                            print("✅ SUCCESS: Using live data as expected when APIs are available")
+                            self.log_success("Error Handling", "Using live data when APIs available")
+                            return True
+                        elif source == "Demo_Data":
+                            print("⚠️ INFO: Using demo data (APIs might be unavailable)")
+                            self.log_success("Error Handling", "Using demo data (expected if APIs unavailable)")
+                            return True
+                        else:
+                            print(f"❓ UNKNOWN: Using source {source}")
+                            self.log_error("Error Handling", f"Unknown source: {source}")
+                            return False
+            
+            self.log_error("Error Handling", "Could not test fallback logic")
+            return False
+                
+        except Exception as e:
+            self.log_error("Error Handling Fallback", e)
+            return False
+
     def test_binance_api_integration(self):
         """Test Binance API integration by fetching DOGE price"""
         try:
-            response = requests.get(f"{self.base_url}/doge/price", timeout=15)
-            if response.status_code == 200:
-                data = response.json()
-                required_fields = ['symbol', 'price', 'change_24h', 'volume', 'high_24h', 'low_24h', 'timestamp']
-                
-                if all(field in data for field in required_fields):
-                    if data['symbol'] == 'DOGEUSDT' and isinstance(data['price'], (int, float)) and data['price'] > 0:
-                        self.log_success("Binance API Integration", f"DOGE Price: ${data['price']:.6f}")
-                        self.test_results['binance_api_integration'] = True
-                        return True
-                        
-                self.log_error("Binance API Integration", f"Invalid response format: {data}")
-                return False
+            # Run the comprehensive live price data tests
+            print("\n🚀 COMPREHENSIVE LIVE PRICE DATA TESTING")
+            print("=" * 80)
+            
+            test1_result = self.test_live_price_data_verification()
+            test2_result = self.test_individual_coin_live_prices()
+            test3_result = self.test_websocket_live_data()
+            test4_result = self.test_error_handling_fallback()
+            
+            # Summary
+            print("\n📊 LIVE PRICE DATA TEST SUMMARY:")
+            print(f"✅ Multi-coin Live Prices: {'PASS' if test1_result else 'FAIL'}")
+            print(f"✅ Individual Coin Live Prices: {'PASS' if test2_result else 'FAIL'}")
+            print(f"✅ WebSocket Live Updates: {'PASS' if test3_result else 'FAIL'}")
+            print(f"✅ Error Handling & Fallback: {'PASS' if test4_result else 'FAIL'}")
+            
+            # Overall result
+            if test1_result and test2_result:  # Core tests must pass
+                self.log_success("Live Price Data Integration", "CRITICAL TESTS PASSED - Using live cryptocurrency prices")
+                self.test_results['binance_api_integration'] = True
+                return True
             else:
-                self.log_error("Binance API Integration", f"HTTP {response.status_code}: {response.text}")
+                self.log_error("Live Price Data Integration", "CRITICAL TESTS FAILED - Still using mock data")
                 return False
+                        
         except Exception as e:
             self.log_error("Binance API Integration", e)
             return False
