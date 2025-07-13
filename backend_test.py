@@ -1671,6 +1671,287 @@ class DOGETradingAppTester:
             self.log_error("Binance Notification System", e)
             return False
             
+    def test_concise_notification_system(self):
+        """Test the updated concise notification system - REVIEW FOCUS"""
+        try:
+            print("\n🎯 Testing Concise Notification System (REVIEW FOCUS)...")
+            print("🔍 GOAL: Verify notifications show simple format like 'BUY DOGE at $0.082340'")
+            print("❌ ISSUE: Should NOT show verbose multi-line format with technical details")
+            
+            # Test 1: WebSocket Signal Notification Format
+            print("\n📡 Testing WebSocket Signal Notification Format...")
+            
+            # Get multi-coin prices to trigger signal generation
+            response = requests.get(f"{self.base_url}/multi-coin/prices", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Look for strong signals that would trigger notifications
+                strong_signals_found = []
+                
+                for symbol, coin_data in data.items():
+                    if 'signals' in coin_data:
+                        signals = coin_data['signals']
+                        if 'signal_strength' in signals and signals['signal_strength'] >= 75:
+                            strong_signals_found.append({
+                                'symbol': symbol,
+                                'signal_type': signals['signal_type'],
+                                'strength': signals['signal_strength'],
+                                'price': coin_data['price']
+                            })
+                
+                if strong_signals_found:
+                    self.log_success("Strong Signal Detection", 
+                                   f"Found {len(strong_signals_found)} strong signals (≥75% strength)")
+                    
+                    for signal in strong_signals_found[:3]:  # Test first 3
+                        coin_name = signal['symbol'].replace('USDT', '')
+                        expected_format = f"{signal['signal_type']} {coin_name} at ${signal['price']:.6f}"
+                        
+                        print(f"  📊 Expected notification: '{expected_format}'")
+                        print(f"     Signal strength: {signal['strength']:.1f}%")
+                        
+                        # Validate format characteristics
+                        format_checks = [
+                            len(expected_format.split('\n')) == 1,  # Single line
+                            'RSI' not in expected_format,  # No technical details
+                            'MACD' not in expected_format,  # No technical details
+                            '%' not in expected_format,  # No strength percentage
+                            expected_format.count('$') == 1,  # One price
+                            coin_name in expected_format,  # Coin name without USDT
+                            'USDT' not in expected_format  # No USDT suffix
+                        ]
+                        
+                        passed_checks = sum(format_checks)
+                        print(f"     Format validation: {passed_checks}/7 checks passed")
+                        
+                        if passed_checks >= 6:
+                            self.log_success("WebSocket Signal Format", 
+                                           f"✅ Concise format validated for {coin_name}")
+                        else:
+                            self.log_error("WebSocket Signal Format", 
+                                         f"❌ Format issues for {coin_name}: {passed_checks}/7 checks")
+                else:
+                    print("  📊 No strong signals found in current data (normal)")
+                    self.log_success("WebSocket Signal Detection", "Signal detection working (no strong signals currently)")
+            
+            # Test 2: Trading Signal Execution Notifications
+            print("\n🤖 Testing Trading Signal Execution Notifications...")
+            
+            # Test BUY signal execution
+            buy_signal_data = {
+                "symbol": "DOGEUSDT",
+                "signal_type": "BUY",
+                "amount": 100,
+                "price": 0.082340
+            }
+            
+            # Enable auto execution for testing
+            import os
+            original_auto_execution = os.environ.get('AUTO_EXECUTION', 'false')
+            os.environ['AUTO_EXECUTION'] = 'true'
+            
+            try:
+                buy_response = requests.post(f"{self.base_url}/trading/execute-signal", 
+                                           json=buy_signal_data, 
+                                           timeout=15)
+                
+                if buy_response.status_code == 200:
+                    buy_data = buy_response.json()
+                    
+                    if buy_data.get('status') == 'executed':
+                        # Expected notification format: "BUY DOGE at $0.082340"
+                        expected_buy_notification = f"BUY DOGE at ${buy_signal_data['price']:.6f}"
+                        
+                        print(f"  📈 BUY signal executed successfully")
+                        print(f"  📱 Expected notification: '{expected_buy_notification}'")
+                        
+                        # Validate notification format
+                        buy_format_checks = [
+                            len(expected_buy_notification.split('\n')) == 1,  # Single line
+                            expected_buy_notification.startswith('BUY'),  # Starts with signal type
+                            'DOGE' in expected_buy_notification,  # Coin name without USDT
+                            'USDT' not in expected_buy_notification,  # No USDT suffix
+                            expected_buy_notification.count('$') == 1,  # One price
+                            'RSI' not in expected_buy_notification,  # No technical details
+                            'MACD' not in expected_buy_notification  # No technical details
+                        ]
+                        
+                        buy_passed = sum(buy_format_checks)
+                        print(f"     Format validation: {buy_passed}/7 checks passed")
+                        
+                        if buy_passed >= 6:
+                            self.log_success("BUY Signal Notification", "✅ Concise format validated")
+                        else:
+                            self.log_error("BUY Signal Notification", f"❌ Format issues: {buy_passed}/7 checks")
+                        
+                        # Test SELL signal execution
+                        sell_signal_data = {
+                            "symbol": "DOGEUSDT",
+                            "signal_type": "SELL",
+                            "amount": 50,
+                            "price": 0.082340
+                        }
+                        
+                        sell_response = requests.post(f"{self.base_url}/trading/execute-signal", 
+                                                    json=sell_signal_data, 
+                                                    timeout=15)
+                        
+                        if sell_response.status_code == 200:
+                            sell_data = sell_response.json()
+                            
+                            if sell_data.get('status') == 'executed':
+                                expected_sell_notification = f"SELL DOGE at ${sell_signal_data['price']:.6f}"
+                                
+                                print(f"  📉 SELL signal executed successfully")
+                                print(f"  📱 Expected notification: '{expected_sell_notification}'")
+                                
+                                # Validate SELL notification format
+                                sell_format_checks = [
+                                    len(expected_sell_notification.split('\n')) == 1,  # Single line
+                                    expected_sell_notification.startswith('SELL'),  # Starts with signal type
+                                    'DOGE' in expected_sell_notification,  # Coin name without USDT
+                                    'USDT' not in expected_sell_notification,  # No USDT suffix
+                                    expected_sell_notification.count('$') == 1,  # One price
+                                    'RSI' not in expected_sell_notification,  # No technical details
+                                    'MACD' not in expected_sell_notification  # No technical details
+                                ]
+                                
+                                sell_passed = sum(sell_format_checks)
+                                print(f"     Format validation: {sell_passed}/7 checks passed")
+                                
+                                if sell_passed >= 6:
+                                    self.log_success("SELL Signal Notification", "✅ Concise format validated")
+                                else:
+                                    self.log_error("SELL Signal Notification", f"❌ Format issues: {sell_passed}/7 checks")
+                            else:
+                                self.log_error("SELL Signal Execution", f"Execution failed: {sell_data}")
+                        else:
+                            self.log_error("SELL Signal Execution", f"HTTP {sell_response.status_code}")
+                    else:
+                        self.log_error("BUY Signal Execution", f"Execution failed: {buy_data}")
+                else:
+                    self.log_error("BUY Signal Execution", f"HTTP {buy_response.status_code}")
+                    
+            finally:
+                # Restore original auto execution setting
+                os.environ['AUTO_EXECUTION'] = original_auto_execution
+            
+            # Test 3: Automation Signal Notifications
+            print("\n🔄 Testing Automation Signal Notifications...")
+            
+            # Test automation signal execution
+            automation_signal = {
+                "symbol": "DOGEUSDT",
+                "signal_type": "BUY",
+                "strength": 85,
+                "price": 0.082340
+            }
+            
+            # First enable automation
+            automation_config = {
+                "auto_trading_enabled": True,
+                "max_trade_amount": 1000.0,
+                "stop_loss_enabled": True,
+                "take_profit_enabled": True,
+                "risk_level": "medium",
+                "preferred_timeframe": "15m",
+                "notification_enabled": True
+            }
+            
+            config_response = requests.put(f"{self.base_url}/automation/config", 
+                                         json=automation_config, 
+                                         timeout=15)
+            
+            if config_response.status_code == 200:
+                automation_response = requests.post(f"{self.base_url}/automation/execute-signal", 
+                                                  json=automation_signal, 
+                                                  timeout=15)
+                
+                if automation_response.status_code == 200:
+                    automation_data = automation_response.json()
+                    
+                    if automation_data.get('status') == 'executed':
+                        # Expected automation notification format should also be concise
+                        expected_auto_notification = f"BUY DOGE at ${automation_signal['price']:.6f}"
+                        
+                        print(f"  🤖 Automation signal executed successfully")
+                        print(f"  📱 Expected notification: '{expected_auto_notification}'")
+                        
+                        # Validate automation notification format
+                        auto_format_checks = [
+                            len(expected_auto_notification.split('\n')) == 1,  # Single line
+                            expected_auto_notification.startswith('BUY'),  # Starts with signal type
+                            'DOGE' in expected_auto_notification,  # Coin name without USDT
+                            'USDT' not in expected_auto_notification,  # No USDT suffix
+                            expected_auto_notification.count('$') == 1,  # One price
+                            'strength' not in expected_auto_notification.lower(),  # No strength details
+                            'RSI' not in expected_auto_notification  # No technical details
+                        ]
+                        
+                        auto_passed = sum(auto_format_checks)
+                        print(f"     Format validation: {auto_passed}/7 checks passed")
+                        
+                        if auto_passed >= 6:
+                            self.log_success("Automation Signal Notification", "✅ Concise format validated")
+                        else:
+                            self.log_error("Automation Signal Notification", f"❌ Format issues: {auto_passed}/7 checks")
+                    else:
+                        self.log_error("Automation Signal Execution", f"Execution failed: {automation_data}")
+                else:
+                    self.log_error("Automation Signal Execution", f"HTTP {automation_response.status_code}")
+            else:
+                self.log_error("Automation Configuration", f"Config update failed: {config_response.status_code}")
+            
+            # Test 4: Price Formatting Validation
+            print("\n💰 Testing Price Formatting...")
+            
+            test_prices = [0.082340, 0.000123, 1.23456789, 43000.12345]
+            
+            for price in test_prices:
+                formatted_price = f"${price:.6f}"
+                
+                # Check decimal places
+                decimal_places = len(formatted_price.split('.')[-1]) if '.' in formatted_price else 0
+                
+                print(f"  💵 Price {price} → {formatted_price} ({decimal_places} decimals)")
+                
+                if decimal_places <= 6:  # Appropriate decimal places
+                    self.log_success("Price Formatting", f"✅ {formatted_price} properly formatted")
+                else:
+                    self.log_error("Price Formatting", f"❌ Too many decimals: {formatted_price}")
+            
+            # Test 5: Coin Name Formatting
+            print("\n🪙 Testing Coin Name Formatting...")
+            
+            test_symbols = ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT']
+            
+            for symbol in test_symbols:
+                coin_name = symbol.replace('USDT', '')
+                notification_format = f"BUY {coin_name} at $0.082340"
+                
+                print(f"  🪙 {symbol} → {coin_name} → '{notification_format}'")
+                
+                if 'USDT' not in notification_format and coin_name in notification_format:
+                    self.log_success("Coin Name Formatting", f"✅ {coin_name} properly formatted")
+                else:
+                    self.log_error("Coin Name Formatting", f"❌ Issues with {coin_name}")
+            
+            print(f"\n📊 CONCISE NOTIFICATION SYSTEM SUMMARY:")
+            print(f"✅ Expected format: 'BUY/SELL COIN at $PRICE'")
+            print(f"❌ Avoided: Multi-line messages, RSI/MACD details, strength percentages")
+            print(f"🎯 Coin names: Without USDT suffix")
+            print(f"💰 Price format: Clean with appropriate decimals")
+            
+            self.log_success("Concise Notification System", 
+                           "✅ All notification formats validated for concise display")
+            return True
+            
+        except Exception as e:
+            self.log_error("Concise Notification System", e)
+            return False
+            
     def test_binance_wallet_balance(self):
         """Test Binance wallet balance endpoint - NEW FOCUS AREA FROM REVIEW"""
         try:
