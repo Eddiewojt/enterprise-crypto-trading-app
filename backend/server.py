@@ -1134,10 +1134,11 @@ def start_binance_websocket():
                     global is_websocket_running
                     is_websocket_running = False
         else:
-            # Mock WebSocket data for multiple coins
+            # Enhanced Mock WebSocket data for multiple coins with signals
             def mock_websocket_thread():
                 import random
                 import time
+                import math
                 
                 mock_prices = {
                     'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
@@ -1150,17 +1151,74 @@ def start_binance_websocket():
                 try:
                     while True:
                         for symbol, base_price in mock_prices.items():
-                            price_variation = random.uniform(-0.02, 0.02)
+                            # Set seed for consistent but changing data
+                            random.seed(int(time.time() / 60) + hash(symbol))
+                            
+                            # Create realistic price movements
+                            time_factor = (time.time() / 600) % 1
+                            trend_factor = 0.5 + 0.3 * math.sin(time_factor * 2 * math.pi)
+                            
+                            price_variation = random.uniform(-0.015, 0.015) + (trend_factor - 0.5) * 0.01
                             current_price = base_price * (1 + price_variation)
+                            
+                            # Generate realistic technical indicators
+                            rsi = max(20, min(80, 30 + trend_factor * 50 + random.uniform(-10, 10)))
+                            macd_value = random.uniform(-0.001, 0.001) * current_price
+                            signal_value = macd_value * 0.8 + random.uniform(-0.0001, 0.0001) * current_price
+                            
+                            # Generate signal based on indicators
+                            signal_strength = 0
+                            signal_type = 'HOLD'
+                            
+                            # RSI signals
+                            if rsi < 30:
+                                signal_strength += 35
+                            elif rsi > 70:
+                                signal_strength -= 35
+                            
+                            # MACD signals
+                            if macd_value > signal_value:
+                                signal_strength += 25
+                            else:
+                                signal_strength -= 25
+                            
+                            # Trend signals
+                            if trend_factor > 0.6:
+                                signal_strength += 20
+                            elif trend_factor < 0.4:
+                                signal_strength -= 20
+                            
+                            # Determine final signal
+                            final_strength = max(0, min(100, 50 + signal_strength))
+                            
+                            if final_strength > 75:
+                                signal_type = 'STRONG_BUY' if signal_strength > 0 else 'STRONG_SELL'
+                            elif final_strength > 60:
+                                signal_type = 'BUY' if signal_strength > 0 else 'SELL'
+                            elif final_strength < 25:
+                                signal_type = 'STRONG_SELL'
+                            elif final_strength < 40:
+                                signal_type = 'SELL'
+                            else:
+                                signal_type = 'HOLD'
                             
                             mock_message = {
                                 'e': '24hrTicker',
                                 's': symbol,
                                 'c': str(current_price),
                                 'v': str(random.uniform(100000, 1000000)),
-                                'P': str(random.uniform(-5.0, 5.0)),
+                                'P': str(trend_factor * 10 - 5 + random.uniform(-2, 2)),
                                 'h': str(current_price * 1.02),
-                                'l': str(current_price * 0.98)
+                                'l': str(current_price * 0.98),
+                                # Add signal data to WebSocket
+                                'signals': {
+                                    'signal_type': signal_type,
+                                    'signal_strength': round(final_strength, 1),
+                                    'rsi': round(rsi, 1),
+                                    'macd': round(macd_value, 8),
+                                    'macd_signal': round(signal_value, 8),
+                                    'trend': "bullish" if trend_factor > 0.55 else "bearish" if trend_factor < 0.45 else "neutral"
+                                }
                             }
                             
                             handle_socket_message(mock_message)
