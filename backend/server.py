@@ -2248,32 +2248,40 @@ async def get_coin_price(symbol: str):
                 "volume": float(price_24h['volume']),
                 "high_24h": float(price_24h['highPrice']),
                 "low_24h": float(price_24h['lowPrice']),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
+                "source": "Binance_Live"
             }
         else:
-            # Mock data
-            import random
-            mock_prices = {
-                'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
-                'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
-                'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
-                'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
-                'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
-            }
+            # Use live CoinGecko data instead of mock data
+            live_prices = await get_live_crypto_prices()
             
-            base_price = mock_prices.get(symbol_upper, 1.0)
-            price_variation = random.uniform(-0.002, 0.002)
-            current_price = base_price * (1 + price_variation)
-            
-            return {
-                "symbol": symbol_upper,
-                "price": round(current_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                "change_24h": round(random.uniform(-5.0, 5.0), 2),
-                "volume": round(random.uniform(100000, 1000000), 2),
-                "high_24h": round(current_price * 1.02, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                "low_24h": round(current_price * 0.98, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
-                "timestamp": datetime.utcnow().isoformat()
-            }
+            if live_prices and symbol_upper in live_prices:
+                return live_prices[symbol_upper]
+            else:
+                # Fallback to demo data only if CoinGecko fails
+                import random
+                mock_prices = {
+                    'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
+                    'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
+                    'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
+                    'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
+                    'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
+                }
+                
+                base_price = mock_prices.get(symbol_upper, 1.0)
+                price_variation = random.uniform(-0.002, 0.002)
+                current_price = base_price * (1 + price_variation)
+                
+                return {
+                    "symbol": symbol_upper,
+                    "price": round(current_price, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "change_24h": round(random.uniform(-5.0, 5.0), 2),
+                    "volume": round(random.uniform(100000, 1000000), 2),
+                    "high_24h": round(current_price * 1.02, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "low_24h": round(current_price * 0.98, 6 if symbol_upper in ['DOGEUSDT', 'ADAUSDT', 'XRPUSDT', 'MATICUSDT'] else 2),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "source": "Demo_Data"
+                }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching price: {str(e)}")
 
