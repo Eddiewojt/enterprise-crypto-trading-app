@@ -1837,6 +1837,19 @@ function App() {
     try {
       const response = await axios.get(`${API}/multi-coin/prices`);
       setMultiCoinData(response.data);
+      
+      // Update last refresh time
+      const now = new Date().toLocaleTimeString();
+      console.log(`✅ Live prices updated at ${now}`);
+      
+      // Show brief update notification
+      if (Object.keys(response.data).length > 0) {
+        setNotification({
+          type: 'success',
+          message: `📊 Live prices updated - ${Object.keys(response.data).length} coins`
+        });
+        setTimeout(() => setNotification(null), 2000);
+      }
     } catch (error) {
       console.error('Error fetching multi-coin data:', error);
     }
