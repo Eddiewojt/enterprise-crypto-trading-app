@@ -1905,7 +1905,7 @@ function App() {
       }
       
       const response = await axios.get(endpoint, {
-        timeout: 3000, // 3-second timeout for ultra-fast response
+        timeout: 2000, // Ultra-fast 2-second timeout
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -1917,7 +1917,7 @@ function App() {
       
       if (isMobile && response.data.mobile_optimized) {
         setMultiCoinData(response.data.prices);
-        console.log(`🚀 ULTRA-FAST mobile: ${Object.keys(response.data.prices).length} coins in ${responseTime}ms`);
+        console.log(`🚀 ULTRA-FAST mobile: ${Object.keys(response.data.prices).length} coins in ${responseTime}ms (${response.data.update_interval}s interval)`);
       } else {
         setMultiCoinData(response.data);
         console.log(`🚀 ULTRA-FAST desktop: ${Object.keys(response.data).length} coins in ${responseTime}ms`);
@@ -1926,10 +1926,12 @@ function App() {
       setLastPriceUpdate(new Date());
       
       // Performance feedback
-      if (responseTime > 1000) {
-        console.warn(`⚠️ Slow response: ${responseTime}ms`);
+      if (responseTime < 100) {
+        console.log(`⚡ LIGHTNING FAST: ${responseTime}ms - ZERO DELAY achieved!`);
       } else if (responseTime < 200) {
-        console.log(`⚡ LIGHTNING FAST: ${responseTime}ms`);
+        console.log(`🚀 ULTRA-FAST: ${responseTime}ms - Excellent performance!`);
+      } else {
+        console.warn(`⚠️ Slower than target: ${responseTime}ms`);
       }
       
     } catch (error) {
@@ -1939,7 +1941,7 @@ function App() {
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         console.log('🔄 Timeout detected - trying fallback endpoint');
         try {
-          const fallbackResponse = await axios.get(`${API}/multi-coin/prices`, { timeout: 2000 });
+          const fallbackResponse = await axios.get(`${API}/multi-coin/prices`, { timeout: 3000 });
           setMultiCoinData(fallbackResponse.data);
           setLastPriceUpdate(new Date());
           console.log('✅ Fallback endpoint successful');
