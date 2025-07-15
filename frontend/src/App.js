@@ -1874,8 +1874,24 @@ function App() {
   
   const fetchMultiCoinData = async () => {
     try {
-      const response = await axios.get(`${API}/multi-coin/prices`);
-      setMultiCoinData(response.data);
+      // Detect mobile device for premium mobile endpoint
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      let endpoint = `${API}/multi-coin/prices`;
+      if (isMobile) {
+        endpoint = `${API}/mobile/quick-prices`;
+        console.log('📱 Using premium mobile endpoint for faster updates');
+      }
+      
+      const response = await axios.get(endpoint);
+      
+      if (isMobile && response.data.mobile_optimized) {
+        setMultiCoinData(response.data.prices);
+        console.log(`📱 Mobile optimized: ${Object.keys(response.data.prices).length} coins, ${response.data.update_interval}s interval`);
+      } else {
+        setMultiCoinData(response.data);
+      }
+      
       setLastPriceUpdate(new Date());
       
       // Update last refresh time
@@ -1883,6 +1899,17 @@ function App() {
       console.log(`✅ Live prices updated at ${now}`);
     } catch (error) {
       console.error('Error fetching multi-coin data:', error);
+      // Fallback to regular endpoint on mobile if premium fails
+      if (error.response?.status === 500) {
+        try {
+          const fallbackResponse = await axios.get(`${API}/multi-coin/prices`);
+          setMultiCoinData(fallbackResponse.data);
+          setLastPriceUpdate(new Date());
+          console.log('📱 Using fallback endpoint for mobile');
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+        }
+      }
     }
   };
   
