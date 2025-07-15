@@ -1132,6 +1132,7 @@ function App() {
   const [signalFilter, setSignalFilter] = useState('ALL'); // ALL, BUY, SELL, STRONG_BUY, STRONG_SELL
   const [sortBy, setSortBy] = useState('confidence'); // confidence, price, change, symbol
   const [showWatchlistModal, setShowWatchlistModal] = useState(false);
+  const [lastPriceUpdate, setLastPriceUpdate] = useState(null);
   const [portfolioData, setPortfolioData] = useState({
     total_value: 0,
     daily_change: 0,
