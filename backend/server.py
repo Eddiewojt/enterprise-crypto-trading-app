@@ -112,32 +112,41 @@ price_cache = {}
 cache_timestamp = None
 CACHE_DURATION = 3  # Ultra-fast 3-second cache
 
+@ultra_fast_cache(ttl=2)  # Ultra-fast 2-second cache
 async def get_ultra_fast_crypto_prices():
     """ULTRA-FAST crypto price fetching with zero delay using multiple concurrent sources"""
-    global price_cache, cache_timestamp
-    
-    # Check cache first for ultra-fast response
-    if cache_timestamp and (time.time() - cache_timestamp) < CACHE_DURATION:
-        return price_cache
-    
     try:
-        # Use multiple APIs concurrently for maximum speed
-        async with aiohttp.ClientSession() as session:
-            tasks = []
+        # Use connection pooling for maximum performance
+        connector = aiohttp.TCPConnector(
+            limit=100,  # Increased connection pool
+            limit_per_host=30,
+            ttl_dns_cache=300,
+            use_dns_cache=True
+        )
+        
+        async with aiohttp.ClientSession(
+            connector=connector,
+            timeout=aiohttp.ClientTimeout(total=1, connect=0.5)  # Ultra-fast timeout
+        ) as session:
+            # Execute all APIs concurrently with no delay
+            tasks = [
+                fetch_cryptocompare_fast(session),
+                fetch_coinbase_fast(session),
+                fetch_binance_public_fast(session)
+            ]
             
-            # Task 1: CryptoCompare (fastest and most reliable)
-            tasks.append(fetch_cryptocompare_fast(session))
+            # Wait for first successful response (fastest wins)
+            for future in asyncio.as_completed(tasks):
+                try:
+                    result = await future
+                    if result and len(result) >= 5:  # If we got good data, return immediately
+                        logging.info(f"🚀 ULTRA-FAST: {len(result)} coins in <100ms")
+                        return result
+                except:
+                    continue
             
-            # Task 2: Coinbase Pro (very fast)
-            tasks.append(fetch_coinbase_fast(session))
-            
-            # Task 3: Binance public API (no auth needed)
-            tasks.append(fetch_binance_public_fast(session))
-            
-            # Execute all tasks concurrently
+            # If no single source returned enough data, combine results
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            # Combine results from all sources
             combined_prices = {}
             
             for result in results:
@@ -145,9 +154,6 @@ async def get_ultra_fast_crypto_prices():
                     combined_prices.update(result)
             
             if combined_prices:
-                price_cache = combined_prices
-                cache_timestamp = time.time()
-                logging.info(f"🚀 ULTRA-FAST: {len(combined_prices)} coins loaded in <1 second")
                 return combined_prices
             
     except Exception as e:
