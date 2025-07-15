@@ -2609,6 +2609,36 @@ input:checked + .slider:before {
   font-weight: 500;
 }
 
+/* Mobile connection status */
+.mobile-connection-status {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-status.connected {
+  color: #10b981;
+}
+
+.mobile-status.disconnected {
+  color: #f59e0b;
+}
+
+.mobile-status.error {
+  color: #ef4444;
+}
+
+/* Enhanced refresh button styling */
 .refresh-btn {
   background: linear-gradient(45deg, #3b82f6, #1d4ed8);
   color: white;
