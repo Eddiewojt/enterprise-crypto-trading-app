@@ -2021,24 +2021,30 @@ function App() {
           </div>
           
           <div className="control-card">
-            <h3>💎 Enterprise Limits</h3>
+            <h3>💎 Premium Enterprise Limits</h3>
             <div className="enterprise-limits">
               <div className="limit-item">
                 <span className="limit-label">Per Trade:</span>
-                <span className="limit-value">$5,000</span>
+                <span className="limit-value">$25,000</span>
               </div>
               <div className="limit-item">
                 <span className="limit-label">Daily Limit:</span>
-                <span className="limit-value">$50,000</span>
+                <span className="limit-value">$500,000</span>
               </div>
               <div className="limit-item">
                 <span className="limit-label">Stop Loss:</span>
-                <span className="limit-value">2%</span>
+                <span className="limit-value">1%</span>
               </div>
               <div className="limit-item">
                 <span className="limit-label">Take Profit:</span>
-                <span className="limit-value">15%</span>
+                <span className="limit-value">25%</span>
               </div>
+            </div>
+            <div className="mobile-connection-status">
+              <span className={`mobile-status ${connectionStatus}`}>
+                📱 Mobile: {connectionStatus === 'connected' ? '🟢 LIVE' : 
+                           connectionStatus === 'disconnected' ? '🟡 RECONNECTING' : '🔴 OFFLINE'}
+              </span>
             </div>
           </div>
 
