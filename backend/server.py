@@ -1143,35 +1143,104 @@ def start_binance_websocket():
                     while True:
                         # Fetch live prices from CoinGecko
                         try:
-                            loop = asyncio.new_event_loop()
-                            asyncio.set_event_loop(loop)
-                            live_prices = loop.run_until_complete(get_live_crypto_prices())
-                            loop.close()
+                            # Use requests for simpler synchronous API calls
+                            import requests
                             
-                            if live_prices:
-                                # Use live prices
-                                for symbol, price_data in live_prices.items():
-                                    # Create mock WebSocket message format with live data
-                                    mock_message = {
-                                        'e': '24hrTicker',
-                                        's': symbol,
-                                        'c': str(price_data['price']),
-                                        'v': str(price_data['volume']),
-                                        'P': str(price_data['change_24h']),
-                                        'h': str(price_data['high_24h']),
-                                        'l': str(price_data['low_24h'])
-                                    }
+                            # Try CoinGecko first
+                            try:
+                                symbol_to_id = {
+                                    'DOGEUSDT': 'dogecoin',
+                                    'BTCUSDT': 'bitcoin',
+                                    'ETHUSDT': 'ethereum',
+                                    'ADAUSDT': 'cardano',
+                                    'BNBUSDT': 'binancecoin',
+                                    'SOLUSDT': 'solana',
+                                    'XRPUSDT': 'ripple',
+                                    'DOTUSDT': 'polkadot',
+                                    'AVAXUSDT': 'avalanche-2',
+                                    'MATICUSDT': 'matic-network',
+                                    'LINKUSDT': 'chainlink',
+                                    'UNIUSDT': 'uniswap',
+                                    'LTCUSDT': 'litecoin',
+                                    'BCHUSDT': 'bitcoin-cash',
+                                    'ATOMUSDT': 'cosmos'
+                                }
+                                
+                                coin_ids = ','.join(list(symbol_to_id.values())[:10])  # Limit to reduce load
+                                url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true"
+                                
+                                response = requests.get(url, timeout=10)
+                                if response.status_code == 200:
+                                    data = response.json()
+                                    live_prices = {}
                                     
-                                    handle_socket_message(mock_message)
-                                    last_live_prices = live_prices
-                            else:
-                                # If CoinGecko fails, use last known live prices or fallback to mock
+                                    for symbol, coin_id in symbol_to_id.items():
+                                        if coin_id in data:
+                                            coin_data = data[coin_id]
+                                            current_price = coin_data['usd']
+                                            change_24h = coin_data.get('usd_24h_change', 0)
+                                            volume_24h = coin_data.get('usd_24h_vol', 0)
+                                            
+                                            live_prices[symbol] = {
+                                                'price': current_price,
+                                                'change_24h': change_24h,
+                                                'volume': volume_24h,
+                                                'high_24h': current_price * (1 + abs(change_24h)/100),
+                                                'low_24h': current_price * (1 - abs(change_24h)/100)
+                                            }
+                                    
+                                    if live_prices:
+                                        # Send live prices through WebSocket
+                                        for symbol, price_data in live_prices.items():
+                                            mock_message = {
+                                                'e': '24hrTicker',
+                                                's': symbol,
+                                                'c': str(price_data['price']),
+                                                'v': str(price_data['volume']),
+                                                'P': str(price_data['change_24h']),
+                                                'h': str(price_data['high_24h']),
+                                                'l': str(price_data['low_24h'])
+                                            }
+                                            
+                                            handle_socket_message(mock_message)
+                                        
+                                        last_live_prices = live_prices
+                                        logging.info(f"✅ WebSocket: Live prices updated for {len(live_prices)} coins")
+                                    else:
+                                        logging.warning("No live prices received from CoinGecko")
+                                        
+                                elif response.status_code == 429:
+                                    logging.warning("CoinGecko rate limit in WebSocket, using cached data")
+                                    # Use last known prices with small variations
+                                    if last_live_prices:
+                                        for symbol, price_data in last_live_prices.items():
+                                            import random
+                                            price_variation = random.uniform(-0.002, 0.002)
+                                            current_price = price_data['price'] * (1 + price_variation)
+                                            
+                                            mock_message = {
+                                                'e': '24hrTicker',
+                                                's': symbol,
+                                                'c': str(current_price),
+                                                'v': str(price_data['volume']),
+                                                'P': str(price_data['change_24h']),
+                                                'h': str(current_price * 1.01),
+                                                'l': str(current_price * 0.99)
+                                            }
+                                            
+                                            handle_socket_message(mock_message)
+                                else:
+                                    logging.warning(f"CoinGecko API error in WebSocket: {response.status_code}")
+                                    
+                            except Exception as e:
+                                logging.error(f"CoinGecko WebSocket error: {e}")
+                                
+                                # Use last known data if available
                                 if last_live_prices:
-                                    logging.warning("CoinGecko temporary failure, using last known live prices")
+                                    logging.info("Using last known live prices in WebSocket")
                                     for symbol, price_data in last_live_prices.items():
-                                        # Add small variation to last known prices
                                         import random
-                                        price_variation = random.uniform(-0.005, 0.005)
+                                        price_variation = random.uniform(-0.001, 0.001)
                                         current_price = price_data['price'] * (1 + price_variation)
                                         
                                         mock_message = {
@@ -1180,35 +1249,8 @@ def start_binance_websocket():
                                             'c': str(current_price),
                                             'v': str(price_data['volume']),
                                             'P': str(price_data['change_24h']),
-                                            'h': str(current_price * 1.01),
-                                            'l': str(current_price * 0.99)
-                                        }
-                                        
-                                        handle_socket_message(mock_message)
-                                else:
-                                    # Last resort: use mock data
-                                    logging.warning("Using mock data as fallback")
-                                    import random
-                                    mock_prices = {
-                                        'DOGEUSDT': 0.08234, 'BTCUSDT': 43000, 'ETHUSDT': 2600,
-                                        'ADAUSDT': 0.45, 'BNBUSDT': 320, 'SOLUSDT': 45,
-                                        'XRPUSDT': 0.52, 'DOTUSDT': 7.5, 'AVAXUSDT': 25,
-                                        'MATICUSDT': 0.85, 'LINKUSDT': 15, 'UNIUSDT': 6.5,
-                                        'LTCUSDT': 95, 'BCHUSDT': 250, 'ATOMUSDT': 12
-                                    }
-                                    
-                                    for symbol, base_price in mock_prices.items():
-                                        price_variation = random.uniform(-0.02, 0.02)
-                                        current_price = base_price * (1 + price_variation)
-                                        
-                                        mock_message = {
-                                            'e': '24hrTicker',
-                                            's': symbol,
-                                            'c': str(current_price),
-                                            'v': str(random.uniform(100000, 1000000)),
-                                            'P': str(random.uniform(-5.0, 5.0)),
-                                            'h': str(current_price * 1.02),
-                                            'l': str(current_price * 0.98)
+                                            'h': str(current_price * 1.005),
+                                            'l': str(current_price * 0.995)
                                         }
                                         
                                         handle_socket_message(mock_message)
@@ -1217,7 +1259,7 @@ def start_binance_websocket():
                             logging.error(f"Live WebSocket data fetch error: {e}")
                             # Continue with last known data or mock fallback
                         
-                        time.sleep(10)  # Update every 10 seconds (CoinGecko rate limit friendly)
+                        time.sleep(15)  # Update every 15 seconds to avoid rate limits
                         
                 except Exception as e:
                     logging.error(f"Live WebSocket thread error: {e}")
