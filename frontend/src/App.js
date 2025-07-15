@@ -1893,41 +1893,58 @@ function App() {
   }, []);
   
   const fetchMultiCoinData = async () => {
+    const startTime = Date.now();
+    
     try {
-      // Detect mobile device for premium mobile endpoint
+      // Detect mobile device for ultra-fast mobile endpoint
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
       let endpoint = `${API}/multi-coin/prices`;
       if (isMobile) {
         endpoint = `${API}/mobile/quick-prices`;
-        console.log('📱 Using premium mobile endpoint for faster updates');
       }
       
-      const response = await axios.get(endpoint);
+      const response = await axios.get(endpoint, {
+        timeout: 3000, // 3-second timeout for ultra-fast response
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
       
       if (isMobile && response.data.mobile_optimized) {
         setMultiCoinData(response.data.prices);
-        console.log(`📱 Mobile optimized: ${Object.keys(response.data.prices).length} coins, ${response.data.update_interval}s interval`);
+        console.log(`🚀 ULTRA-FAST mobile: ${Object.keys(response.data.prices).length} coins in ${responseTime}ms`);
       } else {
         setMultiCoinData(response.data);
+        console.log(`🚀 ULTRA-FAST desktop: ${Object.keys(response.data).length} coins in ${responseTime}ms`);
       }
       
       setLastPriceUpdate(new Date());
       
-      // Update last refresh time
-      const now = new Date().toLocaleTimeString();
-      console.log(`✅ Live prices updated at ${now}`);
+      // Performance feedback
+      if (responseTime > 1000) {
+        console.warn(`⚠️ Slow response: ${responseTime}ms`);
+      } else if (responseTime < 200) {
+        console.log(`⚡ LIGHTNING FAST: ${responseTime}ms`);
+      }
+      
     } catch (error) {
-      console.error('Error fetching multi-coin data:', error);
-      // Fallback to regular endpoint on mobile if premium fails
-      if (error.response?.status === 500) {
+      console.error('Error fetching ultra-fast data:', error);
+      
+      // Ultra-fast fallback
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        console.log('🔄 Timeout detected - trying fallback endpoint');
         try {
-          const fallbackResponse = await axios.get(`${API}/multi-coin/prices`);
+          const fallbackResponse = await axios.get(`${API}/multi-coin/prices`, { timeout: 2000 });
           setMultiCoinData(fallbackResponse.data);
           setLastPriceUpdate(new Date());
-          console.log('📱 Using fallback endpoint for mobile');
+          console.log('✅ Fallback endpoint successful');
         } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
+          console.error('❌ Fallback also failed:', fallbackError);
         }
       }
     }
