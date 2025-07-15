@@ -4690,8 +4690,11 @@ logger = logging.getLogger(__name__)
 @app.on_event("startup")
 async def startup():
     await startup_event()
+    # Initialize ultra-fast price system
+    await initialize_ultra_fast_system()
     # Start automation background task
     asyncio.create_task(check_automation_rules())
+    logging.info("🚀 ULTRA-FAST system initialized - zero delay pricing enabled")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
