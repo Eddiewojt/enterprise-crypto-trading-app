@@ -29,11 +29,66 @@ import socket
 import aiohttp
 import aiofiles
 import time
+import redis
+import orjson
+from aiocache import Cache
+from aiocache.serializers import JsonSerializer
+import asyncio
+import concurrent.futures
+from functools import wraps
 
 # Import our AI/ML Engine and new engines
 from ml_engine import ml_engine
 from defi_engine import defi_engine, arbitrage_engine, nft_engine
 from trading_bots import trading_bot_engine, BotConfig, BotStrategy
+
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
+
+# Ultra-fast Redis cache setup
+try:
+    redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+    redis_client.ping()
+    REDIS_AVAILABLE = True
+    logging.info("✅ Redis connected for ultra-fast caching")
+except:
+    REDIS_AVAILABLE = False
+    logging.warning("⚠️ Redis not available, using in-memory cache")
+
+# Ultra-fast aiocache setup
+cache = Cache(Cache.REDIS if REDIS_AVAILABLE else Cache.MEMORY)
+
+# Ultra-fast performance decorator
+def ultra_fast_cache(ttl=3):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Create cache key
+            cache_key = f"{func.__name__}_{hash(str(args) + str(kwargs))}"
+            
+            # Try to get from cache first
+            try:
+                cached_result = await cache.get(cache_key)
+                if cached_result:
+                    return cached_result
+            except:
+                pass
+            
+            # If not cached, execute function
+            result = await func(*args, **kwargs)
+            
+            # Cache the result
+            try:
+                await cache.set(cache_key, result, ttl=ttl)
+            except:
+                pass
+            
+            return result
+        return wrapper
+    return decorator
+
+# Thread pool for CPU-bound operations
+thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
