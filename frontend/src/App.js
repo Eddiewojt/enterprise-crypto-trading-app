@@ -1865,6 +1865,10 @@ function App() {
           ...prev,
           [data.data.symbol]: data.data
         }));
+        
+        // Update last refresh time for WebSocket updates
+        setLastPriceUpdate(new Date());
+        console.log(`🔄 WebSocket price update: ${data.data.symbol} = $${data.data.price}`);
       }
     };
     
