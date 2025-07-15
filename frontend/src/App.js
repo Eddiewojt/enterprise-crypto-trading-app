@@ -2647,6 +2647,13 @@ function App() {
               </div>
             </div>
             <div className="signals-refresh">
+              <div className="last-updated">
+                {lastPriceUpdate && (
+                  <span className="update-time">
+                    🕐 Last updated: {lastPriceUpdate.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
               <button 
                 className="refresh-btn"
                 onClick={() => {
