@@ -2717,7 +2717,7 @@ async def get_multi_coin_prices():
 
 @api_router.get("/mobile/quick-prices")
 async def get_mobile_quick_prices():
-    """ULTRA-FAST mobile endpoint for instant price updates"""
+    """ULTRA-FAST mobile endpoint for instant price updates with 3-second intervals"""
     try:
         # Use ultra-fast system for mobile
         prices = await get_ultra_fast_crypto_prices()
@@ -2733,17 +2733,20 @@ async def get_mobile_quick_prices():
             
             return {
                 "mobile_optimized": True,
-                "update_interval": 3,  # Ultra-fast 3-second updates
+                "update_interval": 3,  # Ultra-fast 3-second updates as required
                 "prices": mobile_prices,
                 "total_coins": len(mobile_prices),
-                "response_time": "<100ms"
+                "response_time": "<100ms",
+                "cache_enabled": REDIS_AVAILABLE,
+                "performance_mode": "ultra_fast"
             }
         
         return {
             "mobile_optimized": False,
-            "update_interval": 10,
+            "update_interval": 3,  # Still 3 seconds even when failing
             "prices": {},
-            "message": "Ultra-fast APIs temporarily unavailable"
+            "message": "Ultra-fast APIs temporarily unavailable",
+            "performance_mode": "fallback"
         }
         
     except Exception as e:
