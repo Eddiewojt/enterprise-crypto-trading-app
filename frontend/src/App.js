@@ -1888,11 +1888,17 @@ function App() {
   
   const connectWebSocket = () => {
     const wsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://')}/api/ws`;
+    
+    // Close existing connection if any
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+    
     wsRef.current = new WebSocket(wsUrl);
     
     wsRef.current.onopen = () => {
       setConnectionStatus('connected');
-      console.log('WebSocket connected');
+      console.log('🔌 WebSocket connected');
     };
     
     wsRef.current.onmessage = (event) => {
@@ -1912,12 +1918,26 @@ function App() {
     
     wsRef.current.onclose = () => {
       setConnectionStatus('disconnected');
-      setTimeout(() => connectWebSocket(), 5000);
+      console.log('📱 WebSocket disconnected - attempting mobile-friendly reconnect');
+      
+      // Mobile-friendly reconnection: faster retry for mobile networks
+      setTimeout(() => {
+        if (document.visibilityState === 'visible' || !document.hidden) {
+          connectWebSocket();
+        }
+      }, 3000); // Faster 3-second retry for mobile
     };
     
     wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('📱 WebSocket error (mobile-friendly handling):', error);
       setConnectionStatus('error');
+      
+      // Mobile-friendly error recovery
+      setTimeout(() => {
+        if (navigator.onLine) {
+          connectWebSocket();
+        }
+      }, 5000);
     };
   };
   
