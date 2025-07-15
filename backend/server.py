@@ -2351,6 +2351,65 @@ async def get_live_crypto_prices():
         logging.error(f"Error fetching live prices: {e}")
         return None
 
+@api_router.get("/mobile/quick-prices")
+async def get_mobile_quick_prices():
+    """Premium mobile endpoint for faster price updates with increased budget"""
+    try:
+        # With increased budget, we can use more aggressive updates
+        prices = {}
+        
+        # Try multiple sources simultaneously for faster response
+        if BINANCE_AVAILABLE and binance_client:
+            # Use Binance for fastest response
+            try:
+                for symbol in ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT']:
+                    ticker = binance_client.get_symbol_ticker(symbol=symbol)
+                    price_24h = binance_client.get_ticker(symbol=symbol)
+                    
+                    prices[symbol] = {
+                        "symbol": symbol,
+                        "price": float(ticker['price']),
+                        "change_24h": float(price_24h['priceChangePercent']),
+                        "volume": float(price_24h['volume']),
+                        "high_24h": float(price_24h['highPrice']),
+                        "low_24h": float(price_24h['lowPrice']),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "source": "Binance_Premium"
+                    }
+                if len(prices) >= 5:
+                    return {"mobile_optimized": True, "update_interval": 10, "prices": prices}
+            except Exception as e:
+                logging.warning(f"Binance mobile endpoint error: {e}")
+        
+        # Premium CoinGecko Pro with increased budget
+        live_prices = await get_live_crypto_prices()
+        if live_prices:
+            # Return only top 5 coins for mobile optimization
+            mobile_prices = {}
+            priority_coins = ['DOGEUSDT', 'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT']
+            
+            for coin in priority_coins:
+                if coin in live_prices:
+                    mobile_prices[coin] = live_prices[coin]
+                    mobile_prices[coin]['source'] = "CoinGecko_Premium"
+            
+            return {
+                "mobile_optimized": True,
+                "update_interval": 10,  # Faster updates with increased budget
+                "prices": mobile_prices
+            }
+        
+        # Fallback for mobile
+        return {
+            "mobile_optimized": False,
+            "update_interval": 30,
+            "prices": {},
+            "message": "Premium APIs temporarily unavailable"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Mobile price error: {str(e)}")
+
 @api_router.get("/multi-coin/prices")
 async def get_multi_coin_prices():
     """Get current prices for all supported coins"""
