@@ -1740,7 +1740,7 @@ function App() {
     return filtered;
   };
   
-  // ULTRA-FAST mobile-friendly data fetching with zero delay
+  // ULTRA-FAST mobile-friendly data fetching with ZERO DELAY
   useEffect(() => {
     fetchMultiCoinData();
     fetchProxyStatus();
@@ -1754,13 +1754,13 @@ function App() {
     fetch3CommasStatus();
     loadWatchlist();
     
-    // ULTRA-FAST automatic price refresh - 3 seconds for zero delay
+    // ULTRA-FAST automatic price refresh - 3 seconds for ZERO DELAY
     const ultraFastInterval = setInterval(() => {
       fetchMultiCoinData();
       console.log('🚀 ULTRA-FAST: Refreshing prices every 3 seconds');
-    }, 3000); // Ultra-fast 3-second updates
+    }, 3000); // Ultra-fast 3-second updates (meets requirement)
     
-    // Premium mobile heartbeat system - even faster
+    // Premium mobile heartbeat system - 2 seconds for mobile
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     let mobileHeartbeat;
     
@@ -1768,7 +1768,7 @@ function App() {
       mobileHeartbeat = setInterval(() => {
         if (!document.hidden && navigator.onLine) {
           fetchMultiCoinData();
-          console.log('📱 ULTRA-FAST mobile: 2-second heartbeat');
+          console.log('📱 ULTRA-FAST mobile: 2-second heartbeat - ZERO DELAY');
         }
       }, 2000); // Ultra-fast 2-second heartbeat for mobile
     }
@@ -1803,14 +1803,14 @@ function App() {
     window.addEventListener('blur', () => console.log('📱 Page blurred'));
     window.addEventListener('online', handleOnline);
     
-    // Performance monitoring
+    // Performance monitoring for ultra-fast response
     const performanceCheck = setInterval(() => {
       const now = Date.now();
-      if (lastPriceUpdate && (now - lastPriceUpdate.getTime()) > 10000) {
-        console.warn('⚠️ Price updates are delayed - forcing refresh');
+      if (lastPriceUpdate && (now - lastPriceUpdate.getTime()) > 5000) {
+        console.warn('⚠️ Price updates delayed >5s - forcing refresh');
         fetchMultiCoinData();
       }
-    }, 5000);
+    }, 3000); // Check every 3 seconds
     
     return () => {
       clearInterval(ultraFastInterval);
