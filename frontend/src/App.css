@@ -2588,6 +2588,48 @@ input:checked + .slider:before {
 }
 
 /* =================== ENHANCED TRADING SIGNALS STYLES =================== */
+/* Signals refresh section */
+.signals-refresh {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.last-updated {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.update-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.refresh-btn {
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.refresh-btn:active {
+  transform: translateY(0);
+}
+
 
 .signals-header {
   display: flex;
