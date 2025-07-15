@@ -1740,7 +1740,7 @@ function App() {
     return filtered;
   };
   
-  // Enhanced mobile-friendly data fetching with visibility detection
+  // ULTRA-FAST mobile-friendly data fetching with zero delay
   useEffect(() => {
     fetchMultiCoinData();
     fetchProxyStatus();
@@ -1754,13 +1754,13 @@ function App() {
     fetch3CommasStatus();
     loadWatchlist();
     
-    // Enhanced mobile-friendly automatic price refresh
-    const priceRefreshInterval = setInterval(() => {
+    // ULTRA-FAST automatic price refresh - 3 seconds for zero delay
+    const ultraFastInterval = setInterval(() => {
       fetchMultiCoinData();
-      console.log('🔄 Auto-refreshing live cryptocurrency prices...');
-    }, 15000); // Faster 15-second updates for premium experience
+      console.log('🚀 ULTRA-FAST: Refreshing prices every 3 seconds');
+    }, 3000); // Ultra-fast 3-second updates
     
-    // Premium mobile heartbeat system
+    // Premium mobile heartbeat system - even faster
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     let mobileHeartbeat;
     
@@ -1768,51 +1768,57 @@ function App() {
       mobileHeartbeat = setInterval(() => {
         if (!document.hidden && navigator.onLine) {
           fetchMultiCoinData();
-          console.log('📱 Premium mobile heartbeat - keeping connection alive');
+          console.log('📱 ULTRA-FAST mobile: 2-second heartbeat');
         }
-      }, 10000); // Premium 10-second heartbeat for mobile
+      }, 2000); // Ultra-fast 2-second heartbeat for mobile
     }
     
-    // Mobile-specific: Handle page visibility changes
+    // Instant refresh on visibility changes
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('📱 Page became visible - refreshing prices for mobile');
+        console.log('📱 Page visible - INSTANT refresh');
         fetchMultiCoinData();
         fetchPortfolioData();
         fetchBotPerformance();
       }
     };
     
-    // Mobile-specific: Handle page focus/blur events
+    // Instant refresh on focus
     const handleFocus = () => {
-      console.log('📱 Page focused - refreshing data for mobile');
+      console.log('📱 Page focused - INSTANT refresh');
       fetchMultiCoinData();
     };
     
-    const handleBlur = () => {
-      console.log('📱 Page blurred - mobile background mode');
-    };
-    
-    // Mobile-specific: Handle online/offline events
+    // Instant refresh when online
     const handleOnline = () => {
-      console.log('📱 Device came online - refreshing all data');
+      console.log('📱 Device online - INSTANT refresh');
       fetchMultiCoinData();
       fetchPortfolioData();
       fetchBotPerformance();
     };
     
-    // Add mobile-friendly event listeners
+    // Add event listeners for instant updates
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
+    window.addEventListener('blur', () => console.log('📱 Page blurred'));
     window.addEventListener('online', handleOnline);
     
+    // Performance monitoring
+    const performanceCheck = setInterval(() => {
+      const now = Date.now();
+      if (lastPriceUpdate && (now - lastPriceUpdate.getTime()) > 10000) {
+        console.warn('⚠️ Price updates are delayed - forcing refresh');
+        fetchMultiCoinData();
+      }
+    }, 5000);
+    
     return () => {
-      clearInterval(priceRefreshInterval);
+      clearInterval(ultraFastInterval);
       if (mobileHeartbeat) clearInterval(mobileHeartbeat);
+      clearInterval(performanceCheck);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('blur', () => console.log('📱 Page blurred'));
       window.removeEventListener('online', handleOnline);
     };
   }, []);
