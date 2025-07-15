@@ -1739,7 +1739,7 @@ function App() {
     return filtered;
   };
   
-  // Fetch initial data
+  // Fetch initial data and set up automatic refresh
   useEffect(() => {
     fetchMultiCoinData();
     fetchProxyStatus();
@@ -1752,6 +1752,16 @@ function App() {
     detectAvailableExchanges();
     fetch3CommasStatus();
     loadWatchlist();
+    
+    // Set up automatic price refresh every 30 seconds
+    const priceRefreshInterval = setInterval(() => {
+      fetchMultiCoinData();
+      console.log('🔄 Auto-refreshing live cryptocurrency prices...');
+    }, 30000); // Update every 30 seconds
+    
+    return () => {
+      clearInterval(priceRefreshInterval);
+    };
   }, []);
 
   // Auto Trading Execution
