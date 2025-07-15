@@ -1740,7 +1740,7 @@ function App() {
     return filtered;
   };
   
-  // Fetch initial data and set up automatic refresh
+  // Enhanced mobile-friendly data fetching with visibility detection
   useEffect(() => {
     fetchMultiCoinData();
     fetchProxyStatus();
@@ -1754,14 +1754,52 @@ function App() {
     fetch3CommasStatus();
     loadWatchlist();
     
-    // Set up automatic price refresh every 30 seconds
+    // Enhanced mobile-friendly automatic price refresh
     const priceRefreshInterval = setInterval(() => {
       fetchMultiCoinData();
       console.log('🔄 Auto-refreshing live cryptocurrency prices...');
-    }, 30000); // Update every 30 seconds
+    }, 15000); // Faster 15-second updates for premium experience
+    
+    // Mobile-specific: Handle page visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('📱 Page became visible - refreshing prices for mobile');
+        fetchMultiCoinData();
+        fetchPortfolioData();
+        fetchBotPerformance();
+      }
+    };
+    
+    // Mobile-specific: Handle page focus/blur events
+    const handleFocus = () => {
+      console.log('📱 Page focused - refreshing data for mobile');
+      fetchMultiCoinData();
+    };
+    
+    const handleBlur = () => {
+      console.log('📱 Page blurred - mobile background mode');
+    };
+    
+    // Mobile-specific: Handle online/offline events
+    const handleOnline = () => {
+      console.log('📱 Device came online - refreshing all data');
+      fetchMultiCoinData();
+      fetchPortfolioData();
+      fetchBotPerformance();
+    };
+    
+    // Add mobile-friendly event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('online', handleOnline);
     
     return () => {
       clearInterval(priceRefreshInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('online', handleOnline);
     };
   }, []);
 
