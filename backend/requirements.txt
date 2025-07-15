@@ -27,3 +27,9 @@ newsapi-python==0.2.7
 py3cw==0.0.4
 asyncio==3.4.3
 aiofiles==23.2.1
+redis==5.0.1
+async-timeout==4.0.3
+orjson==3.9.10
+aiocache==0.12.2
+aioredis==2.0.1
+gunicorn==21.2.0
