@@ -1760,6 +1760,19 @@ function App() {
       console.log('🔄 Auto-refreshing live cryptocurrency prices...');
     }, 15000); // Faster 15-second updates for premium experience
     
+    // Premium mobile heartbeat system
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let mobileHeartbeat;
+    
+    if (isMobile) {
+      mobileHeartbeat = setInterval(() => {
+        if (!document.hidden && navigator.onLine) {
+          fetchMultiCoinData();
+          console.log('📱 Premium mobile heartbeat - keeping connection alive');
+        }
+      }, 10000); // Premium 10-second heartbeat for mobile
+    }
+    
     // Mobile-specific: Handle page visibility changes
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -1796,6 +1809,7 @@ function App() {
     
     return () => {
       clearInterval(priceRefreshInterval);
+      if (mobileHeartbeat) clearInterval(mobileHeartbeat);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
